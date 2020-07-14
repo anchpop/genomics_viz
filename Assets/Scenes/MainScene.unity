@@ -329,6 +329,10 @@ MonoBehaviour:
   linewidth: 1
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
   locations: []
+  spherePrefab: {fileID: 4836871442788804328, guid: 8138015b0d63d4545b0106d1ad538ab8,
+    type: 3}
+  cylinderPrefab: {fileID: 3480948476136559390, guid: b38dad4e67f03bc4997af74dce6442a2,
+    type: 3}
 --- !u!4 &1428644179
 Transform:
   m_ObjectHideFlags: 0

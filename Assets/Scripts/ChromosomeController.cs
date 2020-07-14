@@ -10,6 +10,9 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset locationSequence;
     public List<Vector3> locations;
 
+    public GameObject spherePrefab;
+    public GameObject cylinderPrefab;
+
     LineRenderer line;
     // Start is called before the first frame update
     void Start()
@@ -71,17 +74,28 @@ public class ChromosomeController : MonoBehaviour
             points.Add((point - center) / scaling);
         }
 
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            AddLineSegment(points[i], points[i + 1]);
+        }
 
+        /*
         line.positionCount = points.Count;
         line.SetPositions(points.ToArray());
-        line.startWidth = linewidth/100;
+        line.startWidth = linewidth / 100;
         line.endWidth = linewidth / 100;
-        line.alignment = LineAlignment.View;
+        line.alignment = LineAlignment.View;*/
+    }
+
+    void AddLineSegment(Vector3 p1, Vector3 p2)
+    {
+        var obj = Instantiate(cylinderPrefab, ((p1 + p2) / 2), Quaternion.LookRotation(p1 - p2, Vector3.right), transform);
+        obj.transform.localScale = new Vector3(obj.transform.localScale.x, (p1 - p2).magnitude, obj.transform.localScale.z);
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 }
