@@ -121,6 +121,49 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &227653752
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 227653754}
+  - component: {fileID: 227653753}
+  m_Layer: 0
+  m_Name: FPS counter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &227653753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 227653752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8151914c3a9aeb2479c3304cecb21c38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &227653754
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 227653752}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -249,7 +292,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.5109024, g: 0.63873804, b: 0.8396226, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -325,10 +368,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db07d171e82115b4888401ce76e26814, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linewidth: 0.5
-  simplificationFactor: 1
+  overallScale: 1.5
+  linewidth: 1
+  simplificationFactor: 0.5
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
-  locations: []
   spherePrefab: {fileID: 4836871442788804328, guid: 8138015b0d63d4545b0106d1ad538ab8,
     type: 3}
   cylinderPrefab: {fileID: 3480948476136559390, guid: b38dad4e67f03bc4997af74dce6442a2,
