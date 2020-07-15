@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public struct Point
@@ -22,6 +23,7 @@ public class ChromosomeController : MonoBehaviour
 
     public GameObject spherePrefab;
     public GameObject cylinderPrefab;
+    public GameObject coloredCylinderPrefab;
 
     private LineRenderer line;
     private int numberOfRows = 0;
@@ -107,15 +109,8 @@ public class ChromosomeController : MonoBehaviour
 
         for (int i = 0; i < points.Count - 1; i++)
         {
-            AddLineSegment(points[i], points[i + 1]);
+            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.33f, .66f) });
         }
-
-        /*
-        line.positionCount = points.Count;
-        line.SetPositions(points.ToArray());
-        line.startWidth = linewidth / 100;
-        line.endWidth = linewidth / 100;
-        line.alignment = LineAlignment.View;*/
     }
 
     List<int> GetSimplificationOrder(List<Point> points)
@@ -173,11 +168,30 @@ public class ChromosomeController : MonoBehaviour
         return removalOrder;
     }
 
-    void AddLineSegment(Point p1, Point p2)
+    void AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections)
     {
-        var obj = Instantiate(cylinderPrefab, ((p1.position + p2.position) / 2), Quaternion.LookRotation(p1.position - p2.position, Vector3.right), transform);
-        obj.transform.localScale = new Vector3(linewidth / 100, linewidth / 100, (p1.position - p2.position).magnitude);
+        void AddSegment(float f1, float f2, GameObject prefab)
+        {
+            void AddSubsegment(Vector3 p1_, Vector3 p2_)
+            {
+                var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.right), transform);
+                obj.transform.localScale = new Vector3(linewidth / 100, linewidth / 100, (p1_ - p2_).magnitude);
+            }
+
+            AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
+        }
+
+        var last = 0f;
+        foreach (var section in sections)
+        {
+            AddSegment(last, section.f1, cylinderPrefab);
+            AddSegment(section.f1, section.f2, coloredCylinderPrefab);
+            last = section.f2;
+        }
+        AddSegment(last, 1, cylinderPrefab);
     }
+
+
 
     float triangleArea(Vector3 a, Vector3 b, Vector3 c)
     {

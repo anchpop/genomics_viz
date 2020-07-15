@@ -377,6 +377,8 @@ MonoBehaviour:
     type: 3}
   cylinderPrefab: {fileID: 3480948476136559390, guid: b38dad4e67f03bc4997af74dce6442a2,
     type: 3}
+  coloredCylinderPrefab: {fileID: 3480948476136559390, guid: 59ebe7a40c5a9434388721d4ab689164,
+    type: 3}
 --- !u!4 &1428644179
 Transform:
   m_ObjectHideFlags: 0
