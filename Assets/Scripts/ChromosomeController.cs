@@ -174,7 +174,7 @@ public class ChromosomeController : MonoBehaviour
         {
             void AddSubsegment(Vector3 p1_, Vector3 p2_)
             {
-                var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.right), transform);
+                var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
                 obj.transform.localScale = new Vector3(linewidth / 100, linewidth / 100, (p1_ - p2_).magnitude);
             }
 

@@ -369,15 +369,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   overallScale: 1.5
-  linewidth: 1
-  simplificationFactor: 0.8
+  linewidth: 0.5
+  simplificationFactor: 0.95
   smartSimplify: 1
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
   spherePrefab: {fileID: 4836871442788804328, guid: 8138015b0d63d4545b0106d1ad538ab8,
     type: 3}
-  cylinderPrefab: {fileID: 3480948476136559390, guid: b38dad4e67f03bc4997af74dce6442a2,
+  cylinderPrefab: {fileID: 8078344954632696455, guid: 106d1e2fe5c7ffd4d8639a50d2a290fd,
     type: 3}
-  coloredCylinderPrefab: {fileID: 3480948476136559390, guid: 59ebe7a40c5a9434388721d4ab689164,
+  coloredCylinderPrefab: {fileID: 8078344954632696455, guid: d0b12e67f6a7d9e4882eb201788fa5d9,
     type: 3}
 --- !u!4 &1428644179
 Transform:
