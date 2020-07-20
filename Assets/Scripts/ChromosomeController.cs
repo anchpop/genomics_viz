@@ -20,6 +20,7 @@ public class ChromosomeController : MonoBehaviour
     public bool smartSimplify = true;
     public TextAsset locationSequence;
     private List<Point> points;
+    private List<(int, int)> genes;
 
     public GameObject spherePrefab;
     public GameObject cylinderPrefab;
@@ -31,11 +32,26 @@ public class ChromosomeController : MonoBehaviour
 
     void Start()
     {
+        points = getPoints();
+
+        for (int i = 0; i < points.Count - 1; i++)
+        {
+            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.3f, .6f) });
+        }
+    }
+
+
+    List<(int, int)> getGenes()
+    {
+        return null;
+    }
+
+    List<Point> getPoints()
+    {
         var center = Vector3.zero;
-        line = GetComponent<LineRenderer>();
 
         var pointsRaw = new List<Vector3>();
-        points = new List<Point>();
+        var points = new List<Point>();
 
         Vector3 min = Vector3.zero;
         Vector3 max = Vector3.zero;
@@ -107,11 +123,7 @@ public class ChromosomeController : MonoBehaviour
             }
         }
 
-
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.3f, .6f) });
-        }
+        return points;
     }
 
     List<int> GetSimplificationOrder(List<Point> points)
