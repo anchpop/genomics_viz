@@ -88,13 +88,14 @@ public class ChromosomeController : MonoBehaviour
         var count = 0;
         foreach (var point in pointsRaw)
         {
-            count++;
             var scaling = Mathf.Max(Mathf.Max(min.x - max.x, min.y - max.y), min.z - max.z);
             var p = new Point();
             p.position = (point - center) * overallScale / scaling;
             p.basePairIndex = count * 5000;
 
             points.Add(p);
+
+            count++;
         }
 
         if (smartSimplify)
@@ -109,7 +110,7 @@ public class ChromosomeController : MonoBehaviour
 
         for (int i = 0; i < points.Count - 1; i++)
         {
-            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.33f, .66f) });
+            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.3f, .6f) });
         }
     }
 
@@ -142,7 +143,7 @@ public class ChromosomeController : MonoBehaviour
             }
 
             // This is the point to remove!
-            removalOrder.Add(lowestIndex);
+            removalOrder.Add(lowestIndex + 1);
             importanceList.RemoveAt(lowestIndex);
 
             // Recalcuate the importance of the neighbour points
@@ -175,20 +176,18 @@ public class ChromosomeController : MonoBehaviour
             void AddSubsegment(Vector3 p1_, Vector3 p2_)
             {
                 var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
-                obj.transform.localScale = new Vector3(linewidth / 100, linewidth / 100, (p1_ - p2_).magnitude);
+                obj.transform.localScale = new Vector3(obj.transform.localScale.x * linewidth / 100, obj.transform.localScale.y * linewidth / 100, (p1_ - p2_).magnitude);
             }
 
             AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
         }
 
-        var last = 0f;
-        foreach (var section in sections)
+        AddSegment(0, 1, cylinderPrefab);
+
+        foreach (var (f1, f2) in sections)
         {
-            AddSegment(last, section.f1, cylinderPrefab);
-            AddSegment(section.f1, section.f2, coloredCylinderPrefab);
-            last = section.f2;
+            AddSegment(f1, f2, coloredCylinderPrefab);
         }
-        AddSegment(last, 1, cylinderPrefab);
     }
 
 
