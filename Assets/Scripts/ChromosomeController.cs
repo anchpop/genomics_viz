@@ -19,6 +19,7 @@ public class ChromosomeController : MonoBehaviour
     public float simplificationFactor = 0;
     public bool smartSimplify = true;
     public TextAsset locationSequence;
+    public TextAsset geneAnnotations;
     private List<Point> points;
     private List<(int, int)> genes;
 
@@ -33,6 +34,7 @@ public class ChromosomeController : MonoBehaviour
     void Start()
     {
         points = getPoints();
+        genes = getGenes();
 
         for (int i = 0; i < points.Count - 1; i++)
         {
@@ -43,7 +45,23 @@ public class ChromosomeController : MonoBehaviour
 
     List<(int, int)> getGenes()
     {
-        return null;
+        var genes = new List<(int, int)>();
+        bool firstLine = true;
+        foreach (var line in geneAnnotations.text.Split('\n'))
+        {
+            if (firstLine)
+            {
+                firstLine = false;
+                continue;
+            }
+
+            if (line != "")
+            {
+                var info = line.Split('\t');
+                genes.Add((int.Parse(info[2]), int.Parse(info[3])));
+            }
+        }
+        return genes;
     }
 
     List<Point> getPoints()

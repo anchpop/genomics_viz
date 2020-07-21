@@ -373,6 +373,7 @@ MonoBehaviour:
   simplificationFactor: 0.95
   smartSimplify: 1
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
+  geneAnnotations: {fileID: 4900000, guid: 80adcbd67a092e24d9be3b231e06ffb5, type: 3}
   spherePrefab: {fileID: 4836871442788804328, guid: 8138015b0d63d4545b0106d1ad538ab8,
     type: 3}
   cylinderPrefab: {fileID: 8078344954632696455, guid: 106d1e2fe5c7ffd4d8639a50d2a290fd,
