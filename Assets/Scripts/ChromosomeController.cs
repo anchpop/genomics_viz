@@ -17,11 +17,11 @@ public class ChromosomeController : MonoBehaviour
 {
     public float overallScale = 1.5f;
     public float linewidth = 1;
-    public float simplificationFactor = 0;
-    public bool smartSimplify = true;
+    public float simplificationFactorCoarse = .95f;
+    public float simplificationFactorFine = .5f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
-    private List<Point> points;
+    private (List<Point> original, List<Point> fine, List<Point> coarse) points;
     private List<(int start, int end)> genes;
 
     public GameObject spherePrefab;
@@ -30,7 +30,6 @@ public class ChromosomeController : MonoBehaviour
 
     private LineRenderer line;
     private int numberOfRows = 0;
-    private List<int> removalOrder;
 
     void Start()
     {
@@ -40,10 +39,10 @@ public class ChromosomeController : MonoBehaviour
 
         var currentGeneIndex = 0;
         var toEnd = new List<(int start, int end)>();
-        for (int i = 0; i < points.Count - 1; i++)
+        for (int i = 0; i < points.coarse.Count - 1; i++)
         {
-            var p1 = points[i];
-            var p2 = points[i + 1];
+            var p1 = points.coarse[i];
+            var p2 = points.coarse[i + 1];
 
             var sections = new List<(float, float)>();
 
@@ -116,7 +115,7 @@ public class ChromosomeController : MonoBehaviour
         return genes;
     }
 
-    List<Point> getPoints()
+    (List<Point> original, List<Point> fine, List<Point> coarse) getPoints()
     {
         var center = Vector3.zero;
 
@@ -132,7 +131,6 @@ public class ChromosomeController : MonoBehaviour
             if (line != "")
             {
                 numberOfRows++;
-                if (!smartSimplify && UnityEngine.Random.value < simplificationFactor) continue;
 
                 var coords = line.Split('\t');
                 var newVector = new Vector3(float.Parse(coords[0]), float.Parse(coords[1]), float.Parse(coords[2]));
@@ -185,16 +183,26 @@ public class ChromosomeController : MonoBehaviour
             count++;
         }
 
-        if (smartSimplify)
+        var removalOrder = GetSimplificationOrder(points);
+
+        var pointsOriginal = points.ToList();
+        var pointsCoarse = points.ToList();
+        var pointsFine = points.ToList();
+
+
+        for (var i = 0; i < numberOfRows * simplificationFactorCoarse; i++)
         {
-            removalOrder = GetSimplificationOrder(points);
-            for (var i = 0; i < numberOfRows * simplificationFactor; i++)
-            {
-                points.RemoveAt(removalOrder[i]);
-            }
+            pointsCoarse.RemoveAt(removalOrder[i]);
         }
 
-        return points;
+
+        for (var i = 0; i < numberOfRows * simplificationFactorFine; i++)
+        {
+            pointsFine.RemoveAt(removalOrder[i]);
+        }
+
+
+        return (original: pointsOriginal, fine: pointsFine, coarse: pointsCoarse);
     }
 
     List<int> GetSimplificationOrder(List<Point> points)
