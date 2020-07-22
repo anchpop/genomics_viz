@@ -10,6 +10,7 @@ public struct Point
 {
     public Vector3 position;
     public int basePairIndex;
+    public int originalIndex;
 }
 
 public class ChromosomeController : MonoBehaviour
@@ -176,6 +177,7 @@ public class ChromosomeController : MonoBehaviour
             var scaling = Mathf.Max(Mathf.Max(min.x - max.x, min.y - max.y), min.z - max.z);
             var p = new Point();
             p.position = (point - center) * overallScale / scaling;
+            p.originalIndex = count;
             p.basePairIndex = count * 5000;
 
             points.Add(p);
