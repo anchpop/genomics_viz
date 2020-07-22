@@ -14,6 +14,23 @@ public class CameraParentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime, 0));
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime, 0));
+        }
+        else if (Input.GetKey(KeyCode.RightArrow))
+        {
+            transform.Rotate(new Vector3(0, -rotationSpeed * Time.deltaTime, 0));
+        }
+
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            transform.localScale = transform.localScale * (1 - (.1f * Time.deltaTime));
+        }
+        else if (Input.GetKey(KeyCode.DownArrow))
+        {
+            transform.localScale = transform.localScale * (1 + (.1f * Time.deltaTime));
+        }
     }
 }
