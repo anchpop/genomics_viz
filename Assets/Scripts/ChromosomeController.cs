@@ -21,7 +21,7 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     private List<Point> points;
-    private List<(int, int)> genes;
+    private List<(int start, int end)> genes;
 
     public GameObject spherePrefab;
     public GameObject cylinderPrefab;
@@ -36,14 +36,65 @@ public class ChromosomeController : MonoBehaviour
         points = getPoints();
         genes = getGenes();
 
+
+        var currentGeneIndex = 0;
+        var toEnd = new List<(int start, int end)>();
         for (int i = 0; i < points.Count - 1; i++)
         {
-            AddLineSegment(points[i], points[i + 1], new List<(float, float)> { (.3f, .6f) });
+            var p1 = points[i];
+            var p2 = points[i + 1];
+
+            var sections = new List<(float, float)>();
+
+            while (true)
+            {
+                if (currentGeneIndex >= genes.Count)
+                {
+                    break;
+                }
+
+                var gene = genes[currentGeneIndex];
+
+                // TODO: ASSERT(gene.start >= p1.basePairIndex)
+                // Should always be true
+
+                if (gene.start >= p2.basePairIndex) // if the gene starts after the end of this section, we are done for now.
+                {
+                    break;
+                }
+                else if (gene.end >= p2.basePairIndex)
+                {
+                    sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), 1));
+                    toEnd.Add(gene);
+                }
+                else 
+                {
+                    sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                }
+
+
+                currentGeneIndex++;
+            }
+
+            foreach (var gene in toEnd.ToList())
+            {
+                if (gene.end < p2.basePairIndex)
+                {
+                    sections.Add((0, Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                    toEnd.Remove(gene);
+                }
+                else
+                {
+                    sections.Add((0, 1));
+                }
+            }
+
+            AddLineSegment(p1, p2, sections);
         }
     }
 
 
-    List<(int, int)> getGenes()
+    List<(int start, int end)> getGenes()
     {
         var genes = new List<(int, int)>();
         bool firstLine = true;
@@ -211,8 +262,10 @@ public class ChromosomeController : MonoBehaviour
 
             AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
         }
-
-        AddSegment(0, 1, cylinderPrefab);
+        if (sections.Count == 0 || sections[0] != (0, 1))
+        {
+            AddSegment(0, 1, cylinderPrefab);
+        }
 
         foreach (var (f1, f2) in sections)
         {
