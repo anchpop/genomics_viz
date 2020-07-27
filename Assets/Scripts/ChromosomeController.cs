@@ -24,12 +24,18 @@ public class ChromosomeController : MonoBehaviour
     private (List<Point> original, List<Point> fine, List<Point> coarse) points;
     private List<(int start, int end)> genes;
 
-    public GameObject spherePrefab;
-    public GameObject cylinderPrefab;
-    public GameObject coloredCylinderPrefab;
+    public GameObject cylinderPrefab_LOD0;
+    public GameObject coloredCylinderPrefab_LOD0;
+    public GameObject cylinderPrefab_LOD1;
+    public GameObject coloredCylinderPrefab_LOD1;
+    public GameObject cylinderPrefab_LOD2;
+    public GameObject coloredCylinderPrefab_LOD2;
+    public GameObject cylinderPrefab_LOD3;
+    public GameObject coloredCylinderPrefab_LOD3;
 
     private LineRenderer line;
     private int numberOfRows = 0;
+    private int basePairsPerRow = 5000;
 
     void Start()
     {
@@ -67,7 +73,7 @@ public class ChromosomeController : MonoBehaviour
                     sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), 1));
                     toEnd.Add(gene);
                 }
-                else 
+                else
                 {
                     sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
                 }
@@ -89,7 +95,7 @@ public class ChromosomeController : MonoBehaviour
                 }
             }
 
-            AddLineSegment(p1, p2, sections);
+            AddLineSegment(p1, p2, sections, 3);
         }
     }
 
@@ -176,7 +182,7 @@ public class ChromosomeController : MonoBehaviour
             var p = new Point();
             p.position = (point - center) * overallScale / scaling;
             p.originalIndex = count;
-            p.basePairIndex = count * 5000;
+            p.basePairIndex = count * basePairsPerRow;
 
             points.Add(p);
 
@@ -260,26 +266,45 @@ public class ChromosomeController : MonoBehaviour
         return removalOrder;
     }
 
-    void AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections)
+    void AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections, int LOD)
     {
         void AddSegment(float f1, float f2, GameObject prefab)
         {
             void AddSubsegment(Vector3 p1_, Vector3 p2_)
             {
                 var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
-                obj.transform.localScale = new Vector3(obj.transform.localScale.x * linewidth / 100, obj.transform.localScale.y * linewidth / 100, (p1_ - p2_).magnitude);
+                obj.transform.localScale = new Vector3(
+                    obj.transform.localScale.x * linewidth / 100, 
+                    obj.transform.localScale.y * linewidth / 100,
+                    (p1_ - p2_).magnitude
+                );
             }
 
             AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
         }
         if (sections.Count == 0 || sections[0] != (0, 1))
         {
-            AddSegment(0, 1, cylinderPrefab);
+            AddSegment(0, 1, cylinderGetter(LOD, false));
         }
 
         foreach (var (f1, f2) in sections)
         {
-            AddSegment(f1, f2, coloredCylinderPrefab);
+            AddSegment(f1, f2, cylinderGetter(LOD, true));
+        }
+    }
+
+    GameObject cylinderGetter(int LOD, bool colored)
+    {
+        switch (LOD)
+        {
+            case 0:
+                return colored ? coloredCylinderPrefab_LOD0 : cylinderPrefab_LOD0;
+            case 1:
+                return colored ? coloredCylinderPrefab_LOD1 : cylinderPrefab_LOD1;
+            case 2:
+                return colored ? coloredCylinderPrefab_LOD2 : cylinderPrefab_LOD2;
+            default:
+                return colored ? coloredCylinderPrefab_LOD3 : cylinderPrefab_LOD3;
         }
     }
 
