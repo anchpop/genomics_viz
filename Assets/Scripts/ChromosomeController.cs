@@ -274,8 +274,8 @@ public class ChromosomeController : MonoBehaviour
             {
                 var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
                 obj.transform.localScale = new Vector3(
-                    obj.transform.localScale.x * linewidth / 100, 
-                    obj.transform.localScale.y * linewidth / 100,
+                    obj.transform.localScale.x * linewidth / 100 * overallScale, 
+                    obj.transform.localScale.y * linewidth / 100 * overallScale,
                     (p1_ - p2_).magnitude
                 );
             }
