@@ -371,7 +371,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   overallScale: 10
-  linewidth: 0.5
+  linewidth: 0.25
   simplificationFactorCoarse: 0.95
   simplificationFactorFine: 0.5
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}

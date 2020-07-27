@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public struct Point
 {
@@ -61,8 +62,7 @@ public class ChromosomeController : MonoBehaviour
 
                 var gene = genes[currentGeneIndex];
 
-                // TODO: ASSERT(gene.start >= p1.basePairIndex)
-                // Should always be true
+                Assert.IsTrue(gene.start >= p1.basePairIndex);
 
                 if (gene.start >= p2.basePairIndex) // if the gene starts after the end of this section, we are done for now.
                 {
