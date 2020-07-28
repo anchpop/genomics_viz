@@ -43,62 +43,90 @@ public class ChromosomeController : MonoBehaviour
         points = getPoints();
         genes = getGenes();
 
-
+        var segments = new List<(Point p1, Point p2, List<(float, float)> sections)>(points.fine.Count);
         var currentGeneIndex = 0;
         var toEnd = new List<(int start, int end)>();
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
-            var p1 = points.coarse[i];
-            var p2 = points.coarse[i + 1];
+            var (endPointListIndex, newCurrentGeneIndex, newSegments, newToEnd) = linesToAdd(i, points.coarse[i + 1].originalIndex, currentGeneIndex, points.coarse, genes, toEnd);
+            currentGeneIndex = newCurrentGeneIndex;
+            toEnd = newToEnd;
+            segments.AddRange(newSegments);
+        }
 
-            var sections = new List<(float, float)>();
-
-            while (true)
-            {
-                if (currentGeneIndex >= genes.Count)
-                {
-                    break;
-                }
-
-                var gene = genes[currentGeneIndex];
-
-                Assert.IsTrue(gene.start >= p1.basePairIndex);
-
-                if (gene.start >= p2.basePairIndex) // if the gene starts after the end of this section, we are done for now.
-                {
-                    break;
-                }
-                else if (gene.end >= p2.basePairIndex)
-                {
-                    sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), 1));
-                    toEnd.Add(gene);
-                }
-                else
-                {
-                    sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
-                }
-
-
-                currentGeneIndex++;
-            }
-
-            foreach (var gene in toEnd.ToList())
-            {
-                if (gene.end < p2.basePairIndex)
-                {
-                    sections.Add((0, Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
-                    toEnd.Remove(gene);
-                }
-                else
-                {
-                    sections.Add((0, 1));
-                }
-            }
-
+        foreach (var (p1, p2, sections) in segments)
+        {
             AddLineSegment(p1, p2, sections, 3);
         }
     }
 
+    (int endPointListIndex, int currentGeneIndex, List<(Point p1, Point p2, List<(float, float)> sections)> segments, List<(int start, int end)> toEnd)
+        linesToAdd(int pointListIndexFrom, int originalIndexTo, int currentGeneIndex, List<Point> points, List<(int start, int end)> genes, List<(int start, int end)> toEnd)
+    {
+        var segments = new List<(Point p1, Point p2, List<(float, float)> sections)>();
+
+        var i = pointListIndexFrom;
+        while (true)
+        {
+            if (points[i].originalIndex < originalIndexTo)
+            {
+                var p1 = points[i];
+                var p2 = points[i + 1];
+
+                var sections = new List<(float, float)>();
+
+                while (true)
+                {
+                    if (currentGeneIndex >= genes.Count)
+                    {
+                        break;
+                    }
+
+                    var gene = genes[currentGeneIndex];
+
+                    Assert.IsTrue(gene.start >= p1.basePairIndex); // If the gene we're looking at starts *before* the current section, something has gone seriously wrong.
+
+                    if (gene.start >= p2.basePairIndex) // if the gene starts after the end of this section, we are done for now.
+                    {
+                        break;
+                    }
+                    else if (gene.end >= p2.basePairIndex)
+                    {
+                        sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), 1));
+                        toEnd.Add(gene);
+                    }
+                    else
+                    {
+                        sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                    }
+
+
+                    currentGeneIndex++;
+                }
+
+                foreach (var gene in toEnd.ToList())
+                {
+                    if (gene.end < p2.basePairIndex)
+                    {
+                        sections.Add((0, Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                        toEnd.Remove(gene);
+                    }
+                    else
+                    {
+                        sections.Add((0, 1));
+                    }
+                }
+
+                AddLineSegment(p1, p2, sections, 3);
+            }
+            else
+            {
+                return (endPointListIndex: i, currentGeneIndex, segments, toEnd);
+            }
+
+            i++;
+        }
+    }
 
     List<(int start, int end)> getGenes()
     {
@@ -274,7 +302,7 @@ public class ChromosomeController : MonoBehaviour
             {
                 var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
                 obj.transform.localScale = new Vector3(
-                    obj.transform.localScale.x * linewidth / 100 * overallScale, 
+                    obj.transform.localScale.x * linewidth / 100 * overallScale,
                     obj.transform.localScale.y * linewidth / 100 * overallScale,
                     (p1_ - p2_).magnitude
                 );
