@@ -43,21 +43,26 @@ public class ChromosomeController : MonoBehaviour
         points = getPoints();
         genes = getGenes();
 
-        var segments = new List<(Point p1, Point p2, List<(float, float)> sections)>(points.fine.Count);
         var currentGeneIndex = 0;
         var toEnd = new List<(int start, int end)>();
+
+        var fineIndex = 0;
+        var orignalIndex = 0;
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
-            var (endPointListIndex, newCurrentGeneIndex, newSegments, newToEnd) = linesToAdd(i, points.coarse[i + 1].originalIndex, currentGeneIndex, points.coarse, genes, toEnd);
+            var stopIndex = points.coarse[i + 1].originalIndex;
+            var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd);
+            var (newFineIndex, _, segmentsFine, _) = linesToAdd(fineIndex, stopIndex, currentGeneIndex, points.fine, genes, toEnd);
+            var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd);
             currentGeneIndex = newCurrentGeneIndex;
             toEnd = newToEnd;
-            segments.AddRange(newSegments);
+
+            foreach (var (p1, p2, sections) in segmentsCoarse)
+            {
+                AddLineSegment(p1, p2, sections, 3);
+            }
         }
 
-        foreach (var (p1, p2, sections) in segments)
-        {
-            AddLineSegment(p1, p2, sections, 3);
-        }
     }
 
     (int endPointListIndex, int currentGeneIndex, List<(Point p1, Point p2, List<(float, float)> sections)> segments, List<(int start, int end)> toEnd)
@@ -117,7 +122,7 @@ public class ChromosomeController : MonoBehaviour
                     }
                 }
 
-                AddLineSegment(p1, p2, sections, 3);
+                segments.Add((p1, p2, sections));
             }
             else
             {
@@ -294,8 +299,9 @@ public class ChromosomeController : MonoBehaviour
         return removalOrder;
     }
 
-    void AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections, int LOD)
+    List<MeshRenderer> AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections, int LOD)
     {
+        var segments = new List<MeshRenderer>();
         void AddSegment(float f1, float f2, GameObject prefab)
         {
             void AddSubsegment(Vector3 p1_, Vector3 p2_)
@@ -306,6 +312,7 @@ public class ChromosomeController : MonoBehaviour
                     obj.transform.localScale.y * linewidth / 100 * overallScale,
                     (p1_ - p2_).magnitude
                 );
+                segments.Add(obj.GetComponent<MeshRenderer>());
             }
 
             AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
@@ -319,6 +326,7 @@ public class ChromosomeController : MonoBehaviour
         {
             AddSegment(f1, f2, cylinderGetter(LOD, true));
         }
+        return segments;
     }
 
     GameObject cylinderGetter(int LOD, bool colored)
