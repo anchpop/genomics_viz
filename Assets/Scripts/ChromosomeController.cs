@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -56,11 +57,41 @@ public class ChromosomeController : MonoBehaviour
             var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd);
             currentGeneIndex = newCurrentGeneIndex;
             toEnd = newToEnd;
+            fineIndex = newFineIndex;
+            orignalIndex = newOriginalIndex;
 
+            var coarseSegments = new List<MeshRenderer>();
             foreach (var (p1, p2, sections) in segmentsCoarse)
             {
-                AddLineSegment(p1, p2, sections, 3);
+                coarseSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
             }
+            var fineSegments = new List<MeshRenderer>();
+            foreach (var (p1, p2, sections) in segmentsFine)
+            {
+                fineSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
+            }
+
+
+            var LODParent = new GameObject("LODParent");
+            var coarseParent = new GameObject("coarseParent");
+            var fineParent = new GameObject("fineParent");
+            coarseParent.transform.parent = LODParent.transform;
+            fineParent.transform.parent = LODParent.transform;
+            foreach (var segment in coarseSegments)
+            {
+                segment.transform.parent = coarseParent.transform;
+            }
+            foreach (var segment in fineSegments)
+            {
+                segment.transform.parent = fineParent.transform;
+            }
+
+            var LODGroup = LODParent.AddComponent<LODGroup>();
+            LOD[] lods = new LOD[2];
+            lods[0] = new LOD(1.0F / (1 + 1), fineSegments.ToArray());
+            lods[1] = new LOD(1.0F / (200 + 1), coarseSegments.ToArray());
+            LODGroup.SetLODs(lods);
+            LODGroup.RecalculateBounds();
         }
 
     }
@@ -302,8 +333,12 @@ public class ChromosomeController : MonoBehaviour
     List<MeshRenderer> AddLineSegment(Point p1, Point p2, List<(float f1, float f2)> sections, int LOD)
     {
         var segments = new List<MeshRenderer>();
-        void AddSegment(float f1, float f2, GameObject prefab)
+        void AddSegment(float f1, float f2, GameObject prefab, bool gene)
         {
+            if (gene && LOD > 2 && (f1 - f2) > .25f)
+            {
+                return;
+            }
             void AddSubsegment(Vector3 p1_, Vector3 p2_)
             {
                 var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
@@ -319,12 +354,12 @@ public class ChromosomeController : MonoBehaviour
         }
         if (sections.Count == 0 || sections[0] != (0, 1))
         {
-            AddSegment(0, 1, cylinderGetter(LOD, false));
+            AddSegment(0, 1, cylinderGetter(3, false), false); // ignore input LOD and always get the 3rd one, it's good enough
         }
 
         foreach (var (f1, f2) in sections)
         {
-            AddSegment(f1, f2, cylinderGetter(LOD, true));
+            AddSegment(f1, f2, cylinderGetter(3, true), true); // ignore input LOD and always get the 3rd one, it's good enough
         }
         return segments;
     }
