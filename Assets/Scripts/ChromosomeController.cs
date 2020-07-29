@@ -19,8 +19,8 @@ public class ChromosomeController : MonoBehaviour
 {
     public float overallScale = 1.5f;
     public float linewidth = 1;
-    public float simplificationFactorCoarse = .95f;
-    public float simplificationFactorFine = .5f;
+    float simplificationFactorCoarse = .95f;
+    float simplificationFactorFine = .5f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     private (List<Point> original, List<Point> fine, List<Point> coarse) points;
@@ -52,9 +52,9 @@ public class ChromosomeController : MonoBehaviour
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
             var stopIndex = points.coarse[i + 1].originalIndex;
-            var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd);
-            var (newFineIndex, _, segmentsFine, _) = linesToAdd(fineIndex, stopIndex, currentGeneIndex, points.fine, genes, toEnd);
-            var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd);
+            var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd.ToList());
+            var (newFineIndex, _, segmentsFine, _) = linesToAdd(fineIndex, stopIndex, currentGeneIndex, points.fine, genes, toEnd.ToList());
+            var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd.ToList());
             currentGeneIndex = newCurrentGeneIndex;
             toEnd = newToEnd;
             fineIndex = newFineIndex;
@@ -99,6 +99,7 @@ public class ChromosomeController : MonoBehaviour
     (int endPointListIndex, int currentGeneIndex, List<(Point p1, Point p2, List<(float, float)> sections)> segments, List<(int start, int end)> toEnd)
         linesToAdd(int pointListIndexFrom, int originalIndexTo, int currentGeneIndex, List<Point> points, List<(int start, int end)> genes, List<(int start, int end)> toEnd)
     {
+        var newToEnd = new List<(int start, int end)>();
         var segments = new List<(Point p1, Point p2, List<(float, float)> sections)>();
 
         var i = pointListIndexFrom;
@@ -128,12 +129,26 @@ public class ChromosomeController : MonoBehaviour
                     }
                     else if (gene.end >= p2.basePairIndex)
                     {
-                        sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), 1));
-                        toEnd.Add(gene);
+                        var f1 = Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start);
+                        if (f1 != 1)
+                        {
+                            sections.Add((f1, 1));
+                        }
+                        newToEnd.Add(gene);
                     }
                     else
                     {
-                        sections.Add((Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start), Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                        var f1 = Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.start);
+                        var f2 = Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end);
+                        if (f1 < f2)
+                        {
+                            sections.Add((f1, f2));
+                        }
+                        else if (f1 == f2)
+                        {
+                            Debug.Log("Zero-length gene");
+                        }
+                        Assert.IsTrue(f1 <= f2);
                     }
 
 
@@ -144,7 +159,11 @@ public class ChromosomeController : MonoBehaviour
                 {
                     if (gene.end < p2.basePairIndex)
                     {
-                        sections.Add((0, Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end)));
+                        var f2 = Mathf.InverseLerp(p1.basePairIndex, p2.basePairIndex, gene.end);
+                        if (f2 != 0) // sometimes a gene ends exactly on a curve, lets not bother doing anything in that case
+                        {
+                            sections.Add((0, f2));
+                        }
                         toEnd.Remove(gene);
                     }
                     else
@@ -152,7 +171,8 @@ public class ChromosomeController : MonoBehaviour
                         sections.Add((0, 1));
                     }
                 }
-
+                toEnd.AddRange(newToEnd);
+                newToEnd = new List<(int start, int end)>();
                 segments.Add((p1, p2, sections));
             }
             else
@@ -359,6 +379,10 @@ public class ChromosomeController : MonoBehaviour
 
         foreach (var (f1, f2) in sections)
         {
+            if (f1 >= f2)
+            {
+                Assert.IsTrue(f1 < f2);
+            }
             AddSegment(f1, f2, cylinderGetter(3, true), true); // ignore input LOD and always get the 3rd one, it's good enough
         }
         return segments;

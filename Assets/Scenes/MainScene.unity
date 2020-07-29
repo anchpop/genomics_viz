@@ -372,8 +372,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   overallScale: 10
   linewidth: 0.25
-  simplificationFactorCoarse: 0.95
-  simplificationFactorFine: 0.5
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
   geneAnnotations: {fileID: 4900000, guid: 80adcbd67a092e24d9be3b231e06ffb5, type: 3}
   cylinderPrefab_LOD0: {fileID: 4769671688729265167, guid: 5b725741e694c0848911e78a29fb694a,
