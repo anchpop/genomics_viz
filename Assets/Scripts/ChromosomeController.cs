@@ -199,7 +199,8 @@ public class ChromosomeController : MonoBehaviour
             if (line != "")
             {
                 var info = line.Split('\t');
-                genes.Add((info[6], int.Parse(info[2]), int.Parse(info[3])));
+                Assert.AreNotEqual(info[6], "");
+                genes.Add((name: info[6], start: int.Parse(info[2]), end: int.Parse(info[3])));
             }
         }
         return genes;
@@ -353,37 +354,40 @@ public class ChromosomeController : MonoBehaviour
     List<MeshRenderer> AddLineSegment(Point p1, Point p2, List<(string name, float f1, float f2)> sections, int LOD)
     {
         var segments = new List<MeshRenderer>();
-        void AddSegment(float f1, float f2, GameObject prefab, bool gene)
+        GameObject AddSubsegment(Vector3 p1_, Vector3 p2_, GameObject prefab)
         {
-            if (gene && LOD > 2 && (f1 - f2) > .25f)
+            var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
+            obj.transform.localScale = new Vector3(
+                obj.transform.localScale.x * linewidth / 100 * overallScale,
+                obj.transform.localScale.y * linewidth / 100 * overallScale,
+                (p1_ - p2_).magnitude
+            );
+            segments.Add(obj.GetComponent<MeshRenderer>());
+            return obj;
+        }
+        void AddGeneSegment(string name, float f1, float f2, GameObject prefab, bool gene)
+        {
+            if (gene && LOD > 2 && (f2 - f1) < .1f)
             {
                 return;
             }
-            void AddSubsegment(Vector3 p1_, Vector3 p2_)
-            {
-                var obj = Instantiate(prefab, ((p1_ + p2_) / 2), Quaternion.LookRotation(p1_ - p2_, Vector3.up), transform);
-                obj.transform.localScale = new Vector3(
-                    obj.transform.localScale.x * linewidth / 100 * overallScale,
-                    obj.transform.localScale.y * linewidth / 100 * overallScale,
-                    (p1_ - p2_).magnitude
-                );
-                segments.Add(obj.GetComponent<MeshRenderer>());
-            }
 
-            AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2));
+            var geneObj = AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2), prefab);
+            var geneController = geneObj.AddComponent<GeneController>();
+            geneController.name = name;
         }
         if (sections.Count == 0 || (sections[0].f1 != 0 || sections[0].f2 != 1))
         {
-            AddSegment(0, 1, cylinderGetter(3, false), false); // ignore input LOD and always get the 3rd one, it's good enough
+            AddSubsegment(p1.position, p2.position, cylinderGetter(3, false)); // ignore input LOD and always get the 3rd one, it's good enough
         }
 
-        foreach (var (_, f1, f2) in sections)
+        foreach (var (name, f1, f2) in sections)
         {
             if (f1 >= f2)
             {
                 Assert.IsTrue(f1 < f2);
             }
-            AddSegment(f1, f2, cylinderGetter(3, true), true); // ignore input LOD and always get the 3rd one, it's good enough
+            AddGeneSegment(name, f1, f2, cylinderGetter(3, true), true); // ignore input LOD and always get the 3rd one, it's good enough
         }
         return segments;
     }

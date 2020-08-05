@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GeneController : MonoBehaviour
 {
-    // Start is called before the first frame update
+    string geneName;
     void Start()
     {
 

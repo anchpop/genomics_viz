@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CameraController : MonoBehaviour
 {
-    // Start is called before the first frame update
+    public Text geneNameDisplay;
     void Start()
     {
 
@@ -18,10 +19,15 @@ public class CameraController : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit))
         {
-            if (hit.collider.gameObject.tag == "Gene")
+            GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
+            if (gene)
             {
-                Debug.Log("Yooo");
+                geneNameDisplay.text = gene.name;
             }
+        }
+        else
+        {
+            geneNameDisplay.text = "";
         }
     }
 }
