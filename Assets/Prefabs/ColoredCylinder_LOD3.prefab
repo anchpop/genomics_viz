@@ -11,9 +11,10 @@ GameObject:
   - component: {fileID: 973452334034446539}
   - component: {fileID: 7821227699470426913}
   - component: {fileID: 6116616044526584973}
+  - component: {fileID: 7309520641168321769}
   m_Layer: 0
   m_Name: ColoredCylinder_LOD3
-  m_TagString: Untagged
+  m_TagString: Gene
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -81,3 +82,16 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &7309520641168321769
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 595193432860463289}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.70710677, y: 0.7071068, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

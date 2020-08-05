@@ -19,8 +19,8 @@ public class ChromosomeController : MonoBehaviour
 {
     public float overallScale = 1.5f;
     public float linewidth = 1;
-    float simplificationFactorCoarse = .95f;
-    float simplificationFactorFine = .5f;
+    float simplificationFactorCoarse = .90f;
+    float simplificationFactorFine = .1f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     private (List<Point> original, List<Point> fine, List<Point> coarse) points;
