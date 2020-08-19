@@ -7,7 +7,8 @@ using System.Net;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
-
+using UnityEngine.UI;
+using TMPro;
 public struct Point
 {
     public Vector3 position;
@@ -37,6 +38,8 @@ public class ChromosomeController : MonoBehaviour
 
     public Material coloredMaterial;
     public Material highlightedColoredMaterial;
+
+    public GameObject geneTextCanvas;
 
     private Dictionary<string, List<MeshRenderer>> geneDict;
 
@@ -388,6 +391,11 @@ public class ChromosomeController : MonoBehaviour
             var geneObj = AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2), prefab);
             var geneController = geneObj.AddComponent<GeneController>();
             geneController.geneName = name;
+            if (geneDict[name].Count == 0)
+            {
+                var text = Instantiate(geneTextCanvas, Vector3.Lerp(p1.position, p2.position, f1), Quaternion.identity);
+                text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
+            }
             geneDict[name].Add(geneObj.GetComponent<MeshRenderer>());
         }
         if (sections.Count == 0 || (sections[0].f1 != 0 || sections[0].f2 != 1))
