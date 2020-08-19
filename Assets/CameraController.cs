@@ -5,7 +5,9 @@ using UnityEngine.UI;
 
 public class CameraController : MonoBehaviour
 {
+    public ChromosomeController chromosome;
     public Text geneNameDisplay;
+    string lastLit = "";
     void Start()
     {
 
@@ -22,12 +24,21 @@ public class CameraController : MonoBehaviour
             GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
             if (gene)
             {
-                geneNameDisplay.text = gene.name;
+                if (gene.geneName != lastLit)
+                {
+                    chromosome.unhighlightGene(lastLit);
+
+                    lastLit = gene.geneName;
+                    geneNameDisplay.text = gene.geneName;
+                    chromosome.highlightGene(gene.geneName);
+                }
             }
         }
         else
         {
             geneNameDisplay.text = "";
+            chromosome.unhighlightGene(lastLit);
+            lastLit = "";
         }
     }
 }

@@ -35,12 +35,20 @@ public class ChromosomeController : MonoBehaviour
     public GameObject cylinderPrefab_LOD3;
     public GameObject coloredCylinderPrefab_LOD3;
 
+    public Material coloredMaterial;
+    public Material highlightedColoredMaterial;
+
+    private Dictionary<string, List<MeshRenderer>> geneDict;
+
     private LineRenderer line;
     private int numberOfRows = 0;
     private int basePairsPerRow = 5000;
 
+
+
     void Start()
     {
+        geneDict = new Dictionary<string, List<MeshRenderer>>();
         points = getPoints();
         genes = getGenes();
 
@@ -199,8 +207,13 @@ public class ChromosomeController : MonoBehaviour
             if (line != "")
             {
                 var info = line.Split('\t');
-                Assert.AreNotEqual(info[6], "");
-                genes.Add((name: info[6], start: int.Parse(info[2]), end: int.Parse(info[3])));
+                var name = info[6];
+                Assert.AreNotEqual(name, "");
+                genes.Add((name: name, start: int.Parse(info[2]), end: int.Parse(info[3])));
+                if (!geneDict.ContainsKey(name))
+                {
+                    geneDict.Add(name, new List<MeshRenderer>());
+                }
             }
         }
         return genes;
@@ -374,7 +387,8 @@ public class ChromosomeController : MonoBehaviour
 
             var geneObj = AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2), prefab);
             var geneController = geneObj.AddComponent<GeneController>();
-            geneController.name = name;
+            geneController.geneName = name;
+            geneDict[name].Add(geneObj.GetComponent<MeshRenderer>());
         }
         if (sections.Count == 0 || (sections[0].f1 != 0 || sections[0].f2 != 1))
         {
@@ -407,7 +421,23 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
+    public void highlightGene(string name)
+    {
+        if (name == "") return;
+        foreach (var geneRenderer in geneDict[name])
+        {
+            geneRenderer.material = highlightedColoredMaterial;
+        }
+    }
 
+    public void unhighlightGene(string name)
+    {
+        if (name == "") return;
+        foreach (var geneRenderer in geneDict[name])
+        {
+            geneRenderer.material = coloredMaterial;
+        }
+    }
 
     float triangleArea(Vector3 a, Vector3 b, Vector3 c)
     {

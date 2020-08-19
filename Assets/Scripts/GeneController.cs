@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GeneController : MonoBehaviour
 {
-    string geneName;
+    public string geneName;
     void Start()
     {
 
