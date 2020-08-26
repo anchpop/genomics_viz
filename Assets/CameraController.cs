@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using Util;
 
 public class CameraController : MonoBehaviour
 {
@@ -36,10 +37,14 @@ public class CameraController : MonoBehaviour
                 lastLit = gene.geneName;
                 chromosome.highlightGene(gene.geneName);
 
+                var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(gene.startPoint, gene.endPoint);
+                var cursorDistance = Vector3Utils.InverseLerp(gene.startPoint, gene.endPoint, cursorPoint);
+                var cursorBasePair = Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
 
                 text2.text = gene.geneName;
                 text3.text = "|---------------------------------------------------------------|";
                 text4.text = gene.geneStart.ToString().PadRight(64 - (gene.geneStart.ToString().Length + gene.geneEnd.ToString().Length) / 2) + gene.geneEnd;
+                text5.text = cursorBasePair.ToString();
             }
         }
         else

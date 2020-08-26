@@ -14,3 +14,21 @@ namespace System
         }
     }
 }
+
+namespace Util
+{
+    public static class Vector3Utils
+    {
+        public static Vector3 GetClosestPointOnInfiniteLine(this Vector3 point, Vector3 line_start, Vector3 line_end)
+        {
+            return line_start + Vector3.Project(point - line_start, line_end - line_start);
+        }
+
+        public static float InverseLerp(Vector3 a, Vector3 b, Vector3 value)
+        {
+            Vector3 AB = b - a;
+            Vector3 AV = value - a;
+            return Vector3.Dot(AV, AB) / Vector3.Dot(AB, AB);
+        }
+    }
+}

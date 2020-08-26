@@ -389,15 +389,20 @@ public class ChromosomeController : MonoBehaviour
             {
                 return;
             }
-
-            var geneObj = AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2), prefab);
+            var startPoint = Vector3.Lerp(p1.position, p2.position, f1);
+            var endPoint = Vector3.Lerp(p1.position, p2.position, f2);
+            var geneObj = AddSubsegment(startPoint, endPoint, prefab);
             var geneController = geneObj.AddComponent<GeneController>();
             geneController.geneName = name;
             geneController.geneStart = geneDict[name].start;
             geneController.geneEnd = geneDict[name].end;
+            geneController.segmentStart = Mathf.Lerp(geneDict[name].start, geneDict[name].end, f1);
+            geneController.segmentEnd = Mathf.Lerp(geneDict[name].start, geneDict[name].end, f2);
+            geneController.startPoint = startPoint;
+            geneController.endPoint = endPoint;
             if (geneDict[name].renderer.Count == 0)
             {
-                var text = Instantiate(geneTextCanvas, Vector3.Lerp(p1.position, p2.position, f1), Quaternion.identity);
+                var text = Instantiate(geneTextCanvas, geneController.startPoint, Quaternion.identity);
                 text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             }
             geneDict[name].renderer.Add(geneObj.GetComponent<MeshRenderer>());
