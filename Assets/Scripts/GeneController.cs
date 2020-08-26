@@ -6,6 +6,8 @@ using UnityEngine;
 public class GeneController : MonoBehaviour
 {
     public string geneName;
+    public int geneStart;
+    public int geneEnd;
     void Start()
     {
 

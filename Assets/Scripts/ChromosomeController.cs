@@ -41,7 +41,7 @@ public class ChromosomeController : MonoBehaviour
 
     public GameObject geneTextCanvas;
 
-    private Dictionary<string, List<MeshRenderer>> geneDict;
+    private Dictionary<string, (List<MeshRenderer> renderer, int start, int end)> geneDict;
 
     private LineRenderer line;
     private int numberOfRows = 0;
@@ -51,7 +51,7 @@ public class ChromosomeController : MonoBehaviour
 
     void Start()
     {
-        geneDict = new Dictionary<string, List<MeshRenderer>>();
+        geneDict = new Dictionary<string, (List<MeshRenderer> renderer, int start, int end)>();
         points = getPoints();
         genes = getGenes();
 
@@ -211,11 +211,13 @@ public class ChromosomeController : MonoBehaviour
             {
                 var info = line.Split('\t');
                 var name = info[6];
+                var start = int.Parse(info[2]);
+                var end = int.Parse(info[3]);
                 Assert.AreNotEqual(name, "");
-                genes.Add((name: name, start: int.Parse(info[2]), end: int.Parse(info[3])));
+                genes.Add((name: name, start, end));
                 if (!geneDict.ContainsKey(name))
                 {
-                    geneDict.Add(name, new List<MeshRenderer>());
+                    geneDict.Add(name, (renderer: new List<MeshRenderer>(), start, end));
                 }
             }
         }
@@ -391,12 +393,14 @@ public class ChromosomeController : MonoBehaviour
             var geneObj = AddSubsegment(Vector3.Lerp(p1.position, p2.position, f1), Vector3.Lerp(p1.position, p2.position, f2), prefab);
             var geneController = geneObj.AddComponent<GeneController>();
             geneController.geneName = name;
-            if (geneDict[name].Count == 0)
+            geneController.geneStart = geneDict[name].start;
+            geneController.geneEnd = geneDict[name].end;
+            if (geneDict[name].renderer.Count == 0)
             {
                 var text = Instantiate(geneTextCanvas, Vector3.Lerp(p1.position, p2.position, f1), Quaternion.identity);
                 text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             }
-            geneDict[name].Add(geneObj.GetComponent<MeshRenderer>());
+            geneDict[name].renderer.Add(geneObj.GetComponent<MeshRenderer>());
         }
         if (sections.Count == 0 || (sections[0].f1 != 0 || sections[0].f2 != 1))
         {
@@ -432,7 +436,7 @@ public class ChromosomeController : MonoBehaviour
     public void highlightGene(string name)
     {
         if (name == "") return;
-        foreach (var geneRenderer in geneDict[name])
+        foreach (var geneRenderer in geneDict[name].renderer)
         {
             geneRenderer.material = highlightedColoredMaterial;
         }
@@ -441,7 +445,7 @@ public class ChromosomeController : MonoBehaviour
     public void unhighlightGene(string name)
     {
         if (name == "") return;
-        foreach (var geneRenderer in geneDict[name])
+        foreach (var geneRenderer in geneDict[name].renderer)
         {
             geneRenderer.material = coloredMaterial;
         }

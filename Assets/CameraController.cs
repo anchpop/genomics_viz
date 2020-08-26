@@ -37,13 +37,18 @@ public class CameraController : MonoBehaviour
                 chromosome.highlightGene(gene.geneName);
 
 
-                var textToShow = gene.geneName.PadBoth(15);
-                text1.text = textToShow;
+                text2.text = gene.geneName;
+                text3.text = "|---------------------------------------------------------------|";
+                text4.text = gene.geneStart.ToString().PadRight(64 - (gene.geneStart.ToString().Length + gene.geneEnd.ToString().Length) / 2) + gene.geneEnd;
             }
         }
         else
         {
             text1.text = "";
+            text2.text = "";
+            text3.text = "";
+            text4.text = "";
+            text5.text = "";
             chromosome.unhighlightGene(lastLit);
             lastLit = "";
         }
