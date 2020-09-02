@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraParentController : MonoBehaviour
 {
@@ -14,21 +15,22 @@ public class CameraParentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftArrow))
+        var keyboard = Keyboard.current;
+        if (keyboard.leftArrowKey.IsPressed())
         {
             transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime, 0));
         }
-        else if (Input.GetKey(KeyCode.RightArrow))
+        else if (keyboard.rightArrowKey.IsPressed())
         {
             transform.Rotate(new Vector3(0, -rotationSpeed * Time.deltaTime, 0));
         }
 
 
-        if (Input.GetKey(KeyCode.UpArrow))
+        if (keyboard.upArrowKey.IsPressed())
         {
             transform.localScale = transform.localScale * (1 - (.4f * Time.deltaTime));
         }
-        else if (Input.GetKey(KeyCode.DownArrow))
+        else if (keyboard.downArrowKey.IsPressed())
         {
             transform.localScale = transform.localScale * (1 + (.4f * Time.deltaTime));
         }

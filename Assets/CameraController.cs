@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Util;
+using UnityEngine.InputSystem;
 
 public class CameraController : MonoBehaviour
 {
@@ -26,7 +27,8 @@ public class CameraController : MonoBehaviour
     void Update()
     {
         RaycastHit hit;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        var mouse = Mouse.current;
+        Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
 
         if (Physics.Raycast(ray, out hit))
         {
