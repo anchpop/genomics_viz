@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
 using TMPro;
+
 public struct Point
 {
     public Vector3 position;
@@ -41,17 +42,17 @@ public class ChromosomeController : MonoBehaviour
 
     public GameObject geneTextCanvas;
 
-    private Dictionary<string, (List<MeshRenderer> renderer, int start, int end)> geneDict;
+    public KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)> geneDict;
 
     private LineRenderer line;
     private int numberOfRows = 0;
     private int basePairsPerRow = 5000;
 
-
+    public string focusedGene;
 
     void Start()
     {
-        geneDict = new Dictionary<string, (List<MeshRenderer> renderer, int start, int end)>();
+        geneDict = new KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)>();
         points = getPoints();
         genes = getGenes();
 
@@ -162,7 +163,6 @@ public class ChromosomeController : MonoBehaviour
                         Assert.IsTrue(f1 <= f2);
                     }
 
-
                     currentGeneIndex++;
                 }
 
@@ -199,6 +199,7 @@ public class ChromosomeController : MonoBehaviour
     {
         var genes = new List<(string name, int start, int end)>();
         bool firstLine = true;
+        int index = 0;
         foreach (var line in geneAnnotations.text.Split('\n'))
         {
             if (firstLine)
@@ -215,9 +216,10 @@ public class ChromosomeController : MonoBehaviour
                 var end = int.Parse(info[3]);
                 Assert.AreNotEqual(name, "");
                 genes.Add((name: name, start, end));
+                index++;
                 if (!geneDict.ContainsKey(name))
                 {
-                    geneDict.Add(name, (renderer: new List<MeshRenderer>(), start, end));
+                    geneDict.Add(name, (renderer: new List<MeshRenderer>(), start, end, index));
                 }
             }
         }
@@ -449,12 +451,34 @@ public class ChromosomeController : MonoBehaviour
 
     public void unhighlightGene(string name)
     {
-        if (name == "") return;
+        if (name == "" || name == focusedGene) return;
         foreach (var geneRenderer in geneDict[name].renderer)
         {
             geneRenderer.material = coloredMaterial;
         }
     }
+
+
+    public void focusGene(string name)
+    {
+        if (name == "") return;
+        unfocusGene();
+        focusedGene = name;
+        foreach (var geneRenderer in geneDict[name].renderer)
+        {
+            geneRenderer.material = highlightedColoredMaterial;
+        }
+    }
+
+    public void unfocusGene()
+    {
+        if (focusedGene == "") return;
+        foreach (var geneRenderer in geneDict[focusedGene].renderer)
+        {
+            geneRenderer.material = coloredMaterial;
+        }
+    }
+
 
     float triangleArea(Vector3 a, Vector3 b, Vector3 c)
     {

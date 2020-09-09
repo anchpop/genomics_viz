@@ -31,4 +31,12 @@ namespace Util
             return Vector3.Dot(AV, AB) / Vector3.Dot(AB, AB);
         }
     }
+
+    public static class Math
+    {
+        public static float easeInOutQuart(float x)
+        {
+            return x < 0.5 ? 8 * x * x * x * x : 1 - Mathf.Pow(-2 * x + 2, 4) / 2;
+        }
+    }
 }
