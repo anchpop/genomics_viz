@@ -42,7 +42,7 @@ public class CameraController : MonoBehaviour
 
         if (keyboard.enterKey.wasPressedThisFrame)
         {
-            var search = String.Concat(searchInput.text.ToUpper().Where(c => !Char.IsWhiteSpace(c)));
+            var search = String.Concat(searchInput.text.ToUpper().Where(c => Char.IsLetterOrDigit(c) || c == '-'));
             var results = chromosome.geneDict.GetByPrefix(search);
             foreach (var result in results)
             {
