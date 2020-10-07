@@ -22,10 +22,10 @@ public class ChromosomeController : MonoBehaviour
     public float overallScale = 1.5f;
     public float linewidth = 1;
     float simplificationFactorCoarse = .90f;
-    float simplificationFactorFine = 0f;
+    float simplificationFactorFine = .1f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
-    private (List<Point> original, List<Point> fine, List<Point> coarse) points;
+    public (List<Point> original, List<Point> fine, List<Point> coarse) points;
     public List<(string name, int start, int end)> genes;
 
     public GameObject cylinderPrefab_LOD0;
@@ -46,7 +46,7 @@ public class ChromosomeController : MonoBehaviour
 
     private LineRenderer line;
     private int numberOfRows = 0;
-    private int basePairsPerRow = 5000;
+    public int basePairsPerRow = 5000;
 
     public string focusedGene = "";
 

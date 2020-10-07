@@ -44,20 +44,31 @@ public class CameraController : MonoBehaviour
         if (keyboard.enterKey.wasPressedThisFrame)
         {
             var search = String.Concat(searchInput.text.ToUpper().Where(c => Char.IsLetterOrDigit(c) || c == '-'));
-            var results = chromosome.geneDict.GetByPrefix(search);
-            foreach (var result in results)
+
+            int basePairSearch = 0;
+            bool canConvert = int.TryParse(search, out basePairSearch);
+            if (canConvert == true)
             {
-                Debug.Log(result);
-            }
-            if (chromosome.geneDict.ContainsKey(search))
-            {
-                chromosome.focusGene(search);
-                parentController.goToGene(search);
+                parentController.goToBasePairIndex(basePairSearch);
             }
             else
             {
-                Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                var results = chromosome.geneDict.GetByPrefix(search);
+                foreach (var result in results)
+                {
+                    Debug.Log(result);
+                }
+                if (chromosome.geneDict.ContainsKey(search))
+                {
+                    chromosome.focusGene(search);
+                    parentController.goToGene(search);
+                }
+                else
+                {
+                    Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                }
             }
+
         }
         else
         {

@@ -121,4 +121,31 @@ public class CameraParentController : MonoBehaviour
 
         chromosomeController.highlightGene(geneName);
     }
+
+
+
+    public void goToBasePairIndex(int index)
+    {
+        var info = chromosomeController.points.original[index / chromosomeController.basePairsPerRow];
+
+        if (mainCamera.transform.localPosition.normalized == info.position.normalized)
+        {
+            startQ = transform.rotation;
+            endQ = transform.rotation;
+        }
+        else
+        {
+            startQ = transform.rotation;
+
+            endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, info.position);
+        }
+
+        startS = transform.localScale;
+        var endScale = 1.7f * info.position.magnitude / mainCamera.transform.localPosition.magnitude;
+        endS = new Vector3(endScale, endScale, endScale);
+
+        currentlyTweening = true;
+        rott = 0;
+
+    }
 }
