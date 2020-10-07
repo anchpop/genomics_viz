@@ -89,11 +89,9 @@ public class CameraParentController : MonoBehaviour
 
     public void goToGene(string geneName)
     {
-        Debug.Log("goToGene called");
         var info = chromosomeController.geneDict[geneName];
 
         var geneloc = Vector3.zero;
-        Debug.Log(geneName + ", " + info.renderer + ", " + info.renderer.Count);
         foreach (var renderer in info.renderer)
         {
             geneloc += renderer.gameObject.transform.position;

@@ -22,7 +22,7 @@ public class ChromosomeController : MonoBehaviour
     public float overallScale = 1.5f;
     public float linewidth = 1;
     float simplificationFactorCoarse = .90f;
-    float simplificationFactorFine = .1f;
+    float simplificationFactorFine = 0f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     private (List<Point> original, List<Point> fine, List<Point> coarse) points;
