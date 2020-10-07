@@ -26,7 +26,7 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     private (List<Point> original, List<Point> fine, List<Point> coarse) points;
-    private List<(string name, int start, int end)> genes;
+    public List<(string name, int start, int end)> genes;
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -48,7 +48,7 @@ public class ChromosomeController : MonoBehaviour
     private int numberOfRows = 0;
     private int basePairsPerRow = 5000;
 
-    public string focusedGene;
+    public string focusedGene = "";
 
     void Start()
     {
@@ -387,7 +387,7 @@ public class ChromosomeController : MonoBehaviour
         }
         void AddGeneSegment(string name, float f1, float f2, GameObject prefab, bool gene)
         {
-            if (gene && LOD > 2 && (f2 - f1) < .1f)
+            if (gene && LOD > 2 && (f2 - f1) < .1f && false)
             {
                 return;
             }
@@ -404,8 +404,8 @@ public class ChromosomeController : MonoBehaviour
             geneController.endPoint = endPoint;
             if (geneDict[name].renderer.Count == 0)
             {
-                var text = Instantiate(geneTextCanvas, geneController.startPoint, Quaternion.identity);
-                text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
+                //var text = Instantiate(geneTextCanvas, geneController.startPoint, Quaternion.identity);
+                //text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             }
             geneDict[name].renderer.Add(geneObj.GetComponent<MeshRenderer>());
         }
@@ -476,6 +476,7 @@ public class ChromosomeController : MonoBehaviour
         foreach (var geneRenderer in geneDict[focusedGene].renderer)
         {
             geneRenderer.material = coloredMaterial;
+            focusedGene = "";
         }
     }
 

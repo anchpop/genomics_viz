@@ -16,6 +16,7 @@ public class CameraController : MonoBehaviour
 
 
     public TextMeshProUGUI sideText;
+    public TextMeshProUGUI sideLoc;
 
     public TextMeshProUGUI text1;
     public TextMeshProUGUI text2;
@@ -73,10 +74,11 @@ public class CameraController : MonoBehaviour
 
                     var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(gene.startPoint, gene.endPoint);
                     var cursorDistance = Vector3Utils.InverseLerp(gene.startPoint, gene.endPoint, cursorPoint);
-                    var cursorBasePair = Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
+                    var cursorBasePair = (int)Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
 
 
                     sideText.text = gene.geneName;
+                    sideLoc.text = cursorBasePair.ToString("D");
 
                     if (mouse.leftButton.wasPressedThisFrame)
                     {
@@ -94,6 +96,34 @@ public class CameraController : MonoBehaviour
             {
                 chromosome.unhighlightGene(lastLit);
                 lastLit = "";
+            }
+        }
+
+        if (chromosome.focusedGene != "")
+        {
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                var geneInfo = chromosome.geneDict[chromosome.focusedGene];
+                var nextGene = chromosome.genes[geneInfo.index + 1];
+
+                text2.text = nextGene.name;
+                text3.text = "|---------------------------------------------------------------|";
+                text4.text = nextGene.start.ToString().PadRight(64 - (nextGene.start.ToString().Length + nextGene.end.ToString().Length) / 2) + nextGene.end;
+                text5.text = "";
+
+                chromosome.focusGene(nextGene.name);
+                parentController.goToGene(nextGene.name);
+            }
+
+            if (keyboard.gKey.wasPressedThisFrame)
+            {
+                var geneInfo = chromosome.geneDict[chromosome.focusedGene];
+                Application.OpenURL(
+                    "http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
+                    + geneInfo.start.ToString("D")
+                    + "%2D"
+                    + geneInfo.end.ToString("D")
+                    + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
             }
         }
     }

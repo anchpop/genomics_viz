@@ -89,9 +89,11 @@ public class CameraParentController : MonoBehaviour
 
     public void goToGene(string geneName)
     {
+        Debug.Log("goToGene called");
         var info = chromosomeController.geneDict[geneName];
 
         var geneloc = Vector3.zero;
+        Debug.Log(geneName + ", " + info.renderer + ", " + info.renderer.Count);
         foreach (var renderer in info.renderer)
         {
             geneloc += renderer.gameObject.transform.position;
@@ -100,8 +102,17 @@ public class CameraParentController : MonoBehaviour
         Debug.DrawLine(Vector3.zero, geneloc);
 
 
-        startQ = transform.rotation;
-        endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, geneloc);
+        if (mainCamera.transform.localPosition.normalized == geneloc.normalized)
+        {
+            startQ = transform.rotation;
+            endQ = transform.rotation;
+        }
+        else
+        {
+            startQ = transform.rotation;
+
+            endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, geneloc);
+        }
 
         startS = transform.localScale;
         var endScale = 1.7f * geneloc.magnitude / mainCamera.transform.localPosition.magnitude;
