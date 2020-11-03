@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
 using TMPro;
+using SimplifyCSharp;
 
 public struct Point
 {
@@ -25,7 +26,7 @@ public class ChromosomeController : MonoBehaviour
     float simplificationFactorFine = .1f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
-    public (List<Point> original, List<Point> fine, List<Point> coarse) points;
+    public (List<Point> original, List<Point> coarse) points;
     public List<(string name, int start, int end)> genes;
 
     public GameObject cylinderPrefab_LOD0;
@@ -61,15 +62,15 @@ public class ChromosomeController : MonoBehaviour
 
         var fineIndex = 0;
         var orignalIndex = 0;
+        Debug.Log(points.coarse.Count);
+        Debug.Log(points.original.Count);
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
             var stopIndex = points.coarse[i + 1].originalIndex;
             var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd.ToList());
-            var (newFineIndex, _, segmentsFine, _) = linesToAdd(fineIndex, stopIndex, currentGeneIndex, points.fine, genes, toEnd.ToList());
             var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd.ToList());
             currentGeneIndex = newCurrentGeneIndex;
             toEnd = newToEnd;
-            fineIndex = newFineIndex;
             orignalIndex = newOriginalIndex;
 
             var coarseSegments = new List<MeshRenderer>();
@@ -77,10 +78,10 @@ public class ChromosomeController : MonoBehaviour
             {
                 coarseSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
             }
-            var fineSegments = new List<MeshRenderer>();
-            foreach (var (p1, p2, sections) in segmentsFine)
+            var originalSegments = new List<MeshRenderer>();
+            foreach (var (p1, p2, sections) in segmentsOriginal)
             {
-                fineSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
+                originalSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
             }
 
 
@@ -93,14 +94,14 @@ public class ChromosomeController : MonoBehaviour
             {
                 segment.transform.parent = coarseParent.transform;
             }
-            foreach (var segment in fineSegments)
+            foreach (var segment in originalSegments)
             {
                 segment.transform.parent = fineParent.transform;
             }
 
             var LODGroup = LODParent.AddComponent<LODGroup>();
             LOD[] lods = new LOD[2];
-            lods[0] = new LOD(1.0F / (1 + 1), fineSegments.ToArray());
+            lods[0] = new LOD(1.0F / (1 + 1), originalSegments.ToArray());
             lods[1] = new LOD(1.0F / (200 + 1), coarseSegments.ToArray());
             LODGroup.SetLODs(lods);
             LODGroup.RecalculateBounds();
@@ -226,7 +227,7 @@ public class ChromosomeController : MonoBehaviour
         return genes;
     }
 
-    (List<Point> original, List<Point> fine, List<Point> coarse) getPoints()
+    (List<Point> original, List<Point> coarse) getPoints()
     {
         var center = Vector3.zero;
 
@@ -294,6 +295,8 @@ public class ChromosomeController : MonoBehaviour
             count++;
         }
 
+#if true
+
         var removalOrder = GetSimplificationOrder(points);
 
         var pointsOriginal = points.ToList();
@@ -313,11 +316,29 @@ public class ChromosomeController : MonoBehaviour
         }
 
 
-        return (original: pointsOriginal, fine: pointsFine, coarse: pointsCoarse);
+        return (original: pointsOriginal, coarse: pointsCoarse);
+#else
+        var pointsOriginal = points.ToList();
+
+        bool highQualityEnabled = true;
+        var pointsCoarse = SimplificationHelpers.Simplify<Point>(
+                        points,
+                        (p1, p2) => p1.position == p2.position,
+                        (p) => p.position.x * 1000,
+                        (p) => p.position.y * 1000,
+                        (p) => p.position.z * 1000,
+                        .95,
+                        highQualityEnabled
+                        );
+
+
+        return (original: pointsOriginal, coarse: pointsCoarse.ToList());
+#endif
     }
 
     List<int> GetSimplificationOrder(List<Point> points)
     {
+
         var importanceList = new List<(Point point, float area)>();
         var removalOrder = new List<int>();
 

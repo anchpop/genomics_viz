@@ -46,26 +46,38 @@ public class CameraController : MonoBehaviour
             var search = String.Concat(searchInput.text.ToUpper().Where(c => Char.IsLetterOrDigit(c) || c == '-'));
 
             int basePairSearch = 0;
-            bool canConvert = int.TryParse(search, out basePairSearch);
-            if (canConvert == true)
+            if (int.TryParse(search, out basePairSearch))
             {
                 parentController.goToBasePairIndex(basePairSearch);
             }
             else
             {
-                var results = chromosome.geneDict.GetByPrefix(search);
-                foreach (var result in results)
+                string[] parts = search.Split('-');
+                if (parts.Length == 2)
                 {
-                    Debug.Log(result);
-                }
-                if (chromosome.geneDict.ContainsKey(search))
-                {
-                    chromosome.focusGene(search);
-                    parentController.goToGene(search);
+                    int basePairSearch0 = 0;
+                    int basePairSearch1 = 0;
+                    if (int.TryParse(parts[0], out basePairSearch0) && int.TryParse(parts[1], out basePairSearch1))
+                    {
+                        parentController.goToBasePairIndex(basePairSearch0 / 2 + basePairSearch1 / 2);
+                    }
                 }
                 else
                 {
-                    Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                    var results = chromosome.geneDict.GetByPrefix(search);
+                    foreach (var result in results)
+                    {
+                        Debug.Log(result);
+                    }
+                    if (chromosome.geneDict.ContainsKey(search))
+                    {
+                        chromosome.focusGene(search);
+                        parentController.goToGene(search);
+                    }
+                    else
+                    {
+                        Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                    }
                 }
             }
 
@@ -93,11 +105,6 @@ public class CameraController : MonoBehaviour
 
                     if (mouse.leftButton.wasPressedThisFrame)
                     {
-                        text2.text = gene.geneName;
-                        text3.text = "|---------------------------------------------------------------|";
-                        text4.text = gene.geneStart.ToString().PadRight(64 - (gene.geneStart.ToString().Length + gene.geneEnd.ToString().Length) / 2) + gene.geneEnd;
-                        text5.text = cursorBasePair.ToString();
-
                         chromosome.focusGene(gene.geneName);
                         parentController.goToGene(gene.geneName);
                     }
@@ -117,25 +124,32 @@ public class CameraController : MonoBehaviour
                 var geneInfo = chromosome.geneDict[chromosome.focusedGene];
                 var nextGene = chromosome.genes[geneInfo.index + 1];
 
-                text2.text = nextGene.name;
-                text3.text = "|---------------------------------------------------------------|";
-                text4.text = nextGene.start.ToString().PadRight(64 - (nextGene.start.ToString().Length + nextGene.end.ToString().Length) / 2) + nextGene.end;
-                text5.text = "";
-
                 chromosome.focusGene(nextGene.name);
                 parentController.goToGene(nextGene.name);
             }
 
             if (keyboard.gKey.wasPressedThisFrame)
             {
-                var geneInfo = chromosome.geneDict[chromosome.focusedGene];
-                Application.OpenURL(
-                    "http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
-                    + geneInfo.start.ToString("D")
-                    + "%2D"
-                    + geneInfo.end.ToString("D")
-                    + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
+                openGeneInfoOnline();
             }
         }
+    }
+
+    public void openGeneInfoOnline()
+    {
+        var geneInfo = chromosome.geneDict[chromosome.focusedGene];
+        Application.OpenURL(
+            "http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
+            + geneInfo.start.ToString("D")
+            + "%2D"
+            + geneInfo.end.ToString("D")
+            + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
+    }
+
+    public void Update1DView(string geneName, int geneStart, int geneEnd)
+    {
+        text2.text = geneName;
+        text3.text = "|---------------------------------------------------------------|";
+        text4.text = geneStart.ToString().PadRight(64 - (geneStart.ToString().Length + geneEnd.ToString().Length) / 2) + geneEnd;
     }
 }

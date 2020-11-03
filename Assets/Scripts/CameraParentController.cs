@@ -108,7 +108,6 @@ public class CameraParentController : MonoBehaviour
         else
         {
             startQ = transform.rotation;
-
             endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, geneloc);
         }
 
@@ -120,6 +119,7 @@ public class CameraParentController : MonoBehaviour
         rott = 0;
 
         chromosomeController.highlightGene(geneName);
+        mainCamera.GetComponent<CameraController>().Update1DView(geneName, info.start, info.end);
     }
 
 
