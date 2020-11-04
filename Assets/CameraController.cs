@@ -24,6 +24,13 @@ public class CameraController : MonoBehaviour
     public TextMeshProUGUI text4;
     public TextMeshProUGUI text5;
 
+    public GraphicRaycaster GraphicRaycaster;
+    public UnityEngine.EventSystems.EventSystem m_EventSystem;
+
+    private int horizontalTextChars = 144;
+
+    private (int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
+
     string lastLit = "";
     void Start()
     {
@@ -37,6 +44,7 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
         RaycastHit hit;
         var mouse = Mouse.current;
         var keyboard = Keyboard.current;
@@ -84,36 +92,48 @@ public class CameraController : MonoBehaviour
         }
         else
         {
+            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
+            //Set up the new Pointer Event
+            var m_PointerEventData = new UnityEngine.EventSystems.PointerEventData(m_EventSystem);
+            //Set the Pointer Event Position to that of the mouse position
+            m_PointerEventData.position = mouse.position.ReadValue();
+            //Raycast using the Graphics Raycaster and mouse click position
+            GraphicRaycaster.Raycast(m_PointerEventData, results);
 
-            Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
-            if (Physics.Raycast(ray, out hit))
+            print(results.Count);
+            if (results.Count <= 0)
             {
-                GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
-                if (gene)
+                Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
+                if (Physics.Raycast(ray, out hit))
                 {
-                    chromosome.unhighlightGene(lastLit);
-                    lastLit = gene.geneName;
-                    chromosome.highlightGene(gene.geneName);
-
-                    var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(gene.startPoint, gene.endPoint);
-                    var cursorDistance = Vector3Utils.InverseLerp(gene.startPoint, gene.endPoint, cursorPoint);
-                    var cursorBasePair = (int)Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
-
-
-                    sideText.text = gene.geneName;
-                    sideLoc.text = cursorBasePair.ToString("D");
-
-                    if (mouse.leftButton.wasPressedThisFrame)
+                    GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
+                    if (gene)
                     {
-                        chromosome.focusGene(gene.geneName);
-                        parentController.goToGene(gene.geneName);
+                        chromosome.unhighlightGene(lastLit);
+                        lastLit = gene.geneName;
+                        chromosome.highlightGene(gene.geneName);
+
+                        var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(gene.startPoint, gene.endPoint);
+                        var cursorDistance = Vector3Utils.InverseLerp(gene.startPoint, gene.endPoint, cursorPoint);
+                        var cursorBasePair = (int)Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
+
+
+                        sideText.text = gene.geneName;
+                        sideLoc.text = cursorBasePair.ToString("D");
+
+                        if (mouse.leftButton.wasPressedThisFrame)
+                        {
+                            chromosome.focusGene(gene.geneName);
+                            parentController.goToGene(gene.geneName);
+                        }
                     }
                 }
-            }
-            else
-            {
-                chromosome.unhighlightGene(lastLit);
-                lastLit = "";
+                else
+                {
+                    chromosome.unhighlightGene(lastLit);
+                    lastLit = "";
+                }
+
             }
         }
 
@@ -135,6 +155,13 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    public void clicked_on_1D(float pos)
+    {
+        pos = (pos - .5f) * horizontalTextChars;
+        var basePair = Mathf.RoundToInt(pos * OneDView.scale + OneDView.center);
+        parentController.goToBasePairIndex(basePair);
+    }
+
     public void openGeneInfoOnline()
     {
         var geneInfo = chromosome.geneDict[chromosome.focusedGene];
@@ -148,8 +175,25 @@ public class CameraController : MonoBehaviour
 
     public void Update1DView(string geneName, int geneStart, int geneEnd)
     {
-        text2.text = geneName;
-        text3.text = "|---------------------------------------------------------------|";
-        text4.text = geneStart.ToString().PadRight(64 - (geneStart.ToString().Length + geneEnd.ToString().Length) / 2) + geneEnd;
+        var scale = (geneEnd - geneStart < (7000 * horizontalTextChars * .8f) ? 7000 : 7000 * 3);
+        var length = (geneEnd - geneStart) / scale;
+
+        OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
+
+        if (geneName.Length + 2 > length)
+        {
+            text3.text = "|" + new String('-', length) + "|";
+            text4.text = geneStart.ToString().PadRight(length + (geneStart.ToString().Length + geneEnd.ToString().Length) / 2) + geneEnd;
+        }
+        else
+        {
+            var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
+            var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
+
+            text3.text = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
+            text4.text = geneStart.ToString().PadRight(-2 + length + (geneStart.ToString().Length + geneEnd.ToString().Length) / 4) + "  " + geneEnd;
+        }
+
+
     }
 }
