@@ -200,7 +200,7 @@ public class ChromosomeController : MonoBehaviour
     {
         var genes = new List<(string name, int start, int end)>();
         bool firstLine = true;
-        int index = 0;
+        int lastStart = 0;
         foreach (var line in geneAnnotations.text.Split('\n'))
         {
             if (firstLine)
@@ -216,12 +216,30 @@ public class ChromosomeController : MonoBehaviour
                 var start = int.Parse(info[2]);
                 var end = int.Parse(info[3]);
                 Assert.AreNotEqual(name, "");
-                genes.Add((name: name, start, end));
-                index++;
-                if (!geneDict.ContainsKey(name))
+                genes.Add((name, start, end));
+
+                //Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
+                if (!(start >= lastStart))
                 {
-                    geneDict.Add(name, (renderer: new List<MeshRenderer>(), start, end, index));
+                    break; // BAD!!!!! This cuts off all the genes after around the first 5000. I'm just doing this for performance reasons
                 }
+                lastStart = start;
+            }
+        }
+
+        genes.Sort(delegate ((string name, int start, int end) x, (string name, int start, int end) y)
+        {
+            return (x.start).CompareTo(y.start);
+        });
+
+
+        int index = 0;
+        foreach (var gene in genes)
+        {
+            index++;
+            if (!geneDict.ContainsKey(gene.name))
+            {
+                geneDict.Add(gene.name, (renderer: new List<MeshRenderer>(), gene.start, gene.end, index));
             }
         }
         return genes;
@@ -444,6 +462,11 @@ public class ChromosomeController : MonoBehaviour
             AddGeneSegment(name, f1, f2, cylinderGetter(3, true), true); // ignore input LOD and always get the 3rd one, it's good enough
         }
         return segments;
+    }
+
+    List<(string name, int start, int end)> getGenesAroundBasePairIndex(int basePairIndex)
+    {
+        return new List<(string name, int start, int end)>();
     }
 
     GameObject cylinderGetter(int LOD, bool colored)
