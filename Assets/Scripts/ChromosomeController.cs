@@ -62,8 +62,7 @@ public class ChromosomeController : MonoBehaviour
 
         var fineIndex = 0;
         var orignalIndex = 0;
-        Debug.Log(points.coarse.Count);
-        Debug.Log(points.original.Count);
+
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
             var stopIndex = points.coarse[i + 1].originalIndex;

@@ -19,11 +19,7 @@ public class CameraController : MonoBehaviour
     public TextMeshProUGUI sideText;
     public TextMeshProUGUI sideLoc;
 
-    public TextMeshProUGUI text0;
-    public TextMeshProUGUI text1;
-    public TextMeshProUGUI text2;
-    public TextMeshProUGUI text3;
-    public TextMeshProUGUI text4;
+    public List<TextMeshProUGUI> texts;
 
     public GraphicRaycaster GraphicRaycaster;
     public UnityEngine.EventSystems.EventSystem m_EventSystem;
@@ -35,11 +31,10 @@ public class CameraController : MonoBehaviour
     string lastLit = "";
     void Start()
     {
-        text0.text = "";
-        text1.text = "";
-        text2.text = "";
-        text3.text = "";
-        text4.text = "";
+        foreach (var t in texts)
+        {
+            t.text = "";
+        }
     }
 
     // Update is called once per frame
@@ -101,7 +96,6 @@ public class CameraController : MonoBehaviour
             //Raycast using the Graphics Raycaster and mouse click position
             GraphicRaycaster.Raycast(m_PointerEventData, results);
 
-            print(results.Count);
             if (results.Count <= 0)
             {
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
@@ -189,10 +183,10 @@ public class CameraController : MonoBehaviour
             toDisplay.Add(chromosome.genes[i]);
         }
 
-
-
         Update1DView(info.start / 2 + info.end / 2, scale, toDisplay);
     }
+
+
 
 
     public void Update1DView(int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed)
@@ -202,8 +196,10 @@ public class CameraController : MonoBehaviour
 
         // OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
 
-        text2.text = "." + new String(' ', horizontalTextChars - 2) + ".";
-        text3.text = "." + new String(' ', horizontalTextChars - 2) + ".";
+        foreach (var t in texts)
+        {
+            t.text = "." + new String(' ', horizontalTextChars - 2) + ".";
+        }
 
 
         var left = center - scale * (horizontalTextChars / 2);
@@ -220,7 +216,7 @@ public class CameraController : MonoBehaviour
             var (geneName, geneStart, geneEnd) = focused[0];
 
             var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
-            var startPos = Mathf.RoundToInt(Mathf.InverseLerp(left, right, geneStart) * horizontalTextChars);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, geneStart) * horizontalTextChars);
 
             if (geneName.Length + 2 > length)
             {
@@ -228,8 +224,8 @@ public class CameraController : MonoBehaviour
                 var genePosMarkers = geneStart.ToString().PadRight(length) + geneEnd;
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
-                text2.text = updateSubportion(text2.text, startPos, geneBar);
-                text3.text = updateSubportion(text3.text, genePosMarkersStartPos, genePosMarkers);
+                texts[2].text = updateSubportion(texts[2].text, startPos, geneBar);
+                texts[3].text = updateSubportion(texts[3].text, genePosMarkersStartPos, genePosMarkers);
 
                 reservedAreas[2].Add((startPos, startPos + geneBar.Length));
                 reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
@@ -246,8 +242,8 @@ public class CameraController : MonoBehaviour
 
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
-                text2.text = updateSubportion(text2.text, startPos, geneBar);
-                text3.text = updateSubportion(text3.text, genePosMarkersStartPos, genePosMarkers);
+                texts[2].text = updateSubportion(texts[2].text, startPos, geneBar);
+                texts[3].text = updateSubportion(texts[3].text, genePosMarkersStartPos, genePosMarkers);
 
                 reservedAreas[2].Add((startPos, startPos + geneBar.Length));
                 reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
@@ -259,15 +255,54 @@ public class CameraController : MonoBehaviour
         {
             var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
             var startPos = Mathf.RoundToInt(Mathf.InverseLerp(left, right, geneStart) * horizontalTextChars);
-            if (geneName != chromosome.focusedGene)
+            if (geneName != chromosome.focusedGene && length > 0)
             {
+                var geneBar = "";
+                if (geneName.Length + 2 > length)
+                {
+                    geneBar = "|" + new String('-', length) + "|";
+                }
+                else
+                {
+                    var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
+                    var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
+                    geneBar = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
+                }
 
+                var allowed = Enumerable.Repeat(true, reservedAreas.Count).ToList();
+                for (int i = 0; i < allowed.Count; i++)
+                {
+                    foreach (var (reserveStart, reserveEnd) in reservedAreas[i])
+                    {
+                        if (reserveStart <= startPos && (startPos + geneBar.Length) <= reserveEnd) // check if ranges [reserveStart, reserveEnd], [startPos, startPos + geneBar.Length] overlap
+                        {
+                            allowed[i] = false;
+                            break;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < allowed.Count; i++)
+                {
+                    var v = allowed.Count - i - 1; // invert order to prefer the bottom row for flanking regions
+                    if (allowed[v])
+                    {
+                        texts[v].text = updateSubportion(texts[v].text, startPos, geneBar);
+                        reservedAreas[v].Add((startPos, startPos + geneBar.Length));
+                        break;
+                    }
+                }
             }
         }
 
 
     }
 
+
+    public float InvLerp(float a, float b, float v)
+    {
+        return (v - a) / (b - a);
+    }
 
     public String updateSubportion(String original, int startIndex, String sub)
     {
@@ -277,7 +312,7 @@ public class CameraController : MonoBehaviour
         }
         if (startIndex < 0)
         {
-            return original;
+            return sub.Substring(-startIndex, -startIndex - sub.Length) + original.Substring(-startIndex - sub.Length, (-startIndex - sub.Length) - original.Length);
         }
         var output = original.Substring(0, startIndex) + ((sub.Length > original.Length - startIndex) ? sub.Substring(0, original.Length - startIndex) : (sub + original.Substring(startIndex + sub.Length, original.Length - (startIndex + sub.Length))));
         Assert.AreEqual(original.Length, output.Length);

@@ -1548,6 +1548,12 @@ MonoBehaviour:
   searchInput: {fileID: 739070108}
   sideText: {fileID: 1841067813}
   sideLoc: {fileID: 28764511}
+  texts:
+  - {fileID: 2022667801}
+  - {fileID: 1582510798}
+  - {fileID: 853337426}
+  - {fileID: 869128749}
+  - {fileID: 311169170}
   text0: {fileID: 2022667801}
   text1: {fileID: 1582510798}
   text2: {fileID: 853337426}
