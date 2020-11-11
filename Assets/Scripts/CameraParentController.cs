@@ -126,9 +126,9 @@ public class CameraParentController : MonoBehaviour
 
 
 
-    public void goToBasePairIndex(int index)
+    public void goToBasePairIndex(int bpindex)
     {
-        var info = chromosomeController.points.original[index / chromosomeController.basePairsPerRow];
+        var info = chromosomeController.points.original[bpindex / chromosomeController.basePairsPerRow];
 
         if (mainCamera.transform.localPosition.normalized == info.position.normalized)
         {
@@ -149,5 +149,6 @@ public class CameraParentController : MonoBehaviour
         currentlyTweening = true;
         rott = 0;
 
+        mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }
 }

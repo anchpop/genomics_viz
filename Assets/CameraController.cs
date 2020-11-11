@@ -31,6 +31,7 @@ public class CameraController : MonoBehaviour
     string lastLit = "";
     void Start()
     {
+        OneDView = (0, 7000, new List<(string geneName, int geneStart, int geneEnd)>());
         foreach (var t in texts)
         {
             t.text = "";
@@ -186,6 +187,37 @@ public class CameraController : MonoBehaviour
         Update1DView(info.start / 2 + info.end / 2, scale, toDisplay);
     }
 
+    public void Update1DViewBasePairIndex(int bpindex)
+    {
+        var closestGeneIndex = 0;
+        var closestGeneDistance = 100000000000;
+        var numberOfGenes = chromosome.genes.Count;
+        for (int i = 0; i < numberOfGenes; i++)
+        {
+            var info = chromosome.genes[i];
+            var distance = (info.start < bpindex && info.end > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.start), Mathf.Abs(bpindex - info.end));
+            if (distance < closestGeneDistance)
+            {
+                closestGeneIndex = i;
+                closestGeneDistance = distance;
+            }
+        }
+
+        var scale = OneDView.scale;
+
+        var adjecentsToCheck = 30;
+
+        var toDisplay = new List<(string geneName, int geneStart, int geneEnd)>();
+
+        for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
+        {
+            toDisplay.Add(chromosome.genes[i]);
+        }
+
+
+        Update1DView(bpindex, scale, toDisplay);
+    }
+
 
 
 
@@ -254,7 +286,7 @@ public class CameraController : MonoBehaviour
         foreach (var (geneName, geneStart, geneEnd) in displayed)
         {
             var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
-            var startPos = Mathf.RoundToInt(Mathf.InverseLerp(left, right, geneStart) * horizontalTextChars);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, geneStart) * horizontalTextChars);
             if (geneName != chromosome.focusedGene && length > 0)
             {
                 var geneBar = "";
@@ -312,7 +344,13 @@ public class CameraController : MonoBehaviour
         }
         if (startIndex < 0)
         {
-            return sub.Substring(-startIndex, -startIndex - sub.Length) + original.Substring(-startIndex - sub.Length, (-startIndex - sub.Length) - original.Length);
+            if (-startIndex >= sub.Length)
+            {
+                return original;
+            }
+            var f = sub.Substring(-startIndex, sub.Length - (-startIndex));
+            var l = original.Substring(sub.Length - (-startIndex), original.Length - (sub.Length - (-startIndex)));
+            return f + l;
         }
         var output = original.Substring(0, startIndex) + ((sub.Length > original.Length - startIndex) ? sub.Substring(0, original.Length - startIndex) : (sub + original.Substring(startIndex + sub.Length, original.Length - (startIndex + sub.Length))));
         Assert.AreEqual(original.Length, output.Length);
