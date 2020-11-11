@@ -119,7 +119,9 @@ public class CameraParentController : MonoBehaviour
         rott = 0;
 
         chromosomeController.highlightGene(geneName);
-        mainCamera.GetComponent<CameraController>().Update1DView(geneName, info.start, info.end);
+
+
+        mainCamera.GetComponent<CameraController>().Update1DViewGene(geneName);
     }
 
 

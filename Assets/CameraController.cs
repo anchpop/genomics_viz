@@ -7,6 +7,7 @@ using System;
 using Util;
 using UnityEngine.InputSystem;
 using System.Linq;
+using UnityEngine.Assertions;
 
 public class CameraController : MonoBehaviour
 {
@@ -18,11 +19,11 @@ public class CameraController : MonoBehaviour
     public TextMeshProUGUI sideText;
     public TextMeshProUGUI sideLoc;
 
+    public TextMeshProUGUI text0;
     public TextMeshProUGUI text1;
     public TextMeshProUGUI text2;
     public TextMeshProUGUI text3;
     public TextMeshProUGUI text4;
-    public TextMeshProUGUI text5;
 
     public GraphicRaycaster GraphicRaycaster;
     public UnityEngine.EventSystems.EventSystem m_EventSystem;
@@ -34,11 +35,11 @@ public class CameraController : MonoBehaviour
     string lastLit = "";
     void Start()
     {
+        text0.text = "";
         text1.text = "";
         text2.text = "";
         text3.text = "";
         text4.text = "";
-        text5.text = "";
     }
 
     // Update is called once per frame
@@ -173,27 +174,113 @@ public class CameraController : MonoBehaviour
             + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
     }
 
-    public void Update1DView(string geneName, int geneStart, int geneEnd)
+    public void Update1DViewGene(string geneName)
     {
-        var scale = (geneEnd - geneStart < (7000 * horizontalTextChars * .8f) ? 7000 : 7000 * 3);
-        var length = (geneEnd - geneStart) / scale;
+        var info = chromosome.geneDict[geneName];
+        var scale = (info.end - info.start < (7000 * horizontalTextChars * .8f) ? 7000 : 7000 * 3);
 
-        OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
+        var adjecentsToCheck = 30;
 
-        if (geneName.Length + 2 > length)
+        var toDisplay = new List<(string geneName, int geneStart, int geneEnd)>();
+
+        var numberOfGenes = chromosome.genes.Count;
+        for (int i = Mathf.Max((info.index - adjecentsToCheck / 2), 0); i < Mathf.Min((info.index + adjecentsToCheck / 2), numberOfGenes); i++)
         {
-            text3.text = "|" + new String('-', length) + "|";
-            text4.text = geneStart.ToString().PadRight(length + (geneStart.ToString().Length + geneEnd.ToString().Length) / 2) + geneEnd;
-        }
-        else
-        {
-            var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
-            var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
-
-            text3.text = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
-            text4.text = geneStart.ToString().PadRight(-2 + length + (geneStart.ToString().Length + geneEnd.ToString().Length) / 4) + "  " + geneEnd;
+            toDisplay.Add(chromosome.genes[i]);
         }
 
 
+
+        Update1DView(info.start / 2 + info.end / 2, scale, toDisplay);
+    }
+
+
+    public void Update1DView(int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed)
+    {
+        OneDView = (center, scale, displayed);
+        //
+
+        // OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
+
+        text2.text = "." + new String(' ', horizontalTextChars - 2) + ".";
+        text3.text = "." + new String(' ', horizontalTextChars - 2) + ".";
+
+
+        var left = center - scale * (horizontalTextChars / 2);
+        var right = center + scale * (horizontalTextChars / 2);
+
+        var reservedAreas = new List<List<(int start, int end)>> { new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), };
+
+        // We want to treat the focused gene specially - writing the coordinates in the bottom and putting it in the center
+        var focused = (from info in displayed
+                       where info.geneName == chromosome.focusedGene
+                       select info).ToList();
+        if (focused.Count == 1)
+        {
+            var (geneName, geneStart, geneEnd) = focused[0];
+
+            var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
+            var startPos = Mathf.RoundToInt(Mathf.InverseLerp(left, right, geneStart) * horizontalTextChars);
+
+            if (geneName.Length + 2 > length)
+            {
+                var geneBar = "|" + new String('-', length) + "|";
+                var genePosMarkers = geneStart.ToString().PadRight(length) + geneEnd;
+                var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
+
+                text2.text = updateSubportion(text2.text, startPos, geneBar);
+                text3.text = updateSubportion(text3.text, genePosMarkersStartPos, genePosMarkers);
+
+                reservedAreas[2].Add((startPos, startPos + geneBar.Length));
+                reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
+            }
+            else
+            {
+                var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
+                var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
+
+
+                var geneBar = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
+                var genePosMarkers = geneStart.ToString().PadRight(length) + "  " + geneEnd;
+
+
+                var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
+
+                text2.text = updateSubportion(text2.text, startPos, geneBar);
+                text3.text = updateSubportion(text3.text, genePosMarkersStartPos, genePosMarkers);
+
+                reservedAreas[2].Add((startPos, startPos + geneBar.Length));
+                reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
+            }
+        }
+
+        // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
+        foreach (var (geneName, geneStart, geneEnd) in displayed)
+        {
+            var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
+            var startPos = Mathf.RoundToInt(Mathf.InverseLerp(left, right, geneStart) * horizontalTextChars);
+            if (geneName != chromosome.focusedGene)
+            {
+
+            }
+        }
+
+
+    }
+
+
+    public String updateSubportion(String original, int startIndex, String sub)
+    {
+        if (startIndex >= original.Length)
+        {
+            return original;
+        }
+        if (startIndex < 0)
+        {
+            return original;
+        }
+        var output = original.Substring(0, startIndex) + ((sub.Length > original.Length - startIndex) ? sub.Substring(0, original.Length - startIndex) : (sub + original.Substring(startIndex + sub.Length, original.Length - (startIndex + sub.Length))));
+        Assert.AreEqual(original.Length, output.Length);
+        return output;
     }
 }

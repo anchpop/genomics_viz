@@ -212,18 +212,18 @@ public class ChromosomeController : MonoBehaviour
             if (line != "")
             {
                 var info = line.Split('\t');
-                var name = info[6];
-                var start = int.Parse(info[2]);
-                var end = int.Parse(info[3]);
-                Assert.AreNotEqual(name, "");
-                genes.Add((name, start, end));
-
-                //Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
-                if (!(start >= lastStart))
+                var chromosome = info[1];
+                if (chromosome == "chr1")
                 {
-                    break; // BAD!!!!! This cuts off all the genes after around the first 5000. I'm just doing this for performance reasons
+                    var name = info[6];
+                    var start = int.Parse(info[2]);
+                    var end = int.Parse(info[3]);
+                    Assert.AreNotEqual(name, "");
+                    genes.Add((name, start, end));
+
+                    Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
+                    lastStart = start;
                 }
-                lastStart = start;
             }
         }
 
