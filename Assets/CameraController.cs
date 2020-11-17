@@ -27,6 +27,7 @@ public class CameraController : MonoBehaviour
     private int horizontalTextChars = 144;
 
     private (int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
+    private bool OneDViewFocused = false;
 
     string lastLit = "";
     void Start()
@@ -153,9 +154,12 @@ public class CameraController : MonoBehaviour
 
     public void clicked_on_1D(float pos)
     {
-        pos = (pos - .5f) * horizontalTextChars;
-        var basePair = Mathf.RoundToInt(pos * OneDView.scale + OneDView.center);
-        parentController.goToBasePairIndex(basePair);
+        if (OneDViewFocused)
+        {
+            pos = (pos - .5f) * horizontalTextChars;
+            var basePair = Mathf.RoundToInt(pos * OneDView.scale + OneDView.center);
+            parentController.goToBasePairIndex(basePair);
+        }
     }
 
     public void openGeneInfoOnline()
@@ -223,6 +227,7 @@ public class CameraController : MonoBehaviour
 
     public void Update1DView(int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed)
     {
+        OneDViewFocused = true;
         OneDView = (center, scale, displayed);
         //
 
