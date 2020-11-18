@@ -72,15 +72,20 @@ public class CameraParentController : MonoBehaviour
             }
 
             var scroll = mouse.scroll.ReadValue();
+#if UNITY_WEBGL
+            var scrollVel = 1 / 100;
+#else
+            var scrollVel = 1 / 10000;
+#endif
             if (scroll.y != 0)
             {
                 if (scroll.y > 0)
                 {
-                    transform.localScale = transform.localScale * (1 - (scroll.y / 10000));
+                    transform.localScale = transform.localScale * (1 - .3f * Time.deltaTime);
                 }
                 else if (scroll.y < 0)
                 {
-                    transform.localScale = transform.localScale * (1 + (-scroll.y / 10000));
+                    transform.localScale = transform.localScale * (1 + .3f * Time.deltaTime);
                 }
             }
 

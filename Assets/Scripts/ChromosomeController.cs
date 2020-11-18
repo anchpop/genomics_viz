@@ -22,7 +22,7 @@ public class ChromosomeController : MonoBehaviour
 {
     public float overallScale = 1.5f;
     public float linewidth = 1;
-    float simplificationFactorCoarse = .90f;
+    float simplificationFactorCoarse = .97f;
     float simplificationFactorFine = .1f;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
@@ -100,7 +100,7 @@ public class ChromosomeController : MonoBehaviour
 
             var LODGroup = LODParent.AddComponent<LODGroup>();
             LOD[] lods = new LOD[2];
-            lods[0] = new LOD(1.0F / (1 + 1), originalSegments.ToArray());
+            lods[0] = new LOD(3.0F / (4), originalSegments.ToArray());
             lods[1] = new LOD(1.0F / (200 + 1), coarseSegments.ToArray());
             LODGroup.SetLODs(lods);
             LODGroup.RecalculateBounds();
