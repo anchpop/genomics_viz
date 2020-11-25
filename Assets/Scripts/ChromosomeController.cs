@@ -80,7 +80,7 @@ public class ChromosomeController : MonoBehaviour
             var originalSegments = new List<MeshRenderer>();
             foreach (var (p1, p2, sections) in segmentsOriginal)
             {
-                originalSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
+                originalSegments.AddRange(AddLineSegment(p1, p2, sections, 2));
             }
 
 
@@ -425,7 +425,7 @@ public class ChromosomeController : MonoBehaviour
         }
         void AddGeneSegment(string name, float f1, float f2, GameObject prefab, bool gene)
         {
-            if (gene && LOD > 2 && (f2 - f1) < .1f && false)
+            if (gene && LOD > 2 && (f2 - f1) < .5f)
             {
                 return;
             }

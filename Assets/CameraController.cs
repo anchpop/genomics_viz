@@ -26,13 +26,16 @@ public class CameraController : MonoBehaviour
 
     private int horizontalTextChars = 144;
 
-    private (int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
+    private int baseScale = 20000;
+    public Slider slider;
+    private int currentCenter = 0;
+    private (int center, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
     private bool OneDViewFocused = false;
 
     string lastLit = "";
     void Start()
     {
-        OneDView = (0, 7000, new List<(string geneName, int geneStart, int geneEnd)>());
+        OneDView = (0, new List<(string geneName, int geneStart, int geneEnd)>());
         foreach (var t in texts)
         {
             t.text = "";
@@ -42,6 +45,9 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Tween1DView();
+
+
 
         RaycastHit hit;
         var mouse = Mouse.current;
@@ -150,6 +156,15 @@ public class CameraController : MonoBehaviour
                 openGeneInfoOnline();
             }
         }
+
+
+    }
+
+    public void Tween1DView()
+    {
+        var buffer = getScale() * horizontalTextChars * 2;
+        currentCenter = (int)Mathf.Clamp(Mathf.Lerp(currentCenter, OneDView.center, 2 * Time.deltaTime), OneDView.center - buffer, OneDView.center + buffer);
+        Refresh1DView();
     }
 
     public void clicked_on_1D(float pos)
@@ -157,7 +172,7 @@ public class CameraController : MonoBehaviour
         if (OneDViewFocused)
         {
             pos = (pos - .5f) * horizontalTextChars;
-            var basePair = Mathf.RoundToInt(pos * OneDView.scale + OneDView.center);
+            var basePair = Mathf.RoundToInt(pos * getScale() + OneDView.center);
             parentController.goToBasePairIndex(basePair);
         }
     }
@@ -176,7 +191,7 @@ public class CameraController : MonoBehaviour
     public void Update1DViewGene(string geneName)
     {
         var info = chromosome.geneDict[geneName];
-        var scale = (info.end - info.start < (7000 * horizontalTextChars * .8f) ? 7000 : 7000 * 3);
+        var scale = slider.value * baseScale;
 
         var adjecentsToCheck = 30;
 
@@ -188,7 +203,7 @@ public class CameraController : MonoBehaviour
             toDisplay.Add(chromosome.genes[i]);
         }
 
-        Update1DView(info.start / 2 + info.end / 2, scale, toDisplay);
+        OneDView = (info.start / 2 + info.end / 2, toDisplay);
     }
 
     public void Update1DViewBasePairIndex(int bpindex)
@@ -196,6 +211,7 @@ public class CameraController : MonoBehaviour
         var closestGeneIndex = 0;
         var closestGeneDistance = 100000000000;
         var numberOfGenes = chromosome.genes.Count;
+
         for (int i = 0; i < numberOfGenes; i++)
         {
             var info = chromosome.genes[i];
@@ -207,7 +223,7 @@ public class CameraController : MonoBehaviour
             }
         }
 
-        var scale = OneDView.scale;
+        var scale = slider.value * baseScale;
 
         var adjecentsToCheck = 30;
 
@@ -218,17 +234,26 @@ public class CameraController : MonoBehaviour
             toDisplay.Add(chromosome.genes[i]);
         }
 
-
-        Update1DView(bpindex, scale, toDisplay);
+        OneDView = (bpindex, toDisplay);
     }
 
 
-
-
-    public void Update1DView(int center, float scale, List<(string geneName, int geneStart, int geneEnd)> displayed)
+    public void Refresh1DView()
     {
+
+        Debug.Log(currentCenter);
+        Update1DView(currentCenter, OneDView.displayed);
+    }
+
+    public float getScale()
+    {
+        return slider.value * baseScale;
+    }
+    public void Update1DView(int center, List<(string geneName, int geneStart, int geneEnd)> displayed)
+    {
+        var scale = getScale();
         OneDViewFocused = true;
-        OneDView = (center, scale, displayed);
+
         //
 
         // OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
@@ -292,7 +317,7 @@ public class CameraController : MonoBehaviour
         {
             var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
             var startPos = Mathf.RoundToInt(InvLerp(left, right, geneStart) * horizontalTextChars);
-            if (geneName != chromosome.focusedGene && length > 0)
+            if (geneName != chromosome.focusedGene && length > 1)
             {
                 var geneBar = "";
                 if (geneName.Length + 2 > length)
@@ -354,6 +379,10 @@ public class CameraController : MonoBehaviour
                 return original;
             }
             var f = sub.Substring(-startIndex, sub.Length - (-startIndex));
+            if (sub.Length - (-startIndex) > original.Length)
+            {
+                return f;
+            }
             var l = original.Substring(sub.Length - (-startIndex), original.Length - (sub.Length - (-startIndex)));
             return f + l;
         }
