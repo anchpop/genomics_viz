@@ -240,8 +240,6 @@ public class CameraController : MonoBehaviour
 
     public void Refresh1DView()
     {
-
-        Debug.Log(currentCenter);
         Update1DView(currentCenter, OneDView.displayed);
     }
 
