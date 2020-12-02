@@ -1947,6 +1947,9 @@ MonoBehaviour:
   linewidth: 0.25
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
   geneAnnotations: {fileID: 4900000, guid: 80adcbd67a092e24d9be3b231e06ffb5, type: 3}
+  GATA: {fileID: 4900000, guid: 5fe8523061fbc554a9ff6019b932372f, type: 3}
+  CTCF: {fileID: 4900000, guid: 8f4ae42dc0e56bc44a1a03283de868e1, type: 3}
+  IRF1: {fileID: 4900000, guid: 8213006a17e87fd45a141eabd8d6297a, type: 3}
   cylinderPrefab_LOD0: {fileID: 4769671688729265167, guid: 5b725741e694c0848911e78a29fb694a,
     type: 3}
   coloredCylinderPrefab_LOD0: {fileID: 4744947408227528854, guid: 6307ccfe9cc7e4a438779393f21b5385,
@@ -1963,11 +1966,18 @@ MonoBehaviour:
     type: 3}
   coloredCylinderPrefab_LOD3: {fileID: 595193432860463289, guid: a4e8fb005adf29b47be6acbe8a35fefc,
     type: 3}
+  Sphere_CTCF: {fileID: 5597705319206397659, guid: 032b56ca8faed2b48b26c219f7122f12,
+    type: 3}
+  Sphere_GATA: {fileID: 5597705319206397659, guid: 044989487d7aec44391da08fcd7d0a10,
+    type: 3}
+  Sphere_IDR: {fileID: 3627505914386023872, guid: 12228c508d951f242a872d71e514621a,
+    type: 3}
   coloredMaterial: {fileID: 2100000, guid: 2f5b5cc03074c6f4e8f2561e95157b8b, type: 2}
   highlightedColoredMaterial: {fileID: 2100000, guid: d84bda549d12c5341b8f5b2a7c3580ce,
     type: 2}
   geneTextCanvas: {fileID: 2624446989120790316, guid: 9c8d66b01e9a85c418b14f453064893f,
     type: 3}
+  cartoonAmount: 0.03
   basePairsPerRow: 5000
   focusedGene: 
 --- !u!4 &1428644179
@@ -2880,7 +2890,7 @@ MonoBehaviour:
   m_FillRect: {fileID: 1115153436}
   m_HandleRect: {fileID: 746732123}
   m_Direction: 0
-  m_MinValue: 0.1
+  m_MinValue: 0.05
   m_MaxValue: 1
   m_WholeNumbers: 0
   m_Value: 0.67

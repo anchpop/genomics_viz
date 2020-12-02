@@ -72,11 +72,6 @@ public class CameraParentController : MonoBehaviour
             }
 
             var scroll = mouse.scroll.ReadValue();
-#if UNITY_WEBGL
-            var scrollVel = 1 / 100;
-#else
-            var scrollVel = 1 / 10000;
-#endif
             if (scroll.y != 0)
             {
                 if (scroll.y > 0)

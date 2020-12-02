@@ -24,10 +24,17 @@ public class ChromosomeController : MonoBehaviour
     public float linewidth = 1;
     float simplificationFactorCoarse = .97f;
     float simplificationFactorFine = .1f;
+    bool cartoon = true;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
+    public TextAsset GATA;
+    public TextAsset CTCF;
+    public TextAsset IRF1;
     public (List<Point> original, List<Point> coarse) points;
     public List<(string name, int start, int end)> genes;
+    public List<(int start, int end)> gata;
+    public List<(int start, int end)> ctcf;
+    public List<(int start, int end)> irf;
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -37,15 +44,22 @@ public class ChromosomeController : MonoBehaviour
     public GameObject coloredCylinderPrefab_LOD2;
     public GameObject cylinderPrefab_LOD3;
     public GameObject coloredCylinderPrefab_LOD3;
+    public GameObject Sphere_CTCF;
+    public GameObject Sphere_GATA;
+    public GameObject Sphere_IDR;
 
     public Material coloredMaterial;
     public Material highlightedColoredMaterial;
 
     public GameObject geneTextCanvas;
 
+    public float cartoonAmount = .1f;
+
+
+
+
     public KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)> geneDict;
 
-    private LineRenderer line;
     private int numberOfRows = 0;
     public int basePairsPerRow = 5000;
 
@@ -56,15 +70,34 @@ public class ChromosomeController : MonoBehaviour
         geneDict = new KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)>();
         points = getPoints();
         genes = getGenes();
+        gata = getGATA();
+        ctcf = getCTCF();
+        irf = getIRF();
+
 
         var currentGeneIndex = 0;
         var toEnd = new List<(string name, int start, int end)>();
 
-        var fineIndex = 0;
         var orignalIndex = 0;
+
+
+        var cartoonStartCoarseIndex = Mathf.FloorToInt((points.coarse.Count / 2) - (points.coarse.Count * cartoonAmount / 2));
+        var cartoonEndCoarseIndex = Mathf.FloorToInt((points.coarse.Count / 2) + (points.coarse.Count * cartoonAmount / 2));
+
+        int cartoonStartBP = 0;
+        int cartoonEndBP = int.MaxValue;
 
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
+            bool cartoonPeriod = cartoonStartCoarseIndex < i && i < cartoonEndCoarseIndex;
+            if (cartoonPeriod && cartoonStartBP == 0)
+            {
+                cartoonStartBP = orignalIndex * basePairsPerRow;
+            }
+            else if (!cartoonPeriod && cartoonStartBP != 0 && cartoonEndBP == int.MaxValue)
+            {
+                cartoonEndBP = orignalIndex * basePairsPerRow;
+            }
             var stopIndex = points.coarse[i + 1].originalIndex;
             var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd.ToList());
             var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd.ToList());
@@ -72,15 +105,23 @@ public class ChromosomeController : MonoBehaviour
             toEnd = newToEnd;
             orignalIndex = newOriginalIndex;
 
+
             var coarseSegments = new List<MeshRenderer>();
-            foreach (var (p1, p2, sections) in segmentsCoarse)
+            if (!cartoon)
             {
-                coarseSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
+                foreach (var (p1, p2, sections) in segmentsCoarse)
+                {
+                    coarseSegments.AddRange(AddLineSegment(p1, p2, sections, 3));
+                }
             }
+
             var originalSegments = new List<MeshRenderer>();
-            foreach (var (p1, p2, sections) in segmentsOriginal)
+            if (!cartoon || cartoonPeriod)
             {
-                originalSegments.AddRange(AddLineSegment(p1, p2, sections, 2));
+                foreach (var (p1, p2, sections) in segmentsOriginal)
+                {
+                    originalSegments.AddRange(AddLineSegment(p1, p2, sections, 2));
+                }
             }
 
 
@@ -89,21 +130,45 @@ public class ChromosomeController : MonoBehaviour
             var fineParent = new GameObject("fineParent");
             coarseParent.transform.parent = LODParent.transform;
             fineParent.transform.parent = LODParent.transform;
-            foreach (var segment in coarseSegments)
+            if (!cartoon)
             {
-                segment.transform.parent = coarseParent.transform;
+                foreach (var segment in coarseSegments)
+                {
+                    segment.transform.parent = coarseParent.transform;
+                }
             }
-            foreach (var segment in originalSegments)
+            if (!cartoon || cartoonPeriod)
             {
-                segment.transform.parent = fineParent.transform;
-            }
+                foreach (var segment in originalSegments)
+                {
+                    segment.transform.parent = fineParent.transform;
+                }
 
-            var LODGroup = LODParent.AddComponent<LODGroup>();
-            LOD[] lods = new LOD[2];
-            lods[0] = new LOD(3.0F / (4), originalSegments.ToArray());
-            lods[1] = new LOD(1.0F / (200 + 1), coarseSegments.ToArray());
-            LODGroup.SetLODs(lods);
-            LODGroup.RecalculateBounds();
+                if (!cartoon)
+                {
+                    var LODGroup = LODParent.AddComponent<LODGroup>();
+                    LOD[] lods = new LOD[2];
+                    lods[0] = new LOD(3.0F / (4), originalSegments.ToArray());
+
+                    lods[1] = new LOD(1.0F / (200 + 1), coarseSegments.ToArray());
+                    LODGroup.SetLODs(lods);
+                    LODGroup.RecalculateBounds();
+                }
+            }
+        }
+
+        if (cartoon)
+        {
+            foreach (var (start, end) in gata)
+            {
+                var midpoint = (start + end) / 2;
+                if (cartoonStartBP < midpoint && midpoint < cartoonEndBP)
+                {
+                    var pos = points.original[midpoint / basePairsPerRow];
+                    var sphere = Instantiate(Sphere_GATA, pos.position, Quaternion.identity);
+                    sphere.transform.localScale = new Vector3(.04f, .04f, .04f);
+                }
+            }
         }
 
     }
@@ -243,6 +308,40 @@ public class ChromosomeController : MonoBehaviour
         }
         return genes;
     }
+
+    List<(int start, int end)> readFileBed(TextAsset file)
+    {
+        var data = new List<(int start, int end)>();
+        foreach (var line in file.text.Split('\n'))
+        {
+            var info = line.Split('\t');
+            if (info[0] == "chr1")
+            {
+                var start = int.Parse(info[1]);
+                var end = int.Parse(info[2]);
+                data.Add((start, end));
+            }
+
+        }
+        return data;
+    }
+
+    List<(int start, int end)> getGATA()
+    {
+        return readFileBed(GATA);
+    }
+
+    List<(int start, int end)> getCTCF()
+    {
+        return readFileBed(CTCF);
+    }
+
+
+    List<(int start, int end)> getIRF()
+    {
+        return readFileBed(IRF1);
+    }
+
 
     (List<Point> original, List<Point> coarse) getPoints()
     {
