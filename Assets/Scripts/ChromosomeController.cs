@@ -169,6 +169,26 @@ public class ChromosomeController : MonoBehaviour
                     sphere.transform.localScale = new Vector3(.04f, .04f, .04f);
                 }
             }
+            foreach (var (start, end) in ctcf)
+            {
+                var midpoint = (start + end) / 2;
+                if (cartoonStartBP < midpoint && midpoint < cartoonEndBP)
+                {
+                    var pos = points.original[midpoint / basePairsPerRow];
+                    var sphere = Instantiate(Sphere_CTCF, pos.position, Quaternion.identity);
+                    sphere.transform.localScale = new Vector3(.04f, .04f, .04f);
+                }
+            }
+            foreach (var (start, end) in irf)
+            {
+                var midpoint = (start + end) / 2;
+                if (cartoonStartBP < midpoint && midpoint < cartoonEndBP)
+                {
+                    var pos = points.original[midpoint / basePairsPerRow];
+                    var sphere = Instantiate(Sphere_IDR, pos.position, Quaternion.identity);
+                    sphere.transform.localScale = new Vector3(.04f, .04f, .04f);
+                }
+            }
         }
 
     }
