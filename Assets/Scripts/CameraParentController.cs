@@ -128,7 +128,7 @@ public class CameraParentController : MonoBehaviour
 
     public void goToBasePairIndex(int bpindex)
     {
-        var info = chromosomeController.points.original[bpindex / chromosomeController.basePairsPerRow];
+        var info = chromosomeController.basePairIndexToPoint(bpindex);
 
         if (mainCamera.transform.localPosition.normalized == info.position.normalized)
         {

@@ -30,11 +30,15 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset GATA;
     public TextAsset CTCF;
     public TextAsset IRF1;
+    public TextAsset ChromatinInteractionPrediction;
     public (List<Point> original, List<Point> coarse) points;
     public List<(string name, int start, int end)> genes;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
     public List<(int start, int end)> irf;
+    public List<((int start, int end) start, (int start, int end) end)> chromatinInteractionPrediction;
+
+
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -47,6 +51,7 @@ public class ChromosomeController : MonoBehaviour
     public GameObject Sphere_CTCF;
     public GameObject Sphere_GATA;
     public GameObject Sphere_IDR;
+    public GameObject BridgePrefab;
 
     public Material coloredMaterial;
     public Material highlightedColoredMaterial;
@@ -66,13 +71,16 @@ public class ChromosomeController : MonoBehaviour
     public string focusedGene = "";
 
     void Start()
-    {
+    { 
         geneDict = new KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)>();
         points = getPoints();
         genes = getGenes();
         gata = getGATA();
         ctcf = getCTCF();
         irf = getIRF();
+
+        chromatinInteractionPrediction = getChromatinInteractionPrediction();
+
 
 
         var currentGeneIndex = 0;
@@ -189,6 +197,22 @@ public class ChromosomeController : MonoBehaviour
                     sphere.transform.localScale = new Vector3(.04f, .04f, .04f);
                 }
             }
+        }
+
+        foreach (var (start, end) in chromatinInteractionPrediction)
+        {
+
+            var midpointStart = (start.start + start.end) / 2;
+            var midpointEnd = (end.start + end.end) / 2;
+            if (cartoonStartBP < midpointStart && midpointStart < cartoonEndBP && cartoonStartBP < midpointEnd && midpointEnd < cartoonEndBP)
+            {
+                var bridge = Instantiate(BridgePrefab);
+                var line = bridge.GetComponent<LineRenderer>();
+                line.startWidth *= overallScale * linewidth * .1f;
+                line.endWidth *= overallScale * linewidth * .1f;
+                line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart).position, basePairIndexToPoint(midpointEnd).position });
+            }
+
         }
 
     }
@@ -360,6 +384,26 @@ public class ChromosomeController : MonoBehaviour
     List<(int start, int end)> getIRF()
     {
         return readFileBed(IRF1);
+    }
+
+    List<((int start, int end) start, (int start, int end) end)> getChromatinInteractionPrediction()
+    {
+        List<((int start, int end) start, (int start, int end) end)> data = new List<((int start, int end) start, (int start, int end) end)>();
+        
+        foreach (var line in ChromatinInteractionPrediction.text.Split('\n'))
+        {
+            var info = line.Split('\t');
+            if (info[0] == "chr1" && info[4] == "chr1")
+            {
+                var startStart = int.Parse(info[1]);
+                var endStart = int.Parse(info[2]);
+                var startEnd = int.Parse(info[5]);
+                var endEnd = int.Parse(info[6]);
+                data.Add(((start: startStart, end: endStart), (start: startEnd, end: endEnd)));
+            }
+
+        }
+        return data;
     }
 
 
@@ -559,10 +603,10 @@ public class ChromosomeController : MonoBehaviour
             geneController.segmentEnd = Mathf.Lerp(geneDict[name].start, geneDict[name].end, f2);
             geneController.startPoint = startPoint;
             geneController.endPoint = endPoint;
-            if (geneDict[name].renderer.Count == 0)
+            if (geneDict[name].renderer.Count == 0 && cartoon)
             {
-                //var text = Instantiate(geneTextCanvas, geneController.startPoint, Quaternion.identity);
-                //text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
+                var text = Instantiate(geneTextCanvas, geneController.startPoint, Quaternion.identity);
+                text.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             }
             geneDict[name].renderer.Add(geneObj.GetComponent<MeshRenderer>());
         }
@@ -640,6 +684,11 @@ public class ChromosomeController : MonoBehaviour
             geneRenderer.material = coloredMaterial;
             focusedGene = "";
         }
+    }
+
+    public Point basePairIndexToPoint(int bpIndex)
+    {
+        return points.original[bpIndex / basePairsPerRow];
     }
 
 
