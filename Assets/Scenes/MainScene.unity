@@ -656,6 +656,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &597150235
 Canvas:
   m_ObjectHideFlags: 0
@@ -761,6 +762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
+    m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
@@ -958,6 +960,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &705507995
@@ -1236,6 +1239,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
+    m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
@@ -1950,6 +1954,8 @@ MonoBehaviour:
   GATA: {fileID: 4900000, guid: 5fe8523061fbc554a9ff6019b932372f, type: 3}
   CTCF: {fileID: 4900000, guid: 8f4ae42dc0e56bc44a1a03283de868e1, type: 3}
   IRF1: {fileID: 4900000, guid: 8213006a17e87fd45a141eabd8d6297a, type: 3}
+  ChromatinInteractionPrediction: {fileID: 4900000, guid: 0052706ded6e54c2fb5517b1400d9448,
+    type: 3}
   cylinderPrefab_LOD0: {fileID: 4769671688729265167, guid: 5b725741e694c0848911e78a29fb694a,
     type: 3}
   coloredCylinderPrefab_LOD0: {fileID: 4744947408227528854, guid: 6307ccfe9cc7e4a438779393f21b5385,
@@ -1971,6 +1977,8 @@ MonoBehaviour:
   Sphere_GATA: {fileID: 5597705319206397659, guid: 044989487d7aec44391da08fcd7d0a10,
     type: 3}
   Sphere_IDR: {fileID: 3627505914386023872, guid: 12228c508d951f242a872d71e514621a,
+    type: 3}
+  BridgePrefab: {fileID: 2264368760053339867, guid: 9fcf0db2f6c784c08a6add81e69cc16a,
     type: 3}
   coloredMaterial: {fileID: 2100000, guid: 2f5b5cc03074c6f4e8f2561e95157b8b, type: 2}
   highlightedColoredMaterial: {fileID: 2100000, guid: d84bda549d12c5341b8f5b2a7c3580ce,
@@ -2619,7 +2627,7 @@ LightingSettings:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
-  serializedVersion: 2
+  serializedVersion: 3
   m_GIWorkflowMode: 1
   m_EnableBakedLightmaps: 0
   m_EnableRealtimeLightmaps: 0
@@ -2641,7 +2649,7 @@ LightingSettings:
   m_MixedBakeMode: 2
   m_LightmapsBakeMode: 1
   m_FilterMode: 1
-  m_LightmapParameters: {fileID: 0}
+  m_LightmapParameters: {fileID: 15204, guid: 0000000000000000f000000000000000, type: 0}
   m_ExportTrainingData: 0
   m_TrainingDataDestination: TrainingData
   m_RealtimeResolution: 2
@@ -2658,7 +2666,7 @@ LightingSettings:
   m_PVREnvironmentReferencePointCount: 2048
   m_LightProbeSampleCountMultiplier: 4
   m_PVRBounces: 2
-  m_PVRRussianRouletteStartBounce: 2
+  m_PVRMinBounces: 1
   m_PVREnvironmentMIS: 0
   m_PVRFilteringMode: 2
   m_PVRDenoiserTypeDirect: 0
@@ -2861,6 +2869,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Navigation:
     m_Mode: 3
+    m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
