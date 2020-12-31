@@ -158,17 +158,17 @@ PrefabInstance:
     - target: {fileID: 4420011120874563748, guid: 6b462a4b8d32e4d39abf938938d81c3f,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.3744
+      value: -0.43167323
       objectReference: {fileID: 0}
     - target: {fileID: 4420011120874563748, guid: 6b462a4b8d32e4d39abf938938d81c3f,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.6439
+      value: 0.6105701
       objectReference: {fileID: 0}
     - target: {fileID: 4420011120874563748, guid: 6b462a4b8d32e4d39abf938938d81c3f,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.7889
+      value: 0.7895199
       objectReference: {fileID: 0}
     - target: {fileID: 4420011120874563748, guid: 6b462a4b8d32e4d39abf938938d81c3f,
         type: 3}
@@ -5411,10 +5411,37 @@ MonoBehaviour:
   randoBall2: {fileID: 551171066}
   randoBall3: {fileID: 2078818222}
   line: {fileID: 1564753051}
-  geneEmitter: {fileID: 0}
   rna: {fileID: 0}
-  speed: 1
+  enabledBridgeMat: {fileID: 2100000, guid: 4b0643735ec3a4038a3784296fa9d279, type: 2}
+  disabledBridgeMat: {fileID: 2100000, guid: 954236b92a4434476a71587825029048, type: 2}
+  gene:
+  - {fileID: 1574153504}
+  - {fileID: 1624049869}
+  - {fileID: 697061199}
+  - {fileID: 795279899}
+  - {fileID: 1729729481}
+  - {fileID: 1729729481}
+  - {fileID: 547011637}
+  - {fileID: 821632452}
+  RNASprite: {fileID: 7732550084827828296, guid: f6afcb32d18f64395b157d866fb50d59,
+    type: 3}
+  times:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  currentTimes: []
+  firstSpeed: 1
+  secondSpeed: 1
+  thirdSpeed: 1
+  fourthSpeed: 1
   travelDist: 0.3
+  geneEmitterRotationSpeed: 2
+  emitterRate: 1
 --- !u!1001 &1521172966
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5445,52 +5472,52 @@ PrefabInstance:
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.4263
+      value: -0.43167323
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.5753
+      value: 0.6105701
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.7264
+      value: 0.7895199
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.6117288
+      value: 0.6146142
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.25128493
+      value: 0.2523602
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7027477
+      value: 0.7002263
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.2622773
+      value: -0.26124102
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 42.537
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 98.9
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4805198478597032895, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 2.512
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5597705319206397659, guid: 4c79a18e7c1204765b9d8c844aabe7c3,
         type: 3}
@@ -5611,7 +5638,7 @@ LineRenderer:
     alignment: 0
     textureMode: 0
     shadowBias: 0.5
-    generateLightingData: 0
+    generateLightingData: 1
   m_UseWorldSpace: 0
   m_Loop: 0
 --- !u!4 &1564753052
@@ -5923,7 +5950,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1d3e74983d1cda344a8711c6383a9e9c, type: 2}
+  - {fileID: 2100000, guid: 65ed84a7c66304963a5cef9d0d87634c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

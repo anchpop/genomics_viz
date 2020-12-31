@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class fakeChromosomeController : MonoBehaviour
@@ -10,7 +11,6 @@ public class fakeChromosomeController : MonoBehaviour
     
     public LineRenderer line;
 
-    public GameObject geneEmitter;
 
     public GameObject rna;
 
@@ -25,6 +25,15 @@ public class fakeChromosomeController : MonoBehaviour
     Vector3 b2off;
     Vector3 b3off;
 
+
+    public List<Transform> gene;
+
+    public GameObject RNASprite;
+
+    public List<float> times;
+    public List<float> currentTimes;
+    int currentIndex = 0;
+
     float first = 0;
     float second = 0;
     float third = 0;
@@ -34,7 +43,12 @@ public class fakeChromosomeController : MonoBehaviour
     public float secondSpeed = 1;
     public float thirdSpeed = 1;
     public float fourthSpeed = 1;
-    public float travelDist = .03f;
+    public float travelDist = .3f;
+
+    float currentGeneEmitter = 0;
+    public float geneEmitterRotationSpeed = 1;
+    public float emitterRate = 3;
+    float lastEmittedTime = 0;
     
 
     // Start is called before the first frame update
@@ -47,39 +61,35 @@ public class fakeChromosomeController : MonoBehaviour
         b1off = Random.insideUnitCircle.normalized * travelDist;
         b2off = Random.insideUnitCircle.normalized * travelDist;
         b3off = Random.insideUnitCircle.normalized * travelDist;
+
+        currentTimes = Enumerable.Repeat(0.0f, times.Count).ToList();
+
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        first += Time.deltaTime * firstSpeed;
-        first = Mathf.Clamp01(first);
-        if (first > .95f)
+        currentTimes[currentIndex] += Time.deltaTime * times[currentIndex];
+        currentTimes[currentIndex] = Mathf.Clamp01(currentTimes[currentIndex]);
+        if  (currentTimes[currentIndex] >= 1)
         {
-            second += Time.deltaTime * secondSpeed;
-            second = Mathf.Clamp01(second);
+            currentIndex += 1;
         }
-        if (second > .95f)
+
+        if (currentIndex == currentTimes.Count)
         {
-            third += Time.deltaTime * secondSpeed;
-            third = Mathf.Clamp01(third);
-        }
-        if (third > .95f)
-        {
-            fourth += Time.deltaTime * secondSpeed;
-            fourth = Mathf.Clamp01(fourth);
-        }
-        if (fourth > .95f)
-        {
-            first = second = third = fourth = 0;
+            currentIndex = 0;
+            currentTimes = Enumerable.Repeat(0.0f, times.Count).ToList();
         }
 
 
-        randoBall1.transform.position = Vector3.Lerp(b1pos + b1off, b1pos, first);
-        randoBall2.transform.position = Vector3.Lerp(b2pos + b2off, b2pos, first);
-        randoBall3.transform.position = Vector3.Lerp(b3pos + b3off, b3pos, second);
 
-        if (third > 0)
+        randoBall1.transform.position = Vector3.Lerp(b1pos + b1off, b1pos, currentTimes[0]);
+        randoBall2.transform.position = Vector3.Lerp(b2pos + b2off, b2pos, currentTimes[0]);
+        randoBall3.transform.position = Vector3.Lerp(b3pos + b3off, b3pos, currentTimes[2]);
+
+        if (currentTimes[3] > 0)
         {
             line.material = enabledBridgeMat;
         }
@@ -88,6 +98,20 @@ public class fakeChromosomeController : MonoBehaviour
             line.material = disabledBridgeMat;
         }
 
-        
+        if (currentTimes[4] > 0)
+        {
+            currentGeneEmitter += geneEmitterRotationSpeed * Time.deltaTime;
+            if (currentGeneEmitter > gene.Count)
+            {
+                currentGeneEmitter = 0;
+            }
+
+            var toEmitFrom = gene[(int)currentGeneEmitter];
+            if (Time.time - lastEmittedTime > 1.0/emitterRate)
+            {
+                lastEmittedTime = Time.time;
+                Instantiate(RNASprite, toEmitFrom.position, Quaternion.identity);
+            }
+        }
     }
 }
