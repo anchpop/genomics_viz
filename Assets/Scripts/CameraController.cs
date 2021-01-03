@@ -29,7 +29,7 @@ public class CameraController : MonoBehaviour
     private int baseScale = 20000;
     public Slider slider;
     private int currentCenter = 0;
-    private (int center, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
+    public static (int center, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
     private bool OneDViewFocused = false;
 
     string lastLit = "";
@@ -145,7 +145,7 @@ public class CameraController : MonoBehaviour
             if (keyboard.qKey.wasPressedThisFrame)
             {
                 var geneInfo = chromosome.geneDict[chromosome.focusedGene];
-                var nextGene = chromosome.genes[geneInfo.index + 1];
+                var nextGene = ChromosomeController.genes[geneInfo.index + 1];
 
                 chromosome.focusGene(nextGene.name);
                 parentController.goToGene(nextGene.name);
@@ -197,10 +197,10 @@ public class CameraController : MonoBehaviour
 
         var toDisplay = new List<(string geneName, int geneStart, int geneEnd)>();
 
-        var numberOfGenes = chromosome.genes.Count;
+        var numberOfGenes = ChromosomeController.genes.Count;
         for (int i = Mathf.Max((info.index - adjecentsToCheck / 2), 0); i < Mathf.Min((info.index + adjecentsToCheck / 2), numberOfGenes); i++)
         {
-            toDisplay.Add(chromosome.genes[i]);
+            toDisplay.Add(ChromosomeController.genes[i]);
         }
 
         OneDView = (info.start / 2 + info.end / 2, toDisplay);
@@ -210,11 +210,11 @@ public class CameraController : MonoBehaviour
     {
         var closestGeneIndex = 0;
         var closestGeneDistance = 100000000000;
-        var numberOfGenes = chromosome.genes.Count;
+        var numberOfGenes = ChromosomeController.genes.Count;
 
         for (int i = 0; i < numberOfGenes; i++)
         {
-            var info = chromosome.genes[i];
+            var info = ChromosomeController.genes[i];
             var distance = (info.start < bpindex && info.end > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.start), Mathf.Abs(bpindex - info.end));
             if (distance < closestGeneDistance)
             {
@@ -231,7 +231,7 @@ public class CameraController : MonoBehaviour
 
         for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
         {
-            toDisplay.Add(chromosome.genes[i]);
+            toDisplay.Add(ChromosomeController.genes[i]);
         }
 
         OneDView = (bpindex, toDisplay);

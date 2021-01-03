@@ -10,6 +10,7 @@ using UnityEngine.Assertions;
 using UnityEngine.UI;
 using TMPro;
 using SimplifyCSharp;
+using UnityEngine.SceneManagement;
 
 public struct Point
 {
@@ -24,15 +25,18 @@ public class ChromosomeController : MonoBehaviour
     public float linewidth = 1;
     float simplificationFactorCoarse = .97f;
     float simplificationFactorFine = .1f;
-    bool cartoon = true;
+    static bool cartoon = false;
+    static int cartoonCenter = 0;
+    static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
+    public GameObject cameraParent;
     public TextAsset locationSequence;
     public TextAsset geneAnnotations;
     public TextAsset GATA;
     public TextAsset CTCF;
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
-    public (List<Point> original, List<Point> coarse) points;
-    public List<(string name, int start, int end)> genes;
+    public static (List<Point> original, List<Point> coarse) points;
+    public static List<(string name, int start, int end)> genes;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
     public List<(int start, int end)> irf;
@@ -65,13 +69,19 @@ public class ChromosomeController : MonoBehaviour
 
     public KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)> geneDict;
 
-    private int numberOfRows = 0;
+    static private int numberOfRows = 0;
     public int basePairsPerRow = 5000;
 
     public string focusedGene = "";
 
     void Start()
-    { 
+    {
+        if (cameraParentCachedPosition.position != Vector3.zero || cameraParentCachedPosition.rotation != Vector3.zero || cameraParentCachedPosition.scale != Vector3.zero)
+        {
+            cameraParent.transform.position = cameraParentCachedPosition.position;
+            cameraParent.transform.eulerAngles = cameraParentCachedPosition.rotation;
+            cameraParent.transform.localScale = cameraParentCachedPosition.scale;
+        }
         geneDict = new KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)>();
         points = getPoints();
         genes = getGenes();
@@ -88,24 +98,30 @@ public class ChromosomeController : MonoBehaviour
 
         var orignalIndex = 0;
 
+        var totalBasePairs = basePairsPerRow * numberOfRows;
+        var cartoonCenterBP = Mathf.Clamp(cartoonCenter, totalBasePairs * cartoonAmount, totalBasePairs - totalBasePairs * cartoonAmount);
+        var cartoonStartBP = cartoonCenterBP - cartoonAmount * totalBasePairs;
+        var cartoonEndBP = cartoonCenterBP + cartoonAmount * totalBasePairs;
 
-        var cartoonStartCoarseIndex = Mathf.FloorToInt((points.coarse.Count / 2) - (points.coarse.Count * cartoonAmount / 2));
-        var cartoonEndCoarseIndex = Mathf.FloorToInt((points.coarse.Count / 2) + (points.coarse.Count * cartoonAmount / 2));
+        Debug.Log("cartoonCenterBP " + cartoonCenterBP);
+        Debug.Log("cartoonAmount " + cartoonAmount);
+        Debug.Log("totalBasePairs " + totalBasePairs);
+        Debug.Log("cartoonStartBP " + cartoonStartBP);
+        Debug.Log("cartoonEndBP " + cartoonEndBP);
 
-        int cartoonStartBP = 0;
-        int cartoonEndBP = int.MaxValue;
+
+        //int cartoonStartBP = 0;
+        // int cartoonEndBP = int.MaxValue;
 
         for (int i = 0; i < points.coarse.Count - 1; i++)
         {
-            bool cartoonPeriod = cartoonStartCoarseIndex < i && i < cartoonEndCoarseIndex;
-            if (cartoonPeriod && cartoonStartBP == 0)
+            int currentBasePair = points.coarse[i].basePairIndex;
+            bool cartoonPeriod = cartoonStartBP < currentBasePair && currentBasePair < cartoonEndBP;
+            if (cartoonPeriod)
             {
-                cartoonStartBP = orignalIndex * basePairsPerRow;
+                print("cartoonPeriod is at least sometimes true");
             }
-            else if (!cartoonPeriod && cartoonStartBP != 0 && cartoonEndBP == int.MaxValue)
-            {
-                cartoonEndBP = orignalIndex * basePairsPerRow;
-            }
+            
             var stopIndex = points.coarse[i + 1].originalIndex;
             var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd.ToList());
             var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd.ToList());
@@ -217,6 +233,8 @@ public class ChromosomeController : MonoBehaviour
 
     }
 
+
+
     (int endPointListIndex, int currentGeneIndex, List<(Point p1, Point p2, List<(string name, float start, float end)> sections)> segments, List<(string name, int start, int end)> toEnd)
         linesToAdd(int pointListIndexFrom, int originalIndexTo, int currentGeneIndex, List<Point> points, List<(string name, int start, int end)> genes, List<(string name, int start, int end)> toEnd)
     {
@@ -302,6 +320,14 @@ public class ChromosomeController : MonoBehaviour
 
             i++;
         }
+    }
+
+    public void loadCartoon()
+    {
+        cartoon = true;
+        cartoonCenter = CameraController.OneDView.center;
+        cameraParentCachedPosition = (cameraParent.transform.position, cameraParent.transform.eulerAngles, cameraParent.transform.localScale);
+        SceneManager.LoadScene("mainScene");
     }
 
     List<(string name, int start, int end)> getGenes()
@@ -409,6 +435,10 @@ public class ChromosomeController : MonoBehaviour
 
     (List<Point> original, List<Point> coarse) getPoints()
     {
+        if (ChromosomeController.points.original != null && ChromosomeController.points.coarse != null)
+        {
+            return ChromosomeController.points;
+        }
         var center = Vector3.zero;
 
         var pointsRaw = new List<Vector3>();

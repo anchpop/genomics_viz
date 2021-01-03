@@ -34,11 +34,6 @@ public class fakeChromosomeController : MonoBehaviour
     public List<float> currentTimes;
     int currentIndex = 0;
 
-    float first = 0;
-    float second = 0;
-    float third = 0;
-    float fourth = 0;
-
     public float firstSpeed = 1;
     public float secondSpeed = 1;
     public float thirdSpeed = 1;
