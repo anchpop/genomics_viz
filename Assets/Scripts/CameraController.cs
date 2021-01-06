@@ -181,7 +181,7 @@ public class CameraController : MonoBehaviour
     {
         var geneInfo = chromosome.geneDict[chromosome.focusedGene];
         Application.OpenURL(
-            "http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
+            "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
             + geneInfo.start.ToString("D")
             + "%2D"
             + geneInfo.end.ToString("D")
