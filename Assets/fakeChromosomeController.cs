@@ -8,8 +8,13 @@ public class fakeChromosomeController : MonoBehaviour
     public GameObject randoBall1;
     public GameObject randoBall2;
     public GameObject randoBall3;
-    
+
+    public GameObject randoBallEnd1;
+    public GameObject randoBallEnd2;
+
     public LineRenderer line;
+    public int numPoints = 20;
+    public float lineDistance = .2f;
 
 
     public GameObject rna;
@@ -21,9 +26,13 @@ public class fakeChromosomeController : MonoBehaviour
     Vector3 b1pos;
     Vector3 b2pos;
     Vector3 b3pos;
+    Vector3 bEnd1pos;
+    Vector3 bEnd2pos;
     Vector3 b1off;
     Vector3 b2off;
     Vector3 b3off;
+    Vector3 bEnd1off;
+    Vector3 bEnd2off;
 
 
     public List<Transform> gene;
@@ -52,15 +61,53 @@ public class fakeChromosomeController : MonoBehaviour
         b1pos = randoBall1.transform.position;
         b2pos = randoBall2.transform.position;
         b3pos = randoBall3.transform.position;
+        bEnd1pos = randoBallEnd1.transform.position;
+        bEnd2pos = randoBallEnd2.transform.position;
 
         b1off = Random.insideUnitCircle.normalized * travelDist;
         b2off = Random.insideUnitCircle.normalized * travelDist;
         b3off = Random.insideUnitCircle.normalized * travelDist;
+        bEnd1off = Random.insideUnitCircle.normalized * travelDist;
+        bEnd2off = Random.insideUnitCircle.normalized * travelDist;
 
         currentTimes = Enumerable.Repeat(0.0f, times.Count).ToList();
 
-        
+        curveBridge();
     }
+
+    void curveBridge()
+    {
+        Vector3 start = line.GetPosition(0);
+        Vector3 end = line.GetPosition(1);
+
+        float dist = (start - end).magnitude;
+        Vector3[] newPositions = (from
+                                    index in Enumerable.Range(0, numPoints + 1)
+                                  select
+                                    (Quaternion.AngleAxis(((1.0f * index) / numPoints) * 360, transform.right) * transform.up * easeUpDown((1.0f * index) / numPoints) * dist * lineDistance)
+                                      + Vector3.Lerp(start, end, (1.0f * index)/numPoints)
+                                 ).ToArray();
+        line.positionCount = newPositions.Length;
+        line.SetPositions(newPositions);
+    }
+
+    float easeUpDown(float x)
+    {
+        if (x <= .5f)
+        {
+            return easeOutCubic(x * 2);
+        }
+        else
+        {
+            return easeOutCubic((.5f - (x - .5f)) * 2);
+        }
+    }
+
+    float easeOutCubic(float x)
+    {
+        return 1 - Mathf.Pow(1 - x, 3);
+    }
+
 
     // Update is called once per frame
     void Update()
@@ -93,7 +140,11 @@ public class fakeChromosomeController : MonoBehaviour
             line.material = disabledBridgeMat;
         }
 
-        if (currentTimes[4] > 0)
+        randoBallEnd1.transform.position = Vector3.Lerp(bEnd1pos + bEnd1off, bEnd1pos, currentTimes[4]);
+        randoBallEnd2.transform.position = Vector3.Lerp(bEnd2pos + bEnd2off, bEnd2pos, currentTimes[4]);
+
+
+        if (currentTimes[7] > 0)
         {
             currentGeneEmitter += geneEmitterRotationSpeed * Time.deltaTime;
             if (currentGeneEmitter > gene.Count)
