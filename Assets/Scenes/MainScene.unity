@@ -2354,6 +2354,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1428644179}
   - component: {fileID: 1428644178}
+  - component: {fileID: 1428644180}
   m_Layer: 0
   m_Name: Chromosome
   m_TagString: Untagged
@@ -2431,6 +2432,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &1428644180
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428644177}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 5
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1546904986
 GameObject:
   m_ObjectHideFlags: 0
@@ -2980,6 +2994,7 @@ GameObject:
   - component: {fileID: 1848595114}
   - component: {fileID: 1848595115}
   - component: {fileID: 1848595116}
+  - component: {fileID: 1848595117}
   m_Layer: 0
   m_Name: cameraParent
   m_TagString: Untagged
@@ -3049,6 +3064,18 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &1848595117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1848595113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b4c944eaa1524281b2622e7e0b728fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!850595691 &1897718896
 LightingSettings:
   m_ObjectHideFlags: 0
