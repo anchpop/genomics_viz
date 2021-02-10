@@ -177,6 +177,15 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    public void clicked_left()
+    {
+        parentController.goToBasePairIndex(Mathf.Clamp(OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+    }
+
+    public void clicked_right()
+    {
+        parentController.goToBasePairIndex(Mathf.Clamp(OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+    }
     public void openGeneInfoOnline()
     {
         var geneInfo = chromosome.geneDict[chromosome.focusedGene];
@@ -249,6 +258,8 @@ public class CameraController : MonoBehaviour
     }
     public void Update1DView(int center, List<(string geneName, int geneStart, int geneEnd)> displayed)
     {
+        Assert.IsNotNull(displayed);
+
         var scale = getScale();
         OneDViewFocused = true;
 

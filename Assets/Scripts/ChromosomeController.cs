@@ -72,6 +72,7 @@ public class ChromosomeController : MonoBehaviour
     public KTrie.StringTrie<(List<MeshRenderer> renderer, int start, int end, int index)> geneDict;
 
     static private int numberOfRows = 0;
+    static public int totalBasePairs = 0;
     public int basePairsPerRow = 5000;
 
     public string focusedGene = "";
@@ -88,7 +89,8 @@ public class ChromosomeController : MonoBehaviour
         {
             VisualizeSectionButton.SetActive(false);
             SeeFullGenomeButton.SetActive(true);
-        } else
+        }
+        else
         {
 
             VisualizeSectionButton.SetActive(true);
@@ -110,7 +112,7 @@ public class ChromosomeController : MonoBehaviour
 
         var orignalIndex = 0;
 
-        var totalBasePairs = basePairsPerRow * numberOfRows;
+        totalBasePairs = basePairsPerRow * numberOfRows;
         var cartoonCenterBP = Mathf.Clamp(cartoonCenter, totalBasePairs * cartoonAmount, totalBasePairs - totalBasePairs * cartoonAmount);
         var cartoonStartBP = cartoonCenterBP - cartoonAmount * totalBasePairs;
         var cartoonEndBP = cartoonCenterBP + cartoonAmount * totalBasePairs;
@@ -133,7 +135,7 @@ public class ChromosomeController : MonoBehaviour
             {
                 print("cartoonPeriod is at least sometimes true");
             }
-            
+
             var stopIndex = points.coarse[i + 1].originalIndex;
             var (_, newCurrentGeneIndex, segmentsCoarse, newToEnd) = linesToAdd(i, stopIndex, currentGeneIndex, points.coarse, genes, toEnd.ToList());
             var (newOriginalIndex, _, segmentsOriginal, _) = linesToAdd(orignalIndex, stopIndex, currentGeneIndex, points.original, genes, toEnd.ToList());
@@ -229,16 +231,33 @@ public class ChromosomeController : MonoBehaviour
 
         foreach (var (start, end) in chromatinInteractionPrediction)
         {
-
-            var midpointStart = (start.start + start.end) / 2;
-            var midpointEnd = (end.start + end.end) / 2;
-            if (cartoonStartBP < midpointStart && midpointStart < cartoonEndBP && cartoonStartBP < midpointEnd && midpointEnd < cartoonEndBP)
+            try
             {
-                var bridge = Instantiate(BridgePrefab);
-                var line = bridge.GetComponent<LineRenderer>();
-                line.startWidth *= overallScale * linewidth * .1f;
-                line.endWidth *= overallScale * linewidth * .1f;
-                line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart).position, basePairIndexToPoint(midpointEnd).position });
+                Assert.IsTrue(start.start >= 0);
+                Assert.IsTrue(start.end >= 0);
+                Assert.IsTrue(end.start >= 0);
+                Assert.IsTrue(end.end >= 0);
+
+                Assert.IsTrue(start.start <= totalBasePairs);
+                Assert.IsTrue(start.end <= totalBasePairs);
+                Assert.IsTrue(end.start <= totalBasePairs);
+                Assert.IsTrue(end.end <= totalBasePairs);
+
+
+                var midpointStart = (start.start + start.end) / 2;
+                var midpointEnd = (end.start + end.end) / 2;
+                if ((cartoon && cartoonStartBP < midpointStart && midpointStart < cartoonEndBP && cartoonStartBP < midpointEnd && midpointEnd < cartoonEndBP) || !cartoon)
+                {
+                    var bridge = Instantiate(BridgePrefab);
+                    var line = bridge.GetComponent<LineRenderer>();
+                    line.startWidth *= overallScale * linewidth * .1f;
+                    line.endWidth *= overallScale * linewidth * .1f;
+                    line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart).position, basePairIndexToPoint(midpointEnd).position });
+                }
+            }
+            catch
+            {
+                //Debug.Log((start, end) + " is outside the range of [0, " + totalBasePairs + "]");
             }
 
         }
@@ -436,7 +455,7 @@ public class ChromosomeController : MonoBehaviour
     List<((int start, int end) start, (int start, int end) end)> getChromatinInteractionPrediction()
     {
         List<((int start, int end) start, (int start, int end) end)> data = new List<((int start, int end) start, (int start, int end) end)>();
-        
+
         foreach (var line in ChromatinInteractionPrediction.text.Split('\n'))
         {
             var info = line.Split('\t');
@@ -739,7 +758,9 @@ public class ChromosomeController : MonoBehaviour
 
     public Point basePairIndexToPoint(int bpIndex)
     {
-        return points.original[bpIndex / basePairsPerRow];
+        Debug.Log(bpIndex);
+        var a = points.original[bpIndex / basePairsPerRow];
+        return a;
     }
 
 
