@@ -19,6 +19,7 @@ public class CameraController : MonoBehaviour
     public TextMeshProUGUI sideText;
     public TextMeshProUGUI sideLoc;
 
+    public TextMeshProUGUI scaleText;
     public List<TextMeshProUGUI> texts;
 
     public GraphicRaycaster GraphicRaycaster;
@@ -262,6 +263,10 @@ public class CameraController : MonoBehaviour
 
         var scale = getScale();
         OneDViewFocused = true;
+
+        var legendSize = 5;
+
+        scaleText.text = (-Mathf.RoundToInt(scale) * legendSize / 2).ToString() + "|" + new String('-', legendSize) + "|" + (Mathf.RoundToInt(scale) * legendSize / 2).ToString();
 
         //
 
