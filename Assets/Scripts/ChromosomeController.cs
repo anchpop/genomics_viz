@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UI;
 using TMPro;
 using SimplifyCSharp;
 using UnityEngine.SceneManagement;
@@ -66,6 +60,7 @@ public class ChromosomeController : MonoBehaviour
 
     public float cartoonAmount = .1f;
 
+    public List<MeshFilter> renderers;
 
 
 
@@ -76,6 +71,25 @@ public class ChromosomeController : MonoBehaviour
     public int basePairsPerRow = 5000;
 
     public string focusedGene = "";
+
+
+    List<List<Vector3>> verticiesl;
+    List<List<int>> indicesl;
+
+
+    void OnDrawGizmos()
+    {
+        // Draw a yellow sphere at the transform's position
+        Gizmos.color = UnityEngine.Color.yellow;
+        if (verticiesl != null)
+        {
+
+            foreach (var vertex in verticiesl)
+            {
+                //Gizmos.DrawSphere(vertex, 0.05f);
+            }
+        }
+    }
 
     void Start()
     {
@@ -107,6 +121,60 @@ public class ChromosomeController : MonoBehaviour
 
 
 
+        var rando = UnityEngine.Random.insideUnitSphere;
+
+        verticiesl = new List<List<Vector3>>();
+        indicesl = new List<List<int>>();
+        foreach (var (pointsRangeI, meshIndex) in points.original.Split(renderers.Count).Select((x, i) => (x, i)))
+        {
+            var pointsRange = pointsRangeI.ToList();
+
+            Mesh mesh = new Mesh();
+            renderers[meshIndex].mesh = mesh;
+            var verticies_current = new List<Vector3>();
+            var indices_current = new List<int>();
+
+            foreach (var (point0, point1, point2) in pointsRange.Zip(pointsRange.GetRange(1, pointsRange.Count - 1), (a, b) => (a, b)).Zip(pointsRange.GetRange(2, pointsRange.Count - 2), (first, c) => (first.a, first.b, c)))
+            {
+                var point0pos = point0.position;
+                var point1pos = point1.position;
+                var point2pos = point2.position;
+                Debug.Log(point0.position);
+                Debug.Log(point1.position);
+                Debug.Log(point2.position);
+                var preexistingVerticies = verticies_current.Count;
+
+                var direction = point1.position - point0.position;
+                var normal = Vector3.Cross(direction, rando).normalized / 30;
+
+                var numsides = 3;
+
+                var nums = Enumerable.Range(0, numsides).ToList();
+                var num2 = nums.Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).ToList();
+                var nums3 = num2.SelectMany((v) => new List<Vector3>() { point0pos + v, point1pos + v }).ToList();
+
+
+
+                var verts = nums3;//Enumerable.Range(0, numsides - 1).Select((i) => new Vector3(Mathf.Sin((360.0f * i) / numsides), Mathf.Cos((360.0f * i) / numsides), 0).normalized).Select((v) => Vector3.Cross(direction, v)).SelectMany((v) => new List<Vector3>() { point0.position + v, point1.position + v });
+                var indices = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 }.Select((j) => (i * 2 + j) % verts.Count).Select((j) => j + preexistingVerticies));
+                indices_current.AddRange(indices);
+                verticies_current.AddRange(verts);
+
+
+                mesh.Clear();
+                mesh.vertices = verticies_current.ToArray();
+                mesh.triangles = indices_current.ToArray();
+                mesh.RecalculateNormals();
+
+                verticiesl.Add(verticies_current);
+                indicesl.Add(indices_current);
+            }
+        }
+
+
+
+
+        /*
         var currentGeneIndex = 0;
         var toEnd = new List<(string name, int start, int end)>();
 
@@ -261,8 +329,11 @@ public class ChromosomeController : MonoBehaviour
             }
 
         }
+        */
 
     }
+
+
 
 
 
@@ -547,13 +618,13 @@ public class ChromosomeController : MonoBehaviour
 
 #if true
 
-        var removalOrder = GetSimplificationOrder(points);
+        //var removalOrder = GetSimplificationOrder(points);
 
         var pointsOriginal = points.ToList();
         var pointsCoarse = points.ToList();
         var pointsFine = points.ToList();
 
-
+        /*
         for (var i = 0; i < numberOfRows * simplificationFactorCoarse; i++)
         {
             pointsCoarse.RemoveAt(removalOrder[i]);
@@ -564,7 +635,7 @@ public class ChromosomeController : MonoBehaviour
         {
             pointsFine.RemoveAt(removalOrder[i]);
         }
-
+        */
 
         return (original: pointsOriginal, coarse: pointsCoarse);
 #else
