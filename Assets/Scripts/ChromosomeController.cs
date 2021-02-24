@@ -63,6 +63,7 @@ public class ChromosomeController : MonoBehaviour
     // So, we need to use multiple meshes, which means multiple mesh renderers
     public List<MeshFilter> backboneRenderers;
     public List<MeshFilter> geneRenderers;
+    public MeshFilter highlightRenderer;
 
 
 
@@ -70,13 +71,10 @@ public class ChromosomeController : MonoBehaviour
 
     static private int numberOfRows = 0;
     static public int totalBasePairs = 0;
-    public int basePairsPerRow = 5000;
+    static public int basePairsPerRow = 5000;
 
     public string focusedGene = "";
 
-
-    List<List<Vector3>> verticiesl;
-    List<List<int>> indicesl;
 
     Vector3 randoVector;
 
@@ -125,8 +123,8 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackboneMesh()
     {
-        verticiesl = new List<List<Vector3>>();
-        indicesl = new List<List<int>>();
+        var verticiesl = new List<List<Vector3>>();
+        var indicesl = new List<List<int>>();
         var pointsAdded = 0;
         foreach (var (pointsRangeI, meshIndex) in points.original.Split(backboneRenderers.Count).Select((x, i) => (x, i)))
         {
@@ -150,9 +148,8 @@ public class ChromosomeController : MonoBehaviour
 
             // Set up renderer info
             var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomeSubrenderer>();
-            chromosomeSubrenderer.startPointsIndex = pointsAdded;
+            chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += pointsRange.Count();
-            chromosomeSubrenderer.endPointsIndex = pointsAdded;
         }
     }
 
@@ -171,11 +168,14 @@ public class ChromosomeController : MonoBehaviour
                 }
                 else
                 {
-                    current_section = (current_section.start, gene.end);
+                    current_section = (current_section.start, Mathf.Max(gene.end, current_section.end));
                 }
             }
+            sections.Add(current_section);
             return sections;
         }
+
+
 
         var geneSections = getGeneSections();
         var genePointses = new List<List<Vector3>>();
@@ -201,7 +201,7 @@ public class ChromosomeController : MonoBehaviour
             var indices = new List<int>();
             foreach (var genePoints in genePointsCurrent)
             {
-                var (verticiesToAdd, indicesToAdd) = createMeshConnectingPointsInRange(genePoints, lineWidth * 2f);
+                var (verticiesToAdd, indicesToAdd) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.15f);
                 var preexistingVerticies = verticies.Count;
                 verticies.AddRange(verticiesToAdd);
                 indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
@@ -499,8 +499,28 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    public void highlightGene(string name)
+    public void highlightGene((string name, int start, int end) info)
     {
+
+        var startBackboneIndex = info.start / basePairsPerRow;
+        var endBackboneIndex = info.end / basePairsPerRow;
+        // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
+        // Assert.IsTrue(endBackboneIndex <= points.original.Count, "Too many genes >:("); 
+        var startBackboneIndexHACK = Mathf.Min(startBackboneIndex, points.original.Count - 1);
+        var endBackboneIndexHACK = Mathf.Min(endBackboneIndex, points.original.Count - 1);
+        Assert.IsTrue(startBackboneIndexHACK <= endBackboneIndexHACK, "start index should be before end index - this is my fault");
+        var genePoints = points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList();
+
+        Mesh mesh = new Mesh();
+        highlightRenderer.mesh = mesh;
+
+
+        var (verticies, indices) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.3f);
+
+        mesh.Clear();
+        mesh.vertices = verticies.ToArray();
+        mesh.triangles = indices.ToArray();
+        mesh.RecalculateNormals();
         /*
         if (name == "") return;
         foreach (var geneRenderer in geneDict[name].renderer)
@@ -547,9 +567,17 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
+    // TODO: This could be sped up with a binary search, or with the kd tree tech
+    public IEnumerable<(string name, int start, int end)> getGenesAtBpIndex(int bpIndex)
+    {
+        return from gene in genes
+               where gene.start <= bpIndex
+               where bpIndex <= gene.end
+               select gene;
+    }
+
     public Point basePairIndexToPoint(int bpIndex)
     {
-        Debug.Log(bpIndex);
         var a = points.original[bpIndex / basePairsPerRow];
         return a;
     }

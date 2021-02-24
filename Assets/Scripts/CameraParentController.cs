@@ -153,4 +153,5 @@ public class CameraParentController : MonoBehaviour
 
         mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }
+
 }

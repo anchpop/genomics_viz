@@ -110,7 +110,28 @@ public class CameraController : MonoBehaviour
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))
                 {
-                    Debug.Log(hit.point);
+                    ChromosomeSubrenderer subrenderer = hit.collider.gameObject.GetComponent<ChromosomeSubrenderer>();
+                    if (subrenderer)
+                    {
+                        var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
+                        var p1 = ChromosomeController.points.original[pointIndices.closest];
+                        var p2 = ChromosomeController.points.original[pointIndices.nextClosest];
+
+                        var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
+                        var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
+                        var cursorBasePair = (int)Mathf.Lerp(p1.originalIndex * ChromosomeController.basePairsPerRow, p2.originalIndex * ChromosomeController.basePairsPerRow, cursorDistance);
+                        Debug.DrawRay(cursorPoint, Vector3.up, Color.red);
+
+                        var genes = chromosome.getGenesAtBpIndex(cursorBasePair);
+
+                        // Don't have a principled way to do this, so I'll just pick the first gene to display
+                        if (genes.Count() > 0)
+                        {
+                            var gene = genes.ToList()[0];
+                            chromosome.highlightGene(gene);
+                        }
+                    }
+                    /*
                     GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
                     if (gene)
                     {
@@ -132,6 +153,7 @@ public class CameraController : MonoBehaviour
                             parentController.goToGene(gene.geneName);
                         }
                     }
+                    */
                 }
                 else
                 {
