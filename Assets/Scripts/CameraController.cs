@@ -105,7 +105,7 @@ public class CameraController : MonoBehaviour
             //Raycast using the Graphics Raycaster and mouse click position
             GraphicRaycaster.Raycast(m_PointerEventData, results);
 
-            if (results.Count <= 0)
+            if (results.Count == 0)
             {
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))

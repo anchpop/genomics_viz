@@ -89,6 +89,7 @@ public class CameraParentController : MonoBehaviour
 
     public void goToGene(string geneName)
     {
+        /*
         var info = chromosomeController.geneDict[geneName];
 
         var geneloc = Vector3.zero;
@@ -122,6 +123,7 @@ public class CameraParentController : MonoBehaviour
 
 
         mainCamera.GetComponent<CameraController>().Update1DViewGene(geneName);
+        */
     }
 
 
