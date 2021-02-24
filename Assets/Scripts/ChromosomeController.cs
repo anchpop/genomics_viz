@@ -48,7 +48,9 @@ public class ChromosomeController : MonoBehaviour
     public GameObject Sphere_CTCF;
     public GameObject Sphere_GATA;
     public GameObject Sphere_IDR;
-    public GameObject BridgePrefab;
+    public GameObject bridgePrefab;
+
+    public GameObject bridgeParent;
 
     public Material coloredMaterial;
     public Material highlightedColoredMaterial;
@@ -125,6 +127,7 @@ public class ChromosomeController : MonoBehaviour
     {
         verticiesl = new List<List<Vector3>>();
         indicesl = new List<List<int>>();
+        var pointsAdded = 0;
         foreach (var (pointsRangeI, meshIndex) in points.original.Split(backboneRenderers.Count).Select((x, i) => (x, i)))
         {
             // Create mesh
@@ -143,6 +146,13 @@ public class ChromosomeController : MonoBehaviour
             // Add collider
             var meshCollider = backboneRenderers[meshIndex].gameObject.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = mesh;
+
+
+            // Set up renderer info
+            var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomeSubrenderer>();
+            chromosomeSubrenderer.startPointsIndex = pointsAdded;
+            pointsAdded += pointsRange.Count();
+            chromosomeSubrenderer.endPointsIndex = pointsAdded;
         }
     }
 
@@ -222,7 +232,9 @@ public class ChromosomeController : MonoBehaviour
                 var midpointStart = (start.start + start.end) / 2;
                 var midpointEnd = (end.start + end.end) / 2;
 
-                var bridge = Instantiate(BridgePrefab);
+                // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
+                // It would add a lot of tris, but it would move work from the CPU to the GPU. 
+                var bridge = Instantiate(bridgePrefab, bridgeParent.transform);
                 var line = bridge.GetComponent<LineRenderer>();
                 line.startWidth *= overallScale * lineWidth * 3;
                 line.endWidth *= overallScale * lineWidth * 3;

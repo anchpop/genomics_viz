@@ -110,6 +110,7 @@ public class CameraController : MonoBehaviour
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))
                 {
+                    Debug.Log(hit.point);
                     GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
                     if (gene)
                     {
