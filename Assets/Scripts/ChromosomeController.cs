@@ -60,6 +60,8 @@ public class ChromosomeController : MonoBehaviour
 
     public float cartoonAmount = .1f;
 
+    // Unity places a limit on the number of verts on a mesh that's quite a bit lower than the amount we need
+    // So, we need to use multiple meshes, which means multiple mesh renderers
     public List<MeshFilter> renderers;
 
 
@@ -75,6 +77,8 @@ public class ChromosomeController : MonoBehaviour
 
     List<List<Vector3>> verticiesl;
     List<List<int>> indicesl;
+
+    Vector3 randoVector;
 
 
     void OnDrawGizmos()
@@ -120,59 +124,10 @@ public class ChromosomeController : MonoBehaviour
         chromatinInteractionPrediction = getChromatinInteractionPrediction();
 
 
+        randoVector = Random.insideUnitSphere;
 
-        var rando = UnityEngine.Random.insideUnitSphere;
-
-        verticiesl = new List<List<Vector3>>();
-        indicesl = new List<List<int>>();
-        foreach (var (pointsRangeI, meshIndex) in points.original.Split(renderers.Count).Select((x, i) => (x, i)))
-        {
-            var pointsRange = pointsRangeI.ToList();
-
-            Mesh mesh = new Mesh();
-            renderers[meshIndex].mesh = mesh;
-            var verticies_current = new List<Vector3>();
-            var indices_current = new List<int>();
-
-            foreach (var (point0, point1, point2) in pointsRange.Zip(pointsRange.GetRange(1, pointsRange.Count - 1), (a, b) => (a, b)).Zip(pointsRange.GetRange(2, pointsRange.Count - 2), (first, c) => (first.a, first.b, c)))
-            {
-                var point0pos = point0.position;
-                var point1pos = point1.position;
-                var point2pos = point2.position;
-                Debug.Log(point0.position);
-                Debug.Log(point1.position);
-                Debug.Log(point2.position);
-                var preexistingVerticies = verticies_current.Count;
-
-                var direction = point1.position - point0.position;
-                var normal = Vector3.Cross(direction, rando).normalized / 30;
-
-                var numsides = 3;
-
-                var nums = Enumerable.Range(0, numsides).ToList();
-                var num2 = nums.Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).ToList();
-                var nums3 = num2.SelectMany((v) => new List<Vector3>() { point0pos + v, point1pos + v }).ToList();
-
-
-
-                var verts = nums3;//Enumerable.Range(0, numsides - 1).Select((i) => new Vector3(Mathf.Sin((360.0f * i) / numsides), Mathf.Cos((360.0f * i) / numsides), 0).normalized).Select((v) => Vector3.Cross(direction, v)).SelectMany((v) => new List<Vector3>() { point0.position + v, point1.position + v });
-                var indices = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 }.Select((j) => (i * 2 + j) % verts.Count).Select((j) => j + preexistingVerticies));
-                indices_current.AddRange(indices);
-                verticies_current.AddRange(verts);
-
-
-                mesh.Clear();
-                mesh.vertices = verticies_current.ToArray();
-                mesh.triangles = indices_current.ToArray();
-                mesh.RecalculateNormals();
-
-                verticiesl.Add(verticies_current);
-                indicesl.Add(indices_current);
-            }
-        }
-
-
-
+        createBackboneMesh();
+        createGenesMesh();
 
         /*
         var currentGeneIndex = 0;
@@ -333,6 +288,55 @@ public class ChromosomeController : MonoBehaviour
 
     }
 
+    void createBackboneMesh()
+    {
+
+
+        verticiesl = new List<List<Vector3>>();
+        indicesl = new List<List<int>>();
+        foreach (var (pointsRangeI, meshIndex) in points.original.Split(renderers.Count).Select((x, i) => (x, i)))
+        {
+            var pointsRange = pointsRangeI.ToList();
+
+            Mesh mesh = new Mesh();
+            renderers[meshIndex].mesh = mesh;
+
+            var (verticies, indices) = createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList());
+
+            mesh.Clear();
+            mesh.vertices = verticies.ToArray();
+            mesh.triangles = indices.ToArray();
+            mesh.RecalculateNormals();
+        }
+    }
+
+    void createGenesMesh()
+    {
+
+    }
+
+
+    (List<Vector3> verticies, List<int> indices) createMeshConnectingPointsInRange(List<Vector3> points)
+    {
+        var numsides = 5;
+
+        var verticies = new List<Vector3>(points.Count * numsides * 2);
+        var indices = new List<int>(points.Count * numsides * 3);
+
+        foreach (var (point0, point1, point2) in points.Zip(points.GetRange(1, points.Count - 1), (a, b) => (a, b)).Zip(points.GetRange(2, points.Count - 2), (first, c) => (first.a, first.b, c)))
+        {
+            var preexistingVerticies = verticies.Count;
+
+            var direction = point1 - point0;
+            var normal = Vector3.Cross(direction, randoVector).normalized / 30;
+
+            var verts = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).SelectMany((v) => new List<Vector3>() { point0 + v, point1 + v }).ToList();
+            var inds = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 }.Select((j) => (i * 2 + j) % verts.Count).Select((j) => j + preexistingVerticies)).ToList();
+            verticies.AddRange(verts);
+            indices.AddRange(inds);
+        }
+        return (verticies, indices);
+    }
 
 
 
