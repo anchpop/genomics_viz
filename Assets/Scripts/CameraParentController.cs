@@ -89,6 +89,7 @@ public class CameraParentController : MonoBehaviour
 
     public void goToGene((string name, int start, int end) info)
     {
+        /*
         var geneloc = Vector3.zero;
         foreach (var renderer in info.renderer)
         {
@@ -120,7 +121,7 @@ public class CameraParentController : MonoBehaviour
 
 
         mainCamera.GetComponent<CameraController>().Update1DViewGene(geneName);
-
+        */
     }
 
 

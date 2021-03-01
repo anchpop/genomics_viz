@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using KdTree;
+using KdTree.Math;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -8,7 +10,7 @@ using UnityEngine.SceneManagement;
 public struct Point
 {
     public Vector3 position;
-    public int basePairIndex;
+    public int bin;
     public int originalIndex;
 }
 
@@ -23,12 +25,14 @@ public class ChromosomeController : MonoBehaviour
     public GameObject VisualizeSectionButton;
     public GameObject SeeFullGenomeButton;
     public TextAsset locationSequence;
+    public TextAsset coordinateMapping;
     public TextAsset geneAnnotations;
     public TextAsset GATA;
     public TextAsset CTCF;
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
-    public static (List<Point> original, List<Point> coarse) points;
+    public static (List<Point> original, KdTree<float, int> basePairMapping) points;
+    public static KdTree<float, int> basePairMapping;
     public static List<(string name, int start, int end)> genes;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
@@ -111,8 +115,6 @@ public class ChromosomeController : MonoBehaviour
         irf = getIRF();
         chromatinInteractionPrediction = getChromatinInteractionPrediction();
 
-
-        totalBasePairs = basePairsPerRow * numberOfRows;
         randoVector = Random.insideUnitSphere;
 
         createBackboneMesh();
@@ -182,8 +184,8 @@ public class ChromosomeController : MonoBehaviour
         var genePointses = new List<List<Vector3>>();
         foreach (var (start, end) in geneSections)
         {
-            var startBackboneIndex = start / basePairsPerRow;
-            var endBackboneIndex = end / basePairsPerRow;
+            var startBackboneIndex = basePairIndexToLocationIndex(start);
+            var endBackboneIndex = basePairIndexToLocationIndex(end);
             // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
             // Assert.IsTrue(endBackboneIndex <= points.original.Count, "Too many genes >:("); 
             var startBackboneIndexHACK = Mathf.Min(startBackboneIndex, points.original.Count - 1);
@@ -285,19 +287,20 @@ public class ChromosomeController : MonoBehaviour
     List<(string name, int start, int end)> getGenes()
     {
         var genes = new List<(string name, int start, int end)>();
-        bool firstLine = true;
-        int lastStart = 0;
-        foreach (var line in geneAnnotations.text.Split('\n'))
-        {
-            if (firstLine)
-            {
-                firstLine = false;
-                continue;
-            }
 
-            if (line != "")
+        int lastStart = 0;
+
+        var splitAnnotations = geneAnnotations.text.Split('\n').Skip(1).ToArray();
+
+
+        for (int i = 0; i < splitAnnotations.Length; i++)
+        {
+            var annotationLine = splitAnnotations[i];
+
+            if (annotationLine != "")
             {
-                var info = line.Split('\t');
+                // look at gene positions
+                var info = annotationLine.Split('\t');
                 var chromosome = info[1];
                 if (chromosome == "chr1")
                 {
@@ -310,6 +313,7 @@ public class ChromosomeController : MonoBehaviour
                     Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
                     lastStart = start;
                 }
+
             }
         }
 
@@ -385,57 +389,72 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    (List<Point> original, List<Point> coarse) getPoints()
+    (List<Point> original, KdTree<float, int> basePairMapping) getPoints()
     {
-        if (ChromosomeController.points.original != null && ChromosomeController.points.coarse != null)
+        if (ChromosomeController.points.original != null)
         {
             return ChromosomeController.points;
         }
         var center = Vector3.zero;
 
-        var pointsRaw = new List<Vector3>();
+        var pointsRaw = new List<(Vector3 point, int bin)>();
         var points = new List<Point>();
 
         Vector3 min = Vector3.zero;
         Vector3 max = Vector3.zero;
 
 
-        foreach (var line in locationSequence.text.Split('\n'))
+        var splitCoordinateMapping = coordinateMapping.text.Split('\n').ToArray();
+        var splitLocationSequence = locationSequence.text.Split('\n').ToArray();
+        Assert.AreEqual(splitCoordinateMapping.Length, splitLocationSequence.Length);
+
+        var basePairMapping = new KdTree<float, int>(1, new FloatMath());
+
+        for (int i = 0; i < splitLocationSequence.Length; i++)
         {
-            if (line != "")
+            var locationSequenceLine = splitLocationSequence[i];
+            var mappingLine = splitCoordinateMapping[i];
+            if (locationSequenceLine != "" && mappingLine != "")
             {
-                numberOfRows++;
 
-                var coords = line.Split('\t');
-                var newVector = new Vector3(float.Parse(coords[0]), float.Parse(coords[1]), float.Parse(coords[2]));
+                // look at coordinate mapping
+                var info = mappingLine.Split('\t');
+                var bin = int.Parse(info[0]);
+                var associatedIndex = int.Parse(info[1]);
+                basePairMapping.Add(new float[] { bin }, associatedIndex);
+                totalBasePairs = bin;
 
-                if (newVector.x < min.x)
+                // look at coordinate sequence
+                var coords = locationSequenceLine.Split('\t');
+                var point = new Vector3(float.Parse(coords[0]), float.Parse(coords[1]), float.Parse(coords[2]));
+
+                if (point.x < min.x)
                 {
-                    min = new Vector3(newVector.x, min.y, min.z);
+                    min = new Vector3(point.x, min.y, min.z);
                 }
-                if (newVector.y < min.y)
+                if (point.y < min.y)
                 {
-                    min = new Vector3(min.x, newVector.y, min.z);
+                    min = new Vector3(min.x, point.y, min.z);
                 }
-                if (newVector.z < min.z)
+                if (point.z < min.z)
                 {
-                    min = new Vector3(min.x, min.y, newVector.z);
+                    min = new Vector3(min.x, min.y, point.z);
                 }
-                if (newVector.x > max.x)
+                if (point.x > max.x)
                 {
-                    max = new Vector3(newVector.x, max.y, max.z);
+                    max = new Vector3(point.x, max.y, max.z);
                 }
-                if (newVector.y > max.y)
+                if (point.y > max.y)
                 {
-                    max = new Vector3(max.x, newVector.y, max.z);
+                    max = new Vector3(max.x, point.y, max.z);
                 }
-                if (newVector.z > max.z)
+                if (point.z > max.z)
                 {
-                    max = new Vector3(max.x, max.y, newVector.z);
+                    max = new Vector3(max.x, max.y, point.z);
                 }
 
-                pointsRaw.Add(newVector);
-                center += newVector;
+                pointsRaw.Add((point, bin));
+                center += point;
             }
         }
 
@@ -444,16 +463,15 @@ public class ChromosomeController : MonoBehaviour
         center = center / pointsRaw.Count;
 
         var count = 0;
-        foreach (var point in pointsRaw)
+        foreach (var (point, bin) in pointsRaw)
         {
             var scaling = Mathf.Max(Mathf.Max(min.x - max.x, min.y - max.y), min.z - max.z);
             var p = new Point();
             p.position = (point - center) * overallScale / scaling;
             p.originalIndex = count;
-            p.basePairIndex = count * basePairsPerRow;
+            p.bin = bin;
 
             points.Add(p);
-
             count++;
         }
 
@@ -461,9 +479,6 @@ public class ChromosomeController : MonoBehaviour
 
         //var removalOrder = GetSimplificationOrder(points);
 
-        var pointsOriginal = points.ToList();
-        var pointsCoarse = points.ToList();
-        var pointsFine = points.ToList();
 
         /*
         for (var i = 0; i < numberOfRows * simplificationFactorCoarse; i++)
@@ -478,7 +493,7 @@ public class ChromosomeController : MonoBehaviour
         }
         */
 
-        return (original: pointsOriginal, coarse: pointsCoarse);
+        return (original: points, basePairMapping);
 #else
         var pointsOriginal = points.ToList();
 
@@ -500,8 +515,8 @@ public class ChromosomeController : MonoBehaviour
 
     public void highlightArea(MeshFilter renderer, (string name, int start, int end) info)
     {
-        var startBackboneIndex = info.start / basePairsPerRow;
-        var endBackboneIndex = info.end / basePairsPerRow;
+        var startBackboneIndex = basePairIndexToLocationIndex(info.start);
+        var endBackboneIndex = basePairIndexToLocationIndex(info.end);
         // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
         // Assert.IsTrue(endBackboneIndex <= points.original.Count, "Too many genes >:("); 
         var startBackboneIndexHACK = Mathf.Min(startBackboneIndex, points.original.Count - 1);
@@ -560,9 +575,15 @@ public class ChromosomeController : MonoBehaviour
                select gene;
     }
 
+    public int basePairIndexToLocationIndex(int bpIndex)
+    {
+        var a = bpIndex / basePairsPerRow;
+        return a;
+    }
+
     public Point basePairIndexToPoint(int bpIndex)
     {
-        var a = points.original[bpIndex / basePairsPerRow];
+        var a = points.original[basePairIndexToLocationIndex(bpIndex)];
         return a;
     }
 

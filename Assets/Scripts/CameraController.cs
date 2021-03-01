@@ -30,13 +30,13 @@ public class CameraController : MonoBehaviour
     private int baseScale = 20000;
     public Slider slider;
     private int currentCenter = 0;
-    public static (int center, List<(string geneName, int geneStart, int geneEnd)> displayed) OneDView;
+    public static (int center, List<(string name, int start, int end)> displayed) OneDView;
     private bool OneDViewFocused = false;
 
     string lastLit = "";
     void Start()
     {
-        OneDView = (0, new List<(string geneName, int geneStart, int geneEnd)>());
+        OneDView = (0, new List<(string name, int start, int end)>());
         foreach (var t in texts)
         {
             t.text = "";
@@ -85,7 +85,7 @@ public class CameraController : MonoBehaviour
                     if (chromosome.geneDict.ContainsKey(search))
                     {
                         //chromosome.focusGene(search);
-                        parentController.goToGene(search);
+                        //parentController.goToGene(search);
                     }
                     else
                     {
@@ -237,7 +237,7 @@ public class CameraController : MonoBehaviour
 
         var adjecentsToCheck = 30;
 
-        var toDisplay = new List<(string geneName, int geneStart, int geneEnd)>();
+        var toDisplay = new List<(string name, int start, int end)>();
 
         var numberOfGenes = ChromosomeController.genes.Count;
         for (int i = Mathf.Max((info.index - adjecentsToCheck / 2), 0); i < Mathf.Min((info.index + adjecentsToCheck / 2), numberOfGenes); i++)
@@ -269,7 +269,7 @@ public class CameraController : MonoBehaviour
 
         var adjecentsToCheck = 30;
 
-        var toDisplay = new List<(string geneName, int geneStart, int geneEnd)>();
+        var toDisplay = new List<(string name, int start, int end)>();
 
         for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
         {
@@ -289,7 +289,7 @@ public class CameraController : MonoBehaviour
     {
         return slider.value * baseScale;
     }
-    public void Update1DView(int center, List<(string geneName, int geneStart, int geneEnd)> displayed)
+    public void Update1DView(int center, List<(string name, int start, int end)> displayed)
     {
         Assert.IsNotNull(displayed);
 
@@ -317,19 +317,19 @@ public class CameraController : MonoBehaviour
 
         // We want to treat the focused gene specially - writing the coordinates in the bottom and putting it in the center
         var focused = (from info in displayed
-                       where info.geneName == chromosome.focusedGene
+                       where info.name == chromosome.focusedGene
                        select info).ToList();
         if (focused.Count == 1)
         {
-            var (geneName, geneStart, geneEnd) = focused[0];
+            var (name, start, end) = focused[0];
 
-            var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, geneStart) * horizontalTextChars);
+            var length = Mathf.RoundToInt((end - start) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
 
-            if (geneName.Length + 2 > length)
+            if (name.Length + 2 > length)
             {
                 var geneBar = "|" + new String('-', length) + "|";
-                var genePosMarkers = geneStart.ToString().PadRight(length) + geneEnd;
+                var genePosMarkers = start.ToString().PadRight(length) + end;
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
                 texts[2].text = updateSubportion(texts[2].text, startPos, geneBar);
@@ -340,12 +340,12 @@ public class CameraController : MonoBehaviour
             }
             else
             {
-                var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
-                var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
+                var length1 = Mathf.RoundToInt(-.001f + (length - name.Length) / 2.0f);
+                var length2 = Mathf.RoundToInt(.001f + (length - name.Length) / 2.0f);
 
 
-                var geneBar = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
-                var genePosMarkers = geneStart.ToString().PadRight(length) + "  " + geneEnd;
+                var geneBar = "|" + new String('-', length1) + name + new String('-', length2) + "|";
+                var genePosMarkers = start.ToString().PadRight(length) + "  " + end;
 
 
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
@@ -359,22 +359,22 @@ public class CameraController : MonoBehaviour
         }
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
-        foreach (var (geneName, geneStart, geneEnd) in displayed)
+        foreach (var (name, start, end) in displayed)
         {
-            var length = Mathf.RoundToInt((geneEnd - geneStart) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, geneStart) * horizontalTextChars);
-            if (geneName != chromosome.focusedGene && length > 1)
+            var length = Mathf.RoundToInt((end - start) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
+            if (name != chromosome.focusedGene && length > 1)
             {
                 var geneBar = "";
-                if (geneName.Length + 2 > length)
+                if (name.Length + 2 > length)
                 {
                     geneBar = "|" + new String('-', length) + "|";
                 }
                 else
                 {
-                    var length1 = Mathf.RoundToInt(-.001f + (length - geneName.Length) / 2.0f);
-                    var length2 = Mathf.RoundToInt(.001f + (length - geneName.Length) / 2.0f);
-                    geneBar = "|" + new String('-', length1) + geneName + new String('-', length2) + "|";
+                    var length1 = Mathf.RoundToInt(-.001f + (length - name.Length) / 2.0f);
+                    var length2 = Mathf.RoundToInt(.001f + (length - name.Length) / 2.0f);
+                    geneBar = "|" + new String('-', length1) + name + new String('-', length2) + "|";
                 }
 
                 var allowed = Enumerable.Repeat(true, reservedAreas.Count).ToList();
