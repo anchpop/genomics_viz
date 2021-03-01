@@ -147,7 +147,7 @@ public class ChromosomeController : MonoBehaviour
 
 
             // Set up renderer info
-            var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomeSubrenderer>();
+            var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomePart>();
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += pointsRange.Count();
         }
@@ -249,7 +249,7 @@ public class ChromosomeController : MonoBehaviour
 
     (List<Vector3> verticies, List<int> indices) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth)
     {
-        var numsides = 5;
+        var numsides = 3;
 
         var verticies = new List<Vector3>(points.Count * numsides * 2);
         var indices = new List<int>(points.Count * numsides * 3);
@@ -532,6 +532,7 @@ public class ChromosomeController : MonoBehaviour
 
     public void unhighlightGene(string name)
     {
+        highlightRenderer.mesh.Clear();
         /*
         if (name == "" || name == focusedGene) return;
         foreach (var geneRenderer in geneDict[name].renderer)

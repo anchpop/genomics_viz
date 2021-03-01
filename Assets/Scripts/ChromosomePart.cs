@@ -7,13 +7,13 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
-public class ChromosomeSubrenderer : MonoBehaviour
+public class ChromosomePart : MonoBehaviour
 {
     public int startPointsIndex;
     public int endPointsIndex;
-    public KdTree<float, int> tree;
+    private KdTree<float, int> tree;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         tree = new KdTree<float, int>(3, new FloatMath());
     }

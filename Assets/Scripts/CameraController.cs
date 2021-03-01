@@ -110,7 +110,7 @@ public class CameraController : MonoBehaviour
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))
                 {
-                    ChromosomeSubrenderer subrenderer = hit.collider.gameObject.GetComponent<ChromosomeSubrenderer>();
+                    var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
                     if (subrenderer)
                     {
                         var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
