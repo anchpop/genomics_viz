@@ -87,11 +87,8 @@ public class CameraParentController : MonoBehaviour
         }
     }
 
-    public void goToGene(string geneName)
+    public void goToGene((string name, int start, int end) info)
     {
-        /*
-        var info = chromosomeController.geneDict[geneName];
-
         var geneloc = Vector3.zero;
         foreach (var renderer in info.renderer)
         {
@@ -123,7 +120,7 @@ public class CameraParentController : MonoBehaviour
 
 
         mainCamera.GetComponent<CameraController>().Update1DViewGene(geneName);
-        */
+
     }
 
 

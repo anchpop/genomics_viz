@@ -84,7 +84,7 @@ public class CameraController : MonoBehaviour
                     }
                     if (chromosome.geneDict.ContainsKey(search))
                     {
-                        chromosome.focusGene(search);
+                        //chromosome.focusGene(search);
                         parentController.goToGene(search);
                     }
                     else
@@ -129,6 +129,15 @@ public class CameraController : MonoBehaviour
                         {
                             var gene = genes.ToList()[0];
                             chromosome.highlightGene(gene);
+
+                            sideText.text = gene.name;
+                            sideLoc.text = cursorBasePair.ToString("D");
+
+                            if (mouse.leftButton.wasPressedThisFrame)
+                            {
+                                chromosome.focusGene(gene);
+                                parentController.goToGene(gene);
+                            }
                         }
                     }
                     /*
@@ -157,7 +166,7 @@ public class CameraController : MonoBehaviour
                 }
                 else
                 {
-                    chromosome.unhighlightGene(lastLit);
+                    chromosome.unhighlightGene();
                     lastLit = "";
                 }
 
@@ -171,8 +180,8 @@ public class CameraController : MonoBehaviour
                 var geneInfo = chromosome.geneDict[chromosome.focusedGene];
                 var nextGene = ChromosomeController.genes[geneInfo.index + 1];
 
-                chromosome.focusGene(nextGene.name);
-                parentController.goToGene(nextGene.name);
+                //chromosome.focusGene(nextGene.name);
+                //parentController.goToGene(nextGene.name);
             }
 
             if (keyboard.gKey.wasPressedThisFrame)

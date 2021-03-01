@@ -64,6 +64,7 @@ public class ChromosomeController : MonoBehaviour
     public List<MeshFilter> backboneRenderers;
     public List<MeshFilter> geneRenderers;
     public MeshFilter highlightRenderer;
+    public MeshFilter focusRenderer;
 
 
 
@@ -497,11 +498,8 @@ public class ChromosomeController : MonoBehaviour
 #endif
     }
 
-
-
-    public void highlightGene((string name, int start, int end) info)
+    public void highlightArea(MeshFilter renderer, (string name, int start, int end) info)
     {
-
         var startBackboneIndex = info.start / basePairsPerRow;
         var endBackboneIndex = info.end / basePairsPerRow;
         // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
@@ -512,7 +510,7 @@ public class ChromosomeController : MonoBehaviour
         var genePoints = points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList();
 
         Mesh mesh = new Mesh();
-        highlightRenderer.mesh = mesh;
+        renderer.mesh = mesh;
 
 
         var (verticies, indices) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.3f);
@@ -530,42 +528,27 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void unhighlightGene(string name)
+    public void highlightGene((string name, int start, int end) info)
+    {
+        highlightArea(highlightRenderer, info);
+    }
+
+    public void unhighlightGene()
     {
         highlightRenderer.mesh.Clear();
-        /*
-        if (name == "" || name == focusedGene) return;
-        foreach (var geneRenderer in geneDict[name].renderer)
-        {
-            geneRenderer.material = coloredMaterial;
-        }
-        */
     }
 
 
-    public void focusGene(string name)
+    public void focusGene((string name, int start, int end) info)
     {
-        /*
         if (name == "") return;
-        unfocusGene();
         focusedGene = name;
-        foreach (var geneRenderer in geneDict[name].renderer)
-        {
-            geneRenderer.material = highlightedColoredMaterial;
-        }
-        */
+        highlightArea(focusRenderer, info);
     }
 
     public void unfocusGene()
     {
-        /*
-        if (focusedGene == "") return;
-        foreach (var geneRenderer in geneDict[focusedGene].renderer)
-        {
-            geneRenderer.material = coloredMaterial;
-            focusedGene = "";
-        }
-        */
+        focusRenderer.mesh.Clear();
     }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
