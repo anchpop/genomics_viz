@@ -73,7 +73,6 @@ public class ChromosomeController : MonoBehaviour
 
     public KTrie.StringTrie<(int start, int end, int index)> geneDict;
 
-    static private int numberOfRows = 0;
     static public int totalBasePairs = 0;
     static public int basePairsPerRow = 5000;
 
@@ -185,12 +184,8 @@ public class ChromosomeController : MonoBehaviour
         {
             var startBackboneIndex = basePairIndexToLocationIndex(start);
             var endBackboneIndex = basePairIndexToLocationIndex(end);
-            // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
-            // Assert.IsTrue(endBackboneIndex <= points.original.Count, "Too many genes >:("); 
-            var startBackboneIndexHACK = Mathf.Min(startBackboneIndex, points.original.Count - 1);
-            var endBackboneIndexHACK = Mathf.Min(endBackboneIndex, points.original.Count - 1);
-            Assert.IsTrue(startBackboneIndexHACK <= endBackboneIndexHACK, "start index should be before end index - this is my fault");
-            genePointses.Add(points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList());
+            Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
+            genePointses.Add(points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList());
         }
 
         foreach (var (genePointsCurrent, geneRendererIndex) in genePointses.Split(geneRenderers.Count).Select((x, i) => (x, i)))
@@ -562,6 +557,7 @@ public class ChromosomeController : MonoBehaviour
 
     public void unfocusGene()
     {
+        focusedGene = "";
         focusRenderer.mesh.Clear();
     }
 
@@ -578,10 +574,22 @@ public class ChromosomeController : MonoBehaviour
     {
         if (bpIndex <= 525000) return 0;
         if (bpIndex >= 249230000) return points.original.Count - 1;
-        var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
-        var a = node[0].Value;
+
+        // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
+        //var a = node[0].Value;
+
+        var index = points.original.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
+        if (index < 0)
+        {
+            index = ~index; // index of the first element that is larger than the search value
+        }
+        index = index >= points.original.Count ? points.original.Count - 1 : index;
+
+
+
+
         //var a = bpIndex / basePairsPerRow;
-        return a;
+        return index;
     }
 
     public Point basePairIndexToPoint(int bpIndex)

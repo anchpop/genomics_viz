@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -89,13 +90,16 @@ public class CameraParentController : MonoBehaviour
 
     public void goToGene((string name, int start, int end) info)
     {
-        /*
+        var startIndex = chromosomeController.basePairIndexToLocationIndex(info.start);
+        var endIndex = chromosomeController.basePairIndexToLocationIndex(info.end);
+        var genePositions = ChromosomeController.points.original.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
+
         var geneloc = Vector3.zero;
-        foreach (var renderer in info.renderer)
+        foreach (var pos in genePositions)
         {
-            geneloc += renderer.gameObject.transform.position;
+            geneloc += pos / genePositions.Count();
         }
-        geneloc /= info.renderer.Count;
+
         Debug.DrawLine(Vector3.zero, geneloc);
 
 
@@ -117,11 +121,10 @@ public class CameraParentController : MonoBehaviour
         currentlyTweening = true;
         rott = 0;
 
-        chromosomeController.highlightGene(geneName);
+        chromosomeController.highlightGene(info);
 
 
-        mainCamera.GetComponent<CameraController>().Update1DViewGene(geneName);
-        */
+        mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
     }
 
 

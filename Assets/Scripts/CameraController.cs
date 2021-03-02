@@ -140,29 +140,6 @@ public class CameraController : MonoBehaviour
                             }
                         }
                     }
-                    /*
-                    GeneController gene = hit.collider.gameObject.GetComponent<GeneController>();
-                    if (gene)
-                    {
-                        chromosome.unhighlightGene(lastLit);
-                        lastLit = gene.geneName;
-                        chromosome.highlightGene(gene.geneName);
-
-                        var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(gene.startPoint, gene.endPoint);
-                        var cursorDistance = Vector3Utils.InverseLerp(gene.startPoint, gene.endPoint, cursorPoint);
-                        var cursorBasePair = (int)Mathf.Lerp(gene.segmentStart, gene.segmentEnd, cursorDistance);
-
-
-                        sideText.text = gene.geneName;
-                        sideLoc.text = cursorBasePair.ToString("D");
-
-                        if (mouse.leftButton.wasPressedThisFrame)
-                        {
-                            chromosome.focusGene(gene.geneName);
-                            parentController.goToGene(gene.geneName);
-                        }
-                    }
-                    */
                 }
                 else
                 {
@@ -180,8 +157,8 @@ public class CameraController : MonoBehaviour
                 var geneInfo = chromosome.geneDict[chromosome.focusedGene];
                 var nextGene = ChromosomeController.genes[geneInfo.index + 1];
 
-                //chromosome.focusGene(nextGene.name);
-                //parentController.goToGene(nextGene.name);
+                chromosome.focusGene(nextGene);
+                parentController.goToGene(nextGene);
             }
 
             if (keyboard.gKey.wasPressedThisFrame)
