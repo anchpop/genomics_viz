@@ -32,7 +32,6 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
     public static (List<Point> original, KdTree<float, int> basePairMapping) points;
-    public static KdTree<float, int> basePairMapping;
     public static List<(string name, int start, int end)> genes;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
@@ -577,7 +576,11 @@ public class ChromosomeController : MonoBehaviour
 
     public int basePairIndexToLocationIndex(int bpIndex)
     {
-        var a = bpIndex / basePairsPerRow;
+        if (bpIndex <= 525000) return 0;
+        if (bpIndex >= 249230000) return points.original.Count - 1;
+        var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
+        var a = node[0].Value;
+        //var a = bpIndex / basePairsPerRow;
         return a;
     }
 
