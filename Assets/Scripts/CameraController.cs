@@ -274,9 +274,20 @@ public class CameraController : MonoBehaviour
         var scale = getScale();
         OneDViewFocused = true;
 
-        var legendSize = 5;
+        //var legendSize = 5;
 
-        scaleText.text = (-Mathf.RoundToInt(scale) * legendSize / 2).ToString() + "|" + new String('-', legendSize) + "|" + (Mathf.RoundToInt(scale) * legendSize / 2).ToString();
+        for (int i = 0; i < 20; i++)
+        {
+            var dist = (int)(5000 * Mathf.Pow(2, i));
+            var distS = (dist / 1000).ToString() + "K";
+            var legendS = (int)(dist / scale);
+            if (10 <= legendS && legendS <= 50)
+            {
+                scaleText.text = "|" + new String('-', (legendS - distS.Length) / 2) + distS + new String('-', (legendS - distS.Length) / 2) + "|";
+            }
+        }
+
+        // scaleText.text = (-Mathf.RoundToInt(scale) * legendSize / 2).ToString() + "|" + new String('-', legendSize) + "|" + (Mathf.RoundToInt(scale) * legendSize / 2).ToString();
 
         //
 
