@@ -551,7 +551,8 @@ public class ChromosomeController : MonoBehaviour
     public void focusGene((string name, int start, int end) info)
     {
         if (name == "") return;
-        focusedGene = name;
+        focusedGene = info.name;
+
         highlightArea(focusRenderer, info);
     }
 

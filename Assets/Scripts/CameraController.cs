@@ -84,6 +84,7 @@ public class CameraController : MonoBehaviour
                     }
                     if (chromosome.geneDict.ContainsKey(search))
                     {
+                        // TODO
                         //chromosome.focusGene(search);
                         //parentController.goToGene(search);
                     }
@@ -292,6 +293,7 @@ public class CameraController : MonoBehaviour
 
         var reservedAreas = new List<List<(int start, int end)>> { new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), };
 
+
         // We want to treat the focused gene specially - writing the coordinates in the bottom and putting it in the center
         var focused = (from info in displayed
                        where info.name == chromosome.focusedGene
@@ -334,10 +336,14 @@ public class CameraController : MonoBehaviour
                 reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
             }
         }
+        Debug.Log(focused);
+        Debug.Log(chromosome.focusedGene);
+
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
         foreach (var (name, start, end) in displayed)
         {
+
             var length = Mathf.RoundToInt((end - start) / scale);
             var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
             if (name != chromosome.focusedGene && length > 1)
