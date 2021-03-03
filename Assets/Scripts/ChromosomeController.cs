@@ -320,11 +320,11 @@ public class ChromosomeController : MonoBehaviour
         int index = 0;
         foreach (var gene in genes)
         {
-            index++;
             if (!geneDict.ContainsKey(gene.name))
             {
                 geneDict.Add(gene.name, (gene.start, gene.end, index));
             }
+            index++;
         }
         return genes;
     }

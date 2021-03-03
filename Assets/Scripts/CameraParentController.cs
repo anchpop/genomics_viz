@@ -92,6 +92,10 @@ public class CameraParentController : MonoBehaviour
     {
         var startIndex = chromosomeController.basePairIndexToLocationIndex(info.start);
         var endIndex = chromosomeController.basePairIndexToLocationIndex(info.end);
+        if (startIndex == endIndex)
+        {
+            endIndex += 1;
+        }
         var genePositions = ChromosomeController.points.original.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
 
         var geneloc = Vector3.zero;

@@ -84,9 +84,9 @@ public class CameraController : MonoBehaviour
                     }
                     if (chromosome.geneDict.ContainsKey(search))
                     {
-                        // TODO
-                        //chromosome.focusGene(search);
-                        //parentController.goToGene(search);
+                        var gene = ChromosomeController.genes[chromosome.geneDict[search].index];
+                        chromosome.focusGene(gene);
+                        parentController.goToGene(gene);
                     }
                     else
                     {
