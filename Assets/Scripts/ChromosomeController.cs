@@ -31,7 +31,7 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset CTCF;
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
-    public static (List<Point> original, KdTree<float, int> basePairMapping) points;
+    public static (List<Point> original, bool dummy) points; // dummy is only here because I wanted this to be a tuple and tuples need at least two elements
     public static List<(string name, int start, int end)> genes;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
@@ -383,15 +383,17 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    (List<Point> original, KdTree<float, int> basePairMapping) getPoints()
+    (List<Point> original, bool dummy) getPoints()
     {
         if (ChromosomeController.points.original != null)
         {
             return ChromosomeController.points;
         }
+
         var center = Vector3.zero;
 
         var pointsRaw = new List<(Vector3 point, int bin)>();
+
         var points = new List<Point>();
 
         Vector3 min = Vector3.zero;
@@ -402,7 +404,7 @@ public class ChromosomeController : MonoBehaviour
         var splitLocationSequence = locationSequence.text.Split('\n').ToArray();
         Assert.AreEqual(splitCoordinateMapping.Length, splitLocationSequence.Length);
 
-        var basePairMapping = new KdTree<float, int>(1, new FloatMath());
+        //var basePairMapping = new KdTree<float, int>(1, new FloatMath());
 
         for (int i = 0; i < splitLocationSequence.Length; i++)
         {
@@ -410,12 +412,11 @@ public class ChromosomeController : MonoBehaviour
             var mappingLine = splitCoordinateMapping[i];
             if (locationSequenceLine != "" && mappingLine != "")
             {
-
                 // look at coordinate mapping
                 var info = mappingLine.Split('\t');
                 var bin = int.Parse(info[0]);
                 var associatedIndex = int.Parse(info[1]);
-                basePairMapping.Add(new float[] { bin }, associatedIndex);
+                //basePairMapping.Add(new float[] { bin }, associatedIndex);
                 totalBasePairs = bin;
 
                 // look at coordinate sequence
@@ -452,8 +453,6 @@ public class ChromosomeController : MonoBehaviour
             }
         }
 
-
-
         center = center / pointsRaw.Count;
 
         var count = 0;
@@ -465,10 +464,9 @@ public class ChromosomeController : MonoBehaviour
             p.originalIndex = count;
             p.bin = bin;
 
-            points.Add(p);
+            //points.Add(p);
             count++;
         }
-
 #if true
 
         //var removalOrder = GetSimplificationOrder(points);
@@ -487,7 +485,7 @@ public class ChromosomeController : MonoBehaviour
         }
         */
 
-        return (original: points, basePairMapping);
+        return (original: points, dummy: false/*, basePairMapping*/);
 #else
         var pointsOriginal = points.ToList();
 
