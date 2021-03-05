@@ -616,17 +616,20 @@ public class ChromosomeController : MonoBehaviour
         Assert.IsTrue(startBackboneIndexHACK <= endBackboneIndexHACK, "start index should be before end index - this is my fault");
         var genePoints = points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList();
 
-        Mesh mesh = new Mesh();
-        renderer.mesh = mesh;
+        if (genePoints.Count > 0)
+        {
+            Mesh mesh = new Mesh();
+            renderer.mesh = mesh;
 
-        var startNormals = backbonePointNormals[startBackboneIndex];
-        var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints[0]).ToList();
-        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, startingPoints, true);
+            var startNormals = backbonePointNormals[startBackboneIndex];
+            var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints[0]).ToList();
+            var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, startingPoints, true);
 
-        mesh.Clear();
-        mesh.vertices = verticies.ToArray();
-        mesh.triangles = indices.ToArray();
-        mesh.RecalculateNormals();
+            mesh.Clear();
+            mesh.vertices = verticies.ToArray();
+            mesh.triangles = indices.ToArray();
+            mesh.RecalculateNormals();
+        }
         /*
         if (name == "") return;
         foreach (var geneRenderer in geneDict[name].renderer)
