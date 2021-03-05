@@ -196,16 +196,17 @@ public class ChromosomeController : MonoBehaviour
 
 
         var geneSections = getGeneSections();
-        var genePointses = new List<List<Vector3>>();
+        var genePointGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
         foreach (var (start, end) in geneSections)
         {
             var startBackboneIndex = basePairIndexToLocationIndex(start);
             var endBackboneIndex = basePairIndexToLocationIndex(end);
             Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
-            genePointses.Add(points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList());
+            var genePoints = points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList();
+            genePointGroups.Add((genePoints, startBackboneIndex));
         }
 
-        foreach (var (genePointsCurrent, geneRendererIndex) in genePointses.Split(geneRenderers.Count).Select((x, i) => (x, i)))
+        foreach (var (genePointGroupsForCurrentGeneRenderer, geneRendererIndex) in genePointGroups.Split(geneRenderers.Count).Select((x, i) => (x, i)))
         {
             Mesh mesh = new Mesh();
             geneRenderers[geneRendererIndex].mesh = mesh;
@@ -213,12 +214,15 @@ public class ChromosomeController : MonoBehaviour
 
             var verticies = new List<Vector3>();
             var indices = new List<int>();
-            foreach (var genePoints in genePointsCurrent)
+            foreach (var (genePoints, startingBackboneIndex) in genePointGroupsForCurrentGeneRenderer)
             {
                 // Assert.AreNotEqual(genePoints.Count, 0); // WTF? todo, investigate why this is sometimes true 
-                if (genePoints.Count > 1) // todo - put in next bin
+                if (genePoints.Count > 1) // todo - put make up point in next bin if == 1
                 {
-                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.1f);
+
+                    var startNormals = backbonePointNormals[startingBackboneIndex];
+
+                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, startNormals.Select((v) => v * 1.1f + genePoints[0]).ToList(), true);
                     var preexistingVerticies = verticies.Count;
                     verticies.AddRange(verticiesToAdd);
                     indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
@@ -615,8 +619,9 @@ public class ChromosomeController : MonoBehaviour
         Mesh mesh = new Mesh();
         renderer.mesh = mesh;
 
-
-        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.2f);
+        var startNormals = backbonePointNormals[startBackboneIndex];
+        var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints[0]).ToList();
+        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, startingPoints, true);
 
         mesh.Clear();
         mesh.vertices = verticies.ToArray();
