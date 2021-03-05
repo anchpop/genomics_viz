@@ -24,10 +24,10 @@ public class ChromosomePart : MonoBehaviour
 
     }
 
-    public void addPoints(List<Point> pointRange, int startPointsIndexp)
+    public void addPoints(IEnumerable<Point> pointRange, int startPointsIndexp)
     {
         startPointsIndex = startPointsIndexp;
-        endPointsIndex = startPointsIndex + pointRange.Count;
+        endPointsIndex = startPointsIndex + pointRange.Count();
         foreach (var (point, index) in pointRange.Select((x, i) => (x, i)))
         {
             tree.Add(new[] { point.position.x, point.position.y, point.position.z }, index + startPointsIndex);

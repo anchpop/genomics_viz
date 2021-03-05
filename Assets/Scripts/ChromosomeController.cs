@@ -38,7 +38,7 @@ public class ChromosomeController : MonoBehaviour
     public List<(int start, int end)> irf;
     public List<((int start, int end) start, (int start, int end) end)> chromatinInteractionPrediction;
 
-
+    private List<Vector3> backbonePointNormals;
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -69,7 +69,7 @@ public class ChromosomeController : MonoBehaviour
     public MeshFilter highlightRenderer;
     public MeshFilter focusRenderer;
 
-
+    public int numsides = 3;
 
     public KTrie.StringTrie<(int start, int end, int index)> geneDict;
 
@@ -124,18 +124,33 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackboneMesh()
     {
+        backbonePointNormals = new List<Vector3>();
+
         var verticiesl = new List<List<Vector3>>();
         var indicesl = new List<List<int>>();
         var pointsAdded = 0;
-        foreach (var (pointsRangeI, meshIndex) in points.original.Split(backboneRenderers.Count).Select((x, i) => (x, i)))
+
+        var lastpoints = new List<Vector3>();
+
+        var pointss = points.original.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
+
+        foreach (var (pointsRangeI, meshIndex) in pointss)
         {
             // Create mesh
-            var pointsRange = pointsRangeI.ToList();
+            var pointsRange = meshIndex != backboneRenderers.Count - 1 ?
+                pointsRangeI.Append(pointss[meshIndex + 1].points[0]).Append(pointss[meshIndex + 1].points[1])
+                : pointsRangeI.AsEnumerable();
 
             Mesh mesh = new Mesh();
             backboneRenderers[meshIndex].mesh = mesh;
 
-            var (verticies, indices) = createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth);
+            var (verticies, indices, normies, lastpointsp) = lastpoints.Count == 0 ?
+                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth) :
+                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth, lastpoints, false);
+            lastpoints = lastpointsp;
+
+
+            backbonePointNormals.AddRange(normies);
 
             mesh.Clear();
             mesh.vertices = verticies.ToArray();
@@ -177,7 +192,6 @@ public class ChromosomeController : MonoBehaviour
         }
 
 
-
         var geneSections = getGeneSections();
         var genePointses = new List<List<Vector3>>();
         foreach (var (start, end) in geneSections)
@@ -198,10 +212,15 @@ public class ChromosomeController : MonoBehaviour
             var indices = new List<int>();
             foreach (var genePoints in genePointsCurrent)
             {
-                var (verticiesToAdd, indicesToAdd) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.4f);
-                var preexistingVerticies = verticies.Count;
-                verticies.AddRange(verticiesToAdd);
-                indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
+                // Assert.AreNotEqual(genePoints.Count, 0); // WTF? todo, investigate why this is sometimes true 
+                if (genePoints.Count > 1) // todo - put in next bin
+                {
+                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.4f);
+                    var preexistingVerticies = verticies.Count;
+                    verticies.AddRange(verticiesToAdd);
+                    indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
+                }
+
             }
 
 
@@ -244,10 +263,8 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    (List<Vector3> verticies, List<int> indices) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth)
+    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth)
     {
-        var numsides = 3;
-
 
         List<Vector3> cylinderExtrusion(Vector3 p, Vector3 direction)
         {
@@ -256,40 +273,16 @@ public class ChromosomeController : MonoBehaviour
             return verts;
         }
 
+        return createMeshConnectingPointsInRange(points, lineWidth, cylinderExtrusion(points[0], points[1] - points[0]));
+    }
+
+    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, List<Vector3> startingPoints, bool extrudeEnds = true)
+    {
+
+
         // Thanks to http://www.songho.ca/math/line/line.html#intersect_lineplane
         Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, Vector3 planePoint, Vector3 planeNormal)
         {
-
-            /*
-            float findPlaneConstantTerm(Vector3 planeVector, Vector3 planeNormal)
-            {
-                Assert.AreApproximatelyEqual(Vector3.Dot(planeVector, planeNormal), 0); // vectors should be normal
-                float d = -(planeVector.x * planeNormal.x + planeVector.y * planeNormal.y + planeVector.z * planeNormal.z);
-                return d;
-            }
-
-            Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, float d, Vector3 planeNormal)
-            {
-                var p = linePoint;
-                var v = lineDirection;
-
-                var n = planeNormal;
-
-                var dot1 = Vector3.Dot(n, v);
-                var dot2 = Vector3.Dot(n, p);
-
-                Assert.AreNotEqual(dot1, 0); // if this is true, there's no intersection
-
-                // find t = -(a*x1 + b*y1 + c*z1 + d) / (a*Vx + b*Vy + c*Vz)
-                float t = -(dot2 + d) / dot1;
-
-                // find intersection point
-                return p + (t * v);
-            }
-            return intersectLineAndPlane(linePoint, lineDirection, findPlaneConstantTerm(planeVector, planeNormal), planeNormal);
-            */
-
-
             if (Vector3.Dot(planeNormal, linePoint) == 0)
             {
                 return Vector3.zero; // not sure why but this is bad
@@ -301,47 +294,17 @@ public class ChromosomeController : MonoBehaviour
 
         if (points.Count >= 3)
         {
-            var lastPoints = cylinderExtrusion(points[0], points[1] - points[0]);
-
-            /*List<Vector3> getCylinderIntersectionPoints(Vector3 p, Vector3 e_1, Vector3 e_2)
-            {
-                Debug.DrawRay(p, e_1, Color.black, 100, false);
-                Debug.DrawRay(p, e_2, Color.black, 100, false);
-
-                e_1 = e_1.normalized;
-                e_2 = e_2.normalized;
-
-                Debug.DrawRay(p, Vector3.up / 100, Color.black, 100, false);
-                Debug.DrawRay(p, e_1 / 100, Color.black, 100, false);
-                Debug.DrawRay(p, e_2 / 100, Color.black, 100, false);
-
-                var cross = Vector3.Cross(e_1, e_2);
-
-                if (cross == Vector3.zero)
-                {
-                    e_2 = ((e_2 + p) + randoVector / 1) - p;
-                    e_2.Normalize();
-                    cross = Vector3.Cross(e_1, e_2);
-                }
-                var a = ((e_1 + e_2) / (e_2 - e_1 * (Vector3.Dot(e_1, e_2))).magnitude) * lineWidth;
-                var b = (cross / cross.magnitude) * lineWidth;
-
-
-                var planePoints = Enumerable.Range(0, numsides).Select((i) => i * 1.0f / numsides).Select((t) => p + a * Mathf.Cos(2 * Mathf.PI * t) + b * Mathf.Sin(2 * Mathf.PI * t)).ToList();
-                Debug.DrawRay(p, p - planePoints[0], Color.magenta, 100, false);
-                Debug.DrawRay(p, p - planePoints[1], Color.cyan, 100, false);
-                Debug.DrawRay(p, p - planePoints[2], Color.yellow, 100, false);
-                return planePoints;
-
-            }*/
-
             var verticies = new List<Vector3>(points.Count * numsides + numsides * 2);
             var indices = new List<int>(points.Count * numsides * 3);
+            var normalsAtPoint = new List<Vector3>(points.Count);
+
+            var lastPoints = startingPoints;
+            normalsAtPoint.Add(lastPoints[0] - points[0]);
 
             verticies.AddRange(lastPoints);
             var lastPoint = points[points.Count - 1];
             var lastPointDir = lastPoint - points[points.Count - 2];
-            var points_appended = points.Append(lastPoint + lastPointDir);
+            var points_appended = extrudeEnds ? points.Append(lastPoint + lastPointDir) : points.AsEnumerable();
             foreach (
                 var (Q_1, Q_2, Q_3)
                 in points_appended
@@ -349,11 +312,8 @@ public class ChromosomeController : MonoBehaviour
                      .Zip(points.GetRange(2, points.Count - 2), (first, c) => (first.a, first.b, c))
                     )
             {
-                var preexistingVerticies = verticies.Count;
 
-                //Debug.DrawRay(point0, Vector3.up / 60, Color.red, 100, false);
-                //Debug.DrawRay(point1, Vector3.up / 60, Color.green, 100, false);
-                //Debug.DrawRay(point2, Vector3.up / 60, Color.blue, 100, false);
+                var preexistingVerticies = verticies.Count;
 
                 // thanks to http://www.songho.ca/opengl/gl_cylinder.html#pipe
                 var v_1 = Q_2 - Q_1;
@@ -391,42 +351,13 @@ public class ChromosomeController : MonoBehaviour
                 indices.AddRange(inds);
 
 
-                //Debug.DrawRay(p, e_1, Color.black, 100, false);
-                //Debug.DrawRay(p, e_2, Color.black, 100, false);
-                /*
-
-                var a = ((e_1 + e_2) / (e_2 - e_1 * (Vector3.Dot(e_1, e_2))).magnitude) * lineWidth;
-                var b = (Vector3.Cross(e_1, e_2) / (Vector3.Cross(e_1, e_2)).magnitude) * lineWidth;
-
-                var planePoints = Enumerable.Range(0, numsides).Select((i) => i * 1.0f / numsides).Select((t) => p + a * Mathf.Cos(2 * Mathf.PI * t) + b * Mathf.Sin(2 * Mathf.PI * t)).ToList();
-                */
-                //var planePoints = getCylinderIntersectionPoints(p, e_1, e_2);
-
-                //Debug.DrawRay(planePoints[0], Vector3.up / 60, Color.magenta, 100, false);
-                //Debug.DrawRay(verticies[0], Vector3.up / 60, Color.magenta, 100, false);
-                //Debug.DrawRay(planePoints[1], Vector3.up / 60, Color.cyan, 100, false);
-                //Debug.DrawRay(verticies[1], Vector3.up / 60, Color.cyan, 100, false);
-                //Debug.DrawRay(planePoints[2], Vector3.up / 60, Color.yellow, 100, false);
-                //Debug.DrawRay(verticies[2], Vector3.up / 60, Color.yellow, 100, false);
-
-                //var inds = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 })
-
-                /*
-                var direction = point1 - point0;
-                var normal = Vector3.Cross(direction, randoVector).normalized * lineWidth;
-
-                var verts = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).SelectMany((v) => new List<Vector3>() { point0 + v, point1 + v }).ToList();
-                var inds = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 }.Select((j) => (i * 2 + j) % verts.Count).Select((j) => j + preexistingVerticies)).ToList();
-                */
-
-                //verticies.AddRange(verts);
-                //indices.AddRange(inds);
+                normalsAtPoint.Add(lastPoints[0] - Q_2);
             }
-            return (verticies, indices);
+            return (verticies, indices, normalsAtPoint, lastPoints);
         }
         else
         {
-            return (new List<Vector3> { }, new List<int> { });
+            return (new List<Vector3> { }, new List<int> { }, new List<Vector3> { }, new List<Vector3> { });
         }
 
 
@@ -684,7 +615,7 @@ public class ChromosomeController : MonoBehaviour
         renderer.mesh = mesh;
 
 
-        var (verticies, indices) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.7f);
+        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.7f);
 
         mesh.Clear();
         mesh.vertices = verticies.ToArray();
