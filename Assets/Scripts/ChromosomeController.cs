@@ -38,7 +38,7 @@ public class ChromosomeController : MonoBehaviour
     public List<(int start, int end)> irf;
     public List<((int start, int end) start, (int start, int end) end)> chromatinInteractionPrediction;
 
-    private List<Vector3> backbonePointNormals;
+    private List<List<Vector3>> backbonePointNormals;
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -124,7 +124,7 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackboneMesh()
     {
-        backbonePointNormals = new List<Vector3>();
+        backbonePointNormals = new List<List<Vector3>>();
 
         var verticiesl = new List<List<Vector3>>();
         var indicesl = new List<List<int>>();
@@ -266,7 +266,7 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, bool extrudeEnd = true)
+    (List<Vector3> verticies, List<int> indices, List<List<Vector3>> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, bool extrudeEnd = true)
     {
 
         List<Vector3> cylinderExtrusion(Vector3 p, Vector3 direction)
@@ -279,7 +279,7 @@ public class ChromosomeController : MonoBehaviour
         return createMeshConnectingPointsInRange(points, cylinderExtrusion(points[0], points[1] - points[0]), extrudeEnd);
     }
 
-    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, List<Vector3> startingPoints, bool extrudeEnd)
+    (List<Vector3> verticies, List<int> indices, List<List<Vector3>> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, List<Vector3> startingPoints, bool extrudeEnd)
     {
         // Thanks to http://www.songho.ca/math/line/line.html#intersect_lineplane
         Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, Vector3 planePoint, Vector3 planeNormal)
@@ -297,10 +297,10 @@ public class ChromosomeController : MonoBehaviour
         {
             var verticies = new List<Vector3>(points.Count * numsides + numsides * 2);
             var indices = new List<int>(points.Count * numsides * 3);
-            var normalsAtPoint = new List<Vector3>(points.Count);
+            var normalsAtPoint = new List<List<Vector3>>(points.Count);
 
             var lastPoints = startingPoints;
-            normalsAtPoint.Add(lastPoints[0] - points[0]);
+            normalsAtPoint.Add(lastPoints.Select((x, i) => x - points[0]).ToList());
 
             verticies.AddRange(lastPoints);
             var endPoint = points[points.Count - 1];
@@ -352,13 +352,13 @@ public class ChromosomeController : MonoBehaviour
                 indices.AddRange(inds);
 
 
-                normalsAtPoint.Add(lastPoints[0] - Q_2);
+                normalsAtPoint.Add(lastPoints.Select((x, i) => x - Q_2).ToList());
             }
             return (verticies, indices, normalsAtPoint, lastPoints);
         }
         else
         {
-            return (new List<Vector3> { }, new List<int> { }, new List<Vector3> { }, new List<Vector3> { });
+            return (new List<Vector3> { }, new List<int> { }, new List<List<Vector3>> { }, new List<Vector3> { });
         }
 
 
