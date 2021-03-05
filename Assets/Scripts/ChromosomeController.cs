@@ -136,8 +136,9 @@ public class ChromosomeController : MonoBehaviour
 
         foreach (var (pointsRangeI, meshIndex) in pointss)
         {
+            var lastMesh = meshIndex == backboneRenderers.Count - 1;
             // Create mesh
-            var pointsRange = meshIndex != backboneRenderers.Count - 1 ?
+            var pointsRange = !lastMesh ?
                 pointsRangeI.Append(pointss[meshIndex + 1].points[0]).Append(pointss[meshIndex + 1].points[1])
                 : pointsRangeI.AsEnumerable();
 
@@ -145,12 +146,12 @@ public class ChromosomeController : MonoBehaviour
             backboneRenderers[meshIndex].mesh = mesh;
 
             var (verticies, indices, normies, lastpointsp) = lastpoints.Count == 0 ?
-                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth) :
-                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth, lastpoints, false);
+                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth, false) :
+                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lastpoints, false);
             lastpoints = lastpointsp;
 
-
-            backbonePointNormals.AddRange(normies);
+            Assert.AreEqual(pointsRange.Count() - 1, normies.Count);
+            backbonePointNormals.AddRange(normies.GetRange(0, !lastMesh ? normies.Count - 1 : normies.Count));
 
             mesh.Clear();
             mesh.vertices = verticies.ToArray();
@@ -167,6 +168,8 @@ public class ChromosomeController : MonoBehaviour
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += pointsRange.Count();
         }
+        Debug.Log(points.original.Count);
+        Assert.AreEqual(points.original.Count - 1, backbonePointNormals.Count);
     }
 
     void createGenesMesh()
@@ -215,7 +218,7 @@ public class ChromosomeController : MonoBehaviour
                 // Assert.AreNotEqual(genePoints.Count, 0); // WTF? todo, investigate why this is sometimes true 
                 if (genePoints.Count > 1) // todo - put in next bin
                 {
-                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.4f);
+                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.1f);
                     var preexistingVerticies = verticies.Count;
                     verticies.AddRange(verticiesToAdd);
                     indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
@@ -263,7 +266,7 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth)
+    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, bool extrudeEnd = true)
     {
 
         List<Vector3> cylinderExtrusion(Vector3 p, Vector3 direction)
@@ -273,13 +276,11 @@ public class ChromosomeController : MonoBehaviour
             return verts;
         }
 
-        return createMeshConnectingPointsInRange(points, lineWidth, cylinderExtrusion(points[0], points[1] - points[0]));
+        return createMeshConnectingPointsInRange(points, cylinderExtrusion(points[0], points[1] - points[0]), extrudeEnd);
     }
 
-    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, List<Vector3> startingPoints, bool extrudeEnds = true)
+    (List<Vector3> verticies, List<int> indices, List<Vector3> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, List<Vector3> startingPoints, bool extrudeEnd)
     {
-
-
         // Thanks to http://www.songho.ca/math/line/line.html#intersect_lineplane
         Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, Vector3 planePoint, Vector3 planeNormal)
         {
@@ -302,9 +303,9 @@ public class ChromosomeController : MonoBehaviour
             normalsAtPoint.Add(lastPoints[0] - points[0]);
 
             verticies.AddRange(lastPoints);
-            var lastPoint = points[points.Count - 1];
-            var lastPointDir = lastPoint - points[points.Count - 2];
-            var points_appended = extrudeEnds ? points.Append(lastPoint + lastPointDir) : points.AsEnumerable();
+            var endPoint = points[points.Count - 1];
+            var endPointDir = endPoint - points[points.Count - 2];
+            var points_appended = extrudeEnd ? points.Append(endPoint + endPointDir) : points.AsEnumerable();
             foreach (
                 var (Q_1, Q_2, Q_3)
                 in points_appended
@@ -615,7 +616,7 @@ public class ChromosomeController : MonoBehaviour
         renderer.mesh = mesh;
 
 
-        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.7f);
+        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.2f);
 
         mesh.Clear();
         mesh.vertices = verticies.ToArray();
