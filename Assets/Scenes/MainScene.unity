@@ -4181,7 +4181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   overallScale: 10
-  lineWidth: 0.033333335
+  lineWidth: 0.02
   cameraParent: {fileID: 1848595113}
   VisualizeSectionButton: {fileID: 1159501529}
   SeeFullGenomeButton: {fileID: 68814540}

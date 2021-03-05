@@ -347,8 +347,6 @@ public class CameraController : MonoBehaviour
                 reservedAreas[3].Add((genePosMarkersStartPos, genePosMarkersStartPos + genePosMarkers.Length));
             }
         }
-        Debug.Log(focused);
-        Debug.Log(chromosome.focusedGene);
 
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 

@@ -198,7 +198,7 @@ public class ChromosomeController : MonoBehaviour
             var indices = new List<int>();
             foreach (var genePoints in genePointsCurrent)
             {
-                var (verticiesToAdd, indicesToAdd) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.15f);
+                var (verticiesToAdd, indicesToAdd) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.4f);
                 var preexistingVerticies = verticies.Count;
                 verticies.AddRange(verticiesToAdd);
                 indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
@@ -248,25 +248,189 @@ public class ChromosomeController : MonoBehaviour
     {
         var numsides = 3;
 
-        var verticies = new List<Vector3>(points.Count * numsides * 2);
-        var indices = new List<int>(points.Count * numsides * 3);
-        if (points.Count > 2)
+
+        List<Vector3> cylinderExtrusion(Vector3 p, Vector3 direction)
         {
-            foreach (var (point0, point1, point2) in points.Zip(points.GetRange(1, points.Count - 1), (a, b) => (a, b)).Zip(points.GetRange(2, points.Count - 2), (first, c) => (first.a, first.b, c)))
+            var normal = Vector3.Cross(direction, randoVector).normalized * lineWidth;
+            var verts = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).Select((v) => p + v).ToList();
+            return verts;
+        }
+
+        // Thanks to http://www.songho.ca/math/line/line.html#intersect_lineplane
+        Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, Vector3 planePoint, Vector3 planeNormal)
+        {
+
+            /*
+            float findPlaneConstantTerm(Vector3 planeVector, Vector3 planeNormal)
+            {
+                Assert.AreApproximatelyEqual(Vector3.Dot(planeVector, planeNormal), 0); // vectors should be normal
+                float d = -(planeVector.x * planeNormal.x + planeVector.y * planeNormal.y + planeVector.z * planeNormal.z);
+                return d;
+            }
+
+            Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, float d, Vector3 planeNormal)
+            {
+                var p = linePoint;
+                var v = lineDirection;
+
+                var n = planeNormal;
+
+                var dot1 = Vector3.Dot(n, v);
+                var dot2 = Vector3.Dot(n, p);
+
+                Assert.AreNotEqual(dot1, 0); // if this is true, there's no intersection
+
+                // find t = -(a*x1 + b*y1 + c*z1 + d) / (a*Vx + b*Vy + c*Vz)
+                float t = -(dot2 + d) / dot1;
+
+                // find intersection point
+                return p + (t * v);
+            }
+            return intersectLineAndPlane(linePoint, lineDirection, findPlaneConstantTerm(planeVector, planeNormal), planeNormal);
+            */
+
+
+            if (Vector3.Dot(planeNormal, linePoint) == 0)
+            {
+                return Vector3.zero; // not sure why but this is bad
+            }
+
+            float t = (Vector3.Dot(planeNormal, planePoint) - Vector3.Dot(planeNormal, linePoint)) / Vector3.Dot(planeNormal, lineDirection.normalized);
+            return linePoint + (lineDirection.normalized * t);
+        }
+
+        if (points.Count >= 3)
+        {
+            var lastPoints = cylinderExtrusion(points[0], points[1] - points[0]);
+
+            /*List<Vector3> getCylinderIntersectionPoints(Vector3 p, Vector3 e_1, Vector3 e_2)
+            {
+                Debug.DrawRay(p, e_1, Color.black, 100, false);
+                Debug.DrawRay(p, e_2, Color.black, 100, false);
+
+                e_1 = e_1.normalized;
+                e_2 = e_2.normalized;
+
+                Debug.DrawRay(p, Vector3.up / 100, Color.black, 100, false);
+                Debug.DrawRay(p, e_1 / 100, Color.black, 100, false);
+                Debug.DrawRay(p, e_2 / 100, Color.black, 100, false);
+
+                var cross = Vector3.Cross(e_1, e_2);
+
+                if (cross == Vector3.zero)
+                {
+                    e_2 = ((e_2 + p) + randoVector / 1) - p;
+                    e_2.Normalize();
+                    cross = Vector3.Cross(e_1, e_2);
+                }
+                var a = ((e_1 + e_2) / (e_2 - e_1 * (Vector3.Dot(e_1, e_2))).magnitude) * lineWidth;
+                var b = (cross / cross.magnitude) * lineWidth;
+
+
+                var planePoints = Enumerable.Range(0, numsides).Select((i) => i * 1.0f / numsides).Select((t) => p + a * Mathf.Cos(2 * Mathf.PI * t) + b * Mathf.Sin(2 * Mathf.PI * t)).ToList();
+                Debug.DrawRay(p, p - planePoints[0], Color.magenta, 100, false);
+                Debug.DrawRay(p, p - planePoints[1], Color.cyan, 100, false);
+                Debug.DrawRay(p, p - planePoints[2], Color.yellow, 100, false);
+                return planePoints;
+
+            }*/
+
+            var verticies = new List<Vector3>(points.Count * numsides + numsides * 2);
+            var indices = new List<int>(points.Count * numsides * 3);
+
+            verticies.AddRange(lastPoints);
+            var lastPoint = points[points.Count - 1];
+            var lastPointDir = lastPoint - points[points.Count - 2];
+            var points_appended = points.Append(lastPoint + lastPointDir);
+            foreach (
+                var (Q_1, Q_2, Q_3)
+                in points_appended
+                     .Zip(points.GetRange(1, points.Count - 1), (a, b) => (a, b))
+                     .Zip(points.GetRange(2, points.Count - 2), (first, c) => (first.a, first.b, c))
+                    )
             {
                 var preexistingVerticies = verticies.Count;
 
+                //Debug.DrawRay(point0, Vector3.up / 60, Color.red, 100, false);
+                //Debug.DrawRay(point1, Vector3.up / 60, Color.green, 100, false);
+                //Debug.DrawRay(point2, Vector3.up / 60, Color.blue, 100, false);
+
+                // thanks to http://www.songho.ca/opengl/gl_cylinder.html#pipe
+                var v_1 = Q_2 - Q_1;
+                var v_2 = Q_3 - Q_2;
+
+                // apparently you can calculate a normal vector this way lol? It doesn't say to normalize them first but I will just in case that's an assumption they make
+                var n = v_1.normalized + v_2.normalized;
+                // except if the directions were the same or opposite, the normal vector will be zero, and that's not what we want
+                if (n == Vector3.zero)
+                {
+                    n = Vector3.Cross(v_1, randoVector).normalized;
+                }
+
+
+                lastPoints = lastPoints.Select((p, i) => intersectLineAndPlane(p, v_1, Q_2, n)).ToList();
+
+                verticies.AddRange(lastPoints);
+
+                var inds = Enumerable.Range(0, numsides).SelectMany((sideIndex) =>
+                    new List<int>() {
+                        (0        + sideIndex) % numsides,
+                        (1        + sideIndex) % numsides,
+                        (0        + sideIndex) % numsides + numsides,
+
+                        (1            + sideIndex) % numsides,
+                        (1            + sideIndex) % numsides + numsides,
+                        (0            + sideIndex) % numsides + numsides,}
+                    /*Enumerable.Range(0, numsides).SelectMany((j) => 
+                        
+                    )*/
+
+                    .Select((j) => j - numsides)
+                    .Select((j) => j + preexistingVerticies)
+                );
+                indices.AddRange(inds);
+
+
+                //Debug.DrawRay(p, e_1, Color.black, 100, false);
+                //Debug.DrawRay(p, e_2, Color.black, 100, false);
+                /*
+
+                var a = ((e_1 + e_2) / (e_2 - e_1 * (Vector3.Dot(e_1, e_2))).magnitude) * lineWidth;
+                var b = (Vector3.Cross(e_1, e_2) / (Vector3.Cross(e_1, e_2)).magnitude) * lineWidth;
+
+                var planePoints = Enumerable.Range(0, numsides).Select((i) => i * 1.0f / numsides).Select((t) => p + a * Mathf.Cos(2 * Mathf.PI * t) + b * Mathf.Sin(2 * Mathf.PI * t)).ToList();
+                */
+                //var planePoints = getCylinderIntersectionPoints(p, e_1, e_2);
+
+                //Debug.DrawRay(planePoints[0], Vector3.up / 60, Color.magenta, 100, false);
+                //Debug.DrawRay(verticies[0], Vector3.up / 60, Color.magenta, 100, false);
+                //Debug.DrawRay(planePoints[1], Vector3.up / 60, Color.cyan, 100, false);
+                //Debug.DrawRay(verticies[1], Vector3.up / 60, Color.cyan, 100, false);
+                //Debug.DrawRay(planePoints[2], Vector3.up / 60, Color.yellow, 100, false);
+                //Debug.DrawRay(verticies[2], Vector3.up / 60, Color.yellow, 100, false);
+
+                //var inds = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 })
+
+                /*
                 var direction = point1 - point0;
                 var normal = Vector3.Cross(direction, randoVector).normalized * lineWidth;
 
                 var verts = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).SelectMany((v) => new List<Vector3>() { point0 + v, point1 + v }).ToList();
                 var inds = Enumerable.Range(0, numsides).SelectMany((i) => new List<int>() { 2, 1, 0, 1, 2, 3 }.Select((j) => (i * 2 + j) % verts.Count).Select((j) => j + preexistingVerticies)).ToList();
-                verticies.AddRange(verts);
-                indices.AddRange(inds);
+                */
+
+                //verticies.AddRange(verts);
+                //indices.AddRange(inds);
             }
+            return (verticies, indices);
+        }
+        else
+        {
+            return (new List<Vector3> { }, new List<int> { });
         }
 
-        return (verticies, indices);
+
+
     }
 
 
@@ -464,7 +628,7 @@ public class ChromosomeController : MonoBehaviour
             p.originalIndex = count;
             p.bin = bin;
 
-            //points.Add(p);
+            points.Add(p);
             count++;
         }
 #if true
@@ -520,7 +684,7 @@ public class ChromosomeController : MonoBehaviour
         renderer.mesh = mesh;
 
 
-        var (verticies, indices) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.3f);
+        var (verticies, indices) = createMeshConnectingPointsInRange(genePoints, lineWidth * 1.7f);
 
         mesh.Clear();
         mesh.vertices = verticies.ToArray();
