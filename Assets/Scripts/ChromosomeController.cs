@@ -166,9 +166,8 @@ public class ChromosomeController : MonoBehaviour
             // Set up renderer info
             var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomePart>();
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
-            pointsAdded += pointsRange.Count();
+            pointsAdded += lastMesh ? pointsRange.Count() : pointsRange.Count() - 2;
         }
-        Debug.Log(points.original.Count);
         Assert.AreEqual(points.original.Count - 1, backbonePointNormals.Count);
     }
 
@@ -616,7 +615,7 @@ public class ChromosomeController : MonoBehaviour
         Assert.IsTrue(startBackboneIndexHACK <= endBackboneIndexHACK, "start index should be before end index - this is my fault");
         var genePoints = points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList();
 
-        if (genePoints.Count > 0)
+        if (genePoints.Count > 0) // todo: fix bothersome zero-width genes
         {
             Mesh mesh = new Mesh();
             renderer.mesh = mesh;

@@ -33,6 +33,8 @@ public class CameraController : MonoBehaviour
     public static (int center, List<(string name, int start, int end)> displayed) OneDView;
     private bool OneDViewFocused = false;
 
+    public GameObject selectedArea;
+
     string lastLit = "";
     void Start()
     {
@@ -111,9 +113,11 @@ public class CameraController : MonoBehaviour
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
                 if (Physics.Raycast(ray, out hit))
                 {
+                    selectedArea.transform.position = hit.point;
                     var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
                     if (subrenderer)
                     {
+                        Debug.Log(subrenderer.name);
                         var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
                         var p1 = ChromosomeController.points.original[pointIndices.closest];
                         var p2 = ChromosomeController.points.original[pointIndices.nextClosest];
