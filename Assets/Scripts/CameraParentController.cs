@@ -137,6 +137,8 @@ public class CameraParentController : MonoBehaviour
     {
         var info = chromosomeController.basePairIndexToPoint(bpindex);
 
+        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.position = info.position;
+
         if (mainCamera.transform.localPosition.normalized == info.position.normalized)
         {
             startQ = transform.rotation;
