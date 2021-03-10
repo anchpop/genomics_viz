@@ -88,7 +88,7 @@ public class CameraParentController : MonoBehaviour
         }
     }
 
-    public void goToGene((string name, int start, int end) info)
+    public void goToGene((string name, int start, int end, bool direction) info)
     {
         var startIndex = chromosomeController.basePairIndexToLocationIndex(info.start);
         var endIndex = chromosomeController.basePairIndexToLocationIndex(info.end);

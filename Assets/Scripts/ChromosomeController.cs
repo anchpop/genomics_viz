@@ -32,7 +32,8 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
     public static (List<Point> original, bool dummy) points; // dummy is only here because I wanted this to be a tuple and tuples need at least two elements
-    public static List<(string name, int start, int end)> genes;
+    public static List<(string name, int start, int end, bool direction)> genes;
+    public static KdTree<float, int> geneWorldPositions;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
     public List<(int start, int end)> irf;
@@ -83,6 +84,13 @@ public class ChromosomeController : MonoBehaviour
 
 
 
+    // the plan for showing text: we're going to make another kdtree, except this one stores the positions of each gene. 
+    // We create some text gameobjects and leave them disabled at the beginning.
+    // We get the genes closest to the camera with the kdtree, then position the text gameobjects to display them
+    // then profit :sunglasses:
+    // once I do that, the last thing I want to do for today is fix the 1D view, idk why it's so goddamn janky
+
+
     void Start()
     {
         if (cameraParentCachedPosition.position != Vector3.zero || cameraParentCachedPosition.rotation != Vector3.zero || cameraParentCachedPosition.scale != Vector3.zero)
@@ -107,7 +115,7 @@ public class ChromosomeController : MonoBehaviour
 
         geneDict = new KTrie.StringTrie<(int start, int end, int index)>();
         points = getPoints();
-        genes = getGenes();
+        (genes, geneWorldPositions) = getGenes();
         gata = getGATA();
         ctcf = getCTCF();
         irf = getIRF();
@@ -377,9 +385,10 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    List<(string name, int start, int end)> getGenes()
+    (List<(string name, int start, int end, bool direction)> genes, KdTree<float, int> geneWorldPositions) getGenes()
     {
-        var genes = new List<(string name, int start, int end)>();
+        var genes = new List<(string name, int start, int end, bool direction)>();
+        var geneWorldPositions = new KdTree<float, int>(3, new FloatMath());
 
         int lastStart = 0;
 
@@ -400,8 +409,11 @@ public class ChromosomeController : MonoBehaviour
                     var name = info[6];
                     var start = int.Parse(info[2]);
                     var end = int.Parse(info[3]);
+
+                    var direction = info[4] == "+";
+
                     Assert.AreNotEqual(name, "");
-                    genes.Add((name, start, end));
+                    genes.Add((name, start, end, direction));
 
                     Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
                     lastStart = start;
@@ -410,7 +422,7 @@ public class ChromosomeController : MonoBehaviour
             }
         }
 
-        genes.Sort(delegate ((string name, int start, int end) x, (string name, int start, int end) y)
+        genes.Sort(delegate ((string name, int start, int end, bool direction) x, (string name, int start, int end, bool direction) y)
         {
             return (x.start).CompareTo(y.start);
         });
@@ -419,13 +431,20 @@ public class ChromosomeController : MonoBehaviour
         int index = 0;
         foreach (var gene in genes)
         {
+            if (basePairIndexToPoint(gene.start).position != basePairIndexToPoint(gene.end).position)
+            {
+                var originBasePair = gene.direction ? gene.start : gene.end;
+                var originPosition = basePairIndexToPoint(originBasePair).position;
+                geneWorldPositions.Add(new float[] { originPosition.x, originPosition.y, originPosition.z }, index);
+            }
+
             if (!geneDict.ContainsKey(gene.name))
             {
                 geneDict.Add(gene.name, (gene.start, gene.end, index));
             }
             index++;
         }
-        return genes;
+        return (genes, geneWorldPositions);
     }
 
     List<(int start, int end)> readFileBed(TextAsset file)
@@ -604,7 +623,7 @@ public class ChromosomeController : MonoBehaviour
 #endif
     }
 
-    public void highlightArea(MeshFilter renderer, (string name, int start, int end) info)
+    public void highlightArea(MeshFilter renderer, (string name, int start, int end, bool direction) info)
     {
         var startBackboneIndex = basePairIndexToLocationIndex(info.start);
         var endBackboneIndex = basePairIndexToLocationIndex(info.end);
@@ -638,7 +657,7 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightGene((string name, int start, int end) info)
+    public void highlightGene((string name, int start, int end, bool direction) info)
     {
         highlightArea(highlightRenderer, info);
     }
@@ -649,7 +668,7 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    public void focusGene((string name, int start, int end) info)
+    public void focusGene((string name, int start, int end, bool direction) info)
     {
         if (name == "") return;
         focusedGene = info.name;
@@ -664,7 +683,7 @@ public class ChromosomeController : MonoBehaviour
     }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
-    public IEnumerable<(string name, int start, int end)> getGenesAtBpIndex(int bpIndex)
+    public IEnumerable<(string name, int start, int end, bool direction)> getGenesAtBpIndex(int bpIndex)
     {
         return from gene in genes
                where gene.start <= bpIndex

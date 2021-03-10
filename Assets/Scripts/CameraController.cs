@@ -30,15 +30,22 @@ public class CameraController : MonoBehaviour
     private int baseScale = 20000;
     public Slider slider;
     private int currentCenter = 0;
-    public static (int center, List<(string name, int start, int end)> displayed) OneDView;
+    public static (int center, List<(string name, int start, int end, bool direction)> displayed) OneDView;
     private bool OneDViewFocused = false;
 
     public GameObject selectedArea;
 
+    public GameObject labelPrefab;
+    public Transform geneLabelsParent;
+
+    List<GameObject> geneLabels;
+
     string lastLit = "";
     void Start()
     {
-        OneDView = (0, new List<(string name, int start, int end)>());
+        createLabels();
+
+        OneDView = (0, new List<(string name, int start, int end, bool direction)>());
         foreach (var t in texts)
         {
             t.text = "";
@@ -48,9 +55,8 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        ShowLabels();
         Tween1DView();
-
-
 
         RaycastHit hit;
         var mouse = Mouse.current;
@@ -175,6 +181,36 @@ public class CameraController : MonoBehaviour
 
     }
 
+    private void createLabels()
+    {
+        geneLabels = new List<GameObject>();
+        foreach (int i in Enumerable.Range(0, 30))
+        {
+            var label = Instantiate(labelPrefab, geneLabelsParent);
+            geneLabels.Add(label);
+        }
+    }
+    private void ShowLabels()
+    {
+        if (ChromosomeController.geneWorldPositions != null)
+        {
+            var genesToShow = ChromosomeController.geneWorldPositions.GetNearestNeighbours(
+                new float[] { transform.position.x, transform.position.y, transform.position.z },
+                geneLabels.Count
+               ).Select((node) =>
+                 (new Vector3(node.Point[0], node.Point[1], node.Point[2]), ChromosomeController.genes[node.Value]));
+
+
+            foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
+            {
+                var label = geneLabels[index];
+                label.transform.position = position /*+ position.normalized / 10*/;
+                label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
+            }
+            //Debug.Log(genesToShow);
+        }
+    }
+
     public void Tween1DView()
     {
         var buffer = getScale() * horizontalTextChars * 2;
@@ -219,7 +255,7 @@ public class CameraController : MonoBehaviour
 
         var adjecentsToCheck = 30;
 
-        var toDisplay = new List<(string name, int start, int end)>();
+        var toDisplay = new List<(string name, int start, int end, bool direction)>();
 
         var numberOfGenes = ChromosomeController.genes.Count;
         for (int i = Mathf.Max((info.index - adjecentsToCheck / 2), 0); i < Mathf.Min((info.index + adjecentsToCheck / 2), numberOfGenes); i++)
@@ -251,7 +287,7 @@ public class CameraController : MonoBehaviour
 
         var adjecentsToCheck = 30;
 
-        var toDisplay = new List<(string name, int start, int end)>();
+        var toDisplay = new List<(string name, int start, int end, bool direction)>();
 
         for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
         {
@@ -271,7 +307,7 @@ public class CameraController : MonoBehaviour
     {
         return slider.value * baseScale;
     }
-    public void Update1DView(int center, List<(string name, int start, int end)> displayed)
+    public void Update1DView(int center, List<(string name, int start, int end, bool direction)> displayed)
     {
         Assert.IsNotNull(displayed);
 
@@ -315,7 +351,7 @@ public class CameraController : MonoBehaviour
                        select info).ToList();
         if (focused.Count == 1)
         {
-            var (name, start, end) = focused[0];
+            var (name, start, end, _) = focused[0];
 
             var length = Mathf.RoundToInt((end - start) / scale);
             var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
@@ -354,7 +390,7 @@ public class CameraController : MonoBehaviour
 
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
-        foreach (var (name, start, end) in displayed)
+        foreach (var (name, start, end, _) in displayed)
         {
 
             var length = Mathf.RoundToInt((end - start) / scale);
