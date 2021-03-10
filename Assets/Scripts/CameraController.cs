@@ -204,9 +204,9 @@ public class CameraController : MonoBehaviour
             foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
             {
                 var label = geneLabels[index];
-                label.transform.position = position + position.normalized / 50;
+                label.transform.position = position + position.normalized / 20;
                 label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
-                label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position));
+                label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
             }
             //Debug.Log(genesToShow);
         }
@@ -352,14 +352,15 @@ public class CameraController : MonoBehaviour
                        select info).ToList();
         if (focused.Count == 1)
         {
-            var (name, start, end, _) = focused[0];
+            var (name, start, end, direction) = focused[0];
+            var dirchar = direction ? '>' : '<';
 
             var length = Mathf.RoundToInt((end - start) / scale);
             var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
 
             if (name.Length + 2 > length)
             {
-                var geneBar = "|" + new String('-', length) + "|";
+                var geneBar = "|" + new String(dirchar, length) + "|";
                 var genePosMarkers = start.ToString().PadRight(length) + end;
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
@@ -375,7 +376,7 @@ public class CameraController : MonoBehaviour
                 var length2 = Mathf.RoundToInt(.001f + (length - name.Length) / 2.0f);
 
 
-                var geneBar = "|" + new String('-', length1) + name + new String('-', length2) + "|";
+                var geneBar = "|" + new String(dirchar, length1) + name + new String(dirchar, length2) + "|";
                 var genePosMarkers = start.ToString().PadRight(length) + "  " + end;
 
 
@@ -391,23 +392,24 @@ public class CameraController : MonoBehaviour
 
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
-        foreach (var (name, start, end, _) in displayed)
+        foreach (var (name, start, end, direction) in displayed)
         {
-
             var length = Mathf.RoundToInt((end - start) / scale);
             var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
+            var dirchar = direction ? '>' : '<';
+
             if (name != chromosome.focusedGene && length > 1)
             {
                 var geneBar = "";
                 if (name.Length + 2 > length)
                 {
-                    geneBar = "|" + new String('-', length) + "|";
+                    geneBar = "|" + new String(dirchar, length) + "|";
                 }
                 else
                 {
                     var length1 = Mathf.RoundToInt(-.001f + (length - name.Length) / 2.0f);
                     var length2 = Mathf.RoundToInt(.001f + (length - name.Length) / 2.0f);
-                    geneBar = "|" + new String('-', length1) + name + new String('-', length2) + "|";
+                    geneBar = "|" + new String(dirchar, length1) + name + new String(dirchar, length2) + "|";
                 }
 
                 var allowed = Enumerable.Repeat(true, reservedAreas.Count).ToList();
