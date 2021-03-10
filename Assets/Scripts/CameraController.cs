@@ -204,8 +204,9 @@ public class CameraController : MonoBehaviour
             foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
             {
                 var label = geneLabels[index];
-                label.transform.position = position /*+ position.normalized / 10*/;
+                label.transform.position = position + position.normalized / 50;
                 label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
+                label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position));
             }
             //Debug.Log(genesToShow);
         }
