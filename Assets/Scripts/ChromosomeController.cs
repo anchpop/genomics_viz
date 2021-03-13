@@ -6,6 +6,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
 public struct Point
 {
@@ -729,5 +731,6 @@ public class ChromosomeController : MonoBehaviour
     void Update()
     {
 
+        //Debug.Log(SteamVR_Actions._default.Plant[SteamVR_Input_Sources.LeftHand].state);
     }
 }

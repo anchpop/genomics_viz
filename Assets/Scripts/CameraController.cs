@@ -8,6 +8,8 @@ using Util;
 using UnityEngine.InputSystem;
 using System.Linq;
 using UnityEngine.Assertions;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
 public class CameraController : MonoBehaviour
 {
@@ -57,6 +59,7 @@ public class CameraController : MonoBehaviour
     {
         ShowLabels();
         Tween1DView();
+
 
         RaycastHit hit;
         var mouse = Mouse.current;
