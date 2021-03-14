@@ -61,6 +61,7 @@ public class CameraController : MonoBehaviour
         Tween1DView();
 
 
+
         RaycastHit hit;
         var mouse = Mouse.current;
         var keyboard = Keyboard.current;
@@ -120,47 +121,7 @@ public class CameraController : MonoBehaviour
             if (results.Count == 0)
             {
                 Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
-                if (Physics.Raycast(ray, out hit))
-                {
-                    selectionIndicator.transform.position = hit.point;
-                    var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
-                    if (subrenderer)
-                    {
-                        Debug.Log(subrenderer.name);
-                        var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
-                        var p1 = ChromosomeController.points.original[pointIndices.closest];
-                        var p2 = ChromosomeController.points.original[pointIndices.nextClosest];
-
-                        var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
-                        var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
-                        var cursorBasePair = (int)Mathf.Lerp(p1.bin, p2.bin, cursorDistance);
-                        Debug.DrawRay(cursorPoint, Vector3.up, Color.red);
-
-                        var genes = chromosome.getGenesAtBpIndex(cursorBasePair);
-
-                        // Don't have a principled way to do this, so I'll just pick the first gene to display
-                        if (genes.Count() > 0)
-                        {
-                            var gene = genes.ToList()[0];
-                            chromosome.highlightGene(gene);
-
-                            sideText.text = gene.name;
-                            sideLoc.text = cursorBasePair.ToString("D");
-
-                            if (mouse.leftButton.wasPressedThisFrame)
-                            {
-                                chromosome.focusGene(gene);
-                                parentController.goToGene(gene);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    chromosome.unhighlightGene();
-                    lastLit = "";
-                }
-
+                highlightHit(ray, mouse.leftButton.wasPressedThisFrame);
             }
         }
 
@@ -180,8 +141,53 @@ public class CameraController : MonoBehaviour
                 openGeneInfoOnline();
             }
         }
+    }
 
+    public Vector3? highlightHit(Ray ray, bool focus)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit))
+        {
+            selectionIndicator.transform.position = hit.point;
+            var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
+            if (subrenderer)
+            {
+                Debug.Log(subrenderer.name);
+                var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
+                var p1 = ChromosomeController.points.original[pointIndices.closest];
+                var p2 = ChromosomeController.points.original[pointIndices.nextClosest];
 
+                var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
+                var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
+                var cursorBasePair = (int)Mathf.Lerp(p1.bin, p2.bin, cursorDistance);
+                Debug.DrawRay(cursorPoint, Vector3.up, Color.red);
+
+                var genes = chromosome.getGenesAtBpIndex(cursorBasePair);
+
+                // Don't have a principled way to do this, so I'll just pick the first gene to display
+                if (genes.Count() > 0)
+                {
+                    var gene = genes.ToList()[0];
+                    chromosome.highlightGene(gene);
+
+                    sideText.text = gene.name;
+                    sideLoc.text = cursorBasePair.ToString("D");
+
+                    if (focus)
+                    {
+                        chromosome.focusGene(gene);
+                        parentController.goToGene(gene);
+                    }
+                }
+                return hit.point;
+            }
+        }
+        else
+        {
+            chromosome.unhighlightGene();
+            lastLit = "";
+        }
+        return null;
     }
 
     private void createLabels()

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
 public class CameraParentController : MonoBehaviour
 {
@@ -20,6 +22,16 @@ public class CameraParentController : MonoBehaviour
     private Vector3 endS = Vector3.zero;
     private bool currentlyTweening = false;
 
+    public GameObject leftController;
+    public GameObject rightController;
+    public GameObject headset;
+
+    public LineRenderer VRPicker;
+
+    public Vector3? rotatePosLastFrame;
+    public Vector3? repositionPosLastFrame;
+    public Quaternion? repositionRotLastFrame;
+
 
     // Start is called before the first frame update
     void Start()
@@ -30,23 +42,7 @@ public class CameraParentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (currentlyTweening)
-        {
-            if (rott >= 1)
-            {
-                currentlyTweening = false;
-                rott = 0;
-            }
-            else
-            {
-                rott += Time.deltaTime * tweenSpeed;
-                rott = Mathf.Min(1, rott);
-
-                var o = Util.Math.easeInOutQuart(rott);
-                transform.rotation = Quaternion.Slerp(startQ, endQ, o);
-                transform.localScale = Vector3.Lerp(startS, endS, o);
-            }
-        }
+        VRInteraction();
 
 
         if (!currentlyTweening)
@@ -85,6 +81,80 @@ public class CameraParentController : MonoBehaviour
                 }
             }
 
+        }
+    }
+
+    public void VRInteraction()
+    {
+        // Repositioning and reorienting
+        if (SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.LeftHand].state)
+        {
+            rotatePosLastFrame = null;
+
+            if (repositionPosLastFrame is Vector3 repositionPosLastFrameValue && repositionRotLastFrame is Quaternion repositionRotLastFrameValue)
+            {
+                var repositionRotCurrentFrame = leftController.transform.rotation;
+                var repositionPosCurrentFrame = leftController.transform.position;
+
+                transform.position += repositionPosCurrentFrame - repositionPosLastFrameValue;
+
+                float angle = Quaternion.Angle(repositionRotCurrentFrame, repositionRotLastFrameValue);
+            }
+
+
+            repositionPosLastFrame = leftController.transform.position;
+            repositionRotLastFrame = leftController.transform.rotation;
+        }
+        // rotating
+        else if (SteamVR_Actions._default.GrabGrip[SteamVR_Input_Sources.LeftHand].state)
+        {
+            repositionPosLastFrame = null;
+            repositionRotLastFrame = null;
+            if (rotatePosLastFrame is Vector3 dragPosLastFrameValue)
+            {
+                var dragPosCurrentFrame = leftController.transform.position;
+                var rotationChange = Quaternion.FromToRotation(dragPosLastFrameValue - transform.position, dragPosCurrentFrame - transform.position);
+
+                transform.rotation *= rotationChange;
+            }
+
+            rotatePosLastFrame = leftController.transform.position;
+        }
+        else
+        {
+            rotatePosLastFrame = null;
+            repositionPosLastFrame = null;
+            repositionRotLastFrame = null;
+        }
+
+        if (currentlyTweening)
+        {
+            if (rott >= 1)
+            {
+                currentlyTweening = false;
+                rott = 0;
+            }
+            else
+            {
+                rott += Time.deltaTime * tweenSpeed;
+                rott = Mathf.Min(1, rott);
+
+                var o = Util.Math.easeInOutQuart(rott);
+                transform.rotation = Quaternion.Slerp(startQ, endQ, o);
+                transform.localScale = Vector3.Lerp(startS, endS, o);
+            }
+        }
+
+
+        var ray = new Ray(rightController.transform.position, rightController.transform.forward);
+        var hitPos = mainCamera.GetComponent<CameraController>().highlightHit(ray, SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state);
+        if (hitPos is Vector3 hitPosValue)
+        {
+            VRPicker.SetPositions(new Vector3[] { rightController.transform.position, hitPosValue });
+        }
+        else
+        {
+            VRPicker.SetPositions(new Vector3[] { rightController.transform.position, rightController.transform.position + rightController.transform.forward * 10 });
         }
     }
 

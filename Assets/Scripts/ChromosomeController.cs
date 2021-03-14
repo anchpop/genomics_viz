@@ -730,7 +730,5 @@ public class ChromosomeController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
-        //Debug.Log(SteamVR_Actions._default.Plant[SteamVR_Input_Sources.LeftHand].state);
     }
 }

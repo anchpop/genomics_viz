@@ -14,7 +14,7 @@
     },
     {
       "name": "/actions/default/in/GrabGrip",
-      "type": "pose",
+      "type": "boolean",
       "requirement": "optional"
     },
     {
