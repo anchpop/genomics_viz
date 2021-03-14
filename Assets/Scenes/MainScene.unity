@@ -1400,7 +1400,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.1015625
+        value: 0.015625
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -3251,6 +3251,37 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1486941606}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1083124686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083124681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5af6514607dd5364fabf44b65188eb0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644178}
+  parentController: {fileID: 1848595115}
+  searchInput: {fileID: 739070108}
+  sideText: {fileID: 1841067813}
+  sideLoc: {fileID: 28764511}
+  scaleText: {fileID: 428381223}
+  texts:
+  - {fileID: 2022667801}
+  - {fileID: 1582510798}
+  - {fileID: 853337426}
+  - {fileID: 869128749}
+  - {fileID: 311169170}
+  GraphicRaycaster: {fileID: 597150233}
+  m_EventSystem: {fileID: 0}
+  slider: {fileID: 2042315972}
+  selectionIndicator: {fileID: 318582132}
+  labelPrefab: {fileID: 890294525034045516, guid: df233dc48458b954a804671fe5cd2a02,
+    type: 3}
+  geneLabelsParent: {fileID: 1611033062}
 --- !u!1 &1115153435
 GameObject:
   m_ObjectHideFlags: 0
@@ -6489,7 +6520,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationSpeed: 20
   chromosomeController: {fileID: 1428644178}
-  mainCamera: {fileID: 963194225}
+  mainCamera: {fileID: 1083124681}
   tweenSpeed: 1
   leftController: {fileID: 1653940383}
   rightController: {fileID: 767331409}

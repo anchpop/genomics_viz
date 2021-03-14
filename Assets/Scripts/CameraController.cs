@@ -203,8 +203,9 @@ public class CameraController : MonoBehaviour
     {
         if (ChromosomeController.geneWorldPositions != null)
         {
+            var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position);
             var genesToShow = ChromosomeController.geneWorldPositions.GetNearestNeighbours(
-                new float[] { transform.position.x, transform.position.y, transform.position.z },
+                new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
                 geneLabels.Count
                ).Select((node) =>
                  (new Vector3(node.Point[0], node.Point[1], node.Point[2]), ChromosomeController.genes[node.Value]));
@@ -213,7 +214,7 @@ public class CameraController : MonoBehaviour
             foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
             {
                 var label = geneLabels[index];
-                label.transform.position = position + position.normalized / 20;
+                label.transform.localPosition = position + position.normalized / 20;
                 label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
                 label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
             }
