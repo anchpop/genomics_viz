@@ -647,6 +647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &203725523
@@ -1555,6 +1556,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &556717321
@@ -1651,6 +1653,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &597150232
@@ -2506,6 +2509,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &833773484
@@ -3264,7 +3268,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chromosome: {fileID: 1428644178}
-  parentController: {fileID: 1848595115}
+  parentController: {fileID: 2139201846}
   searchInput: {fileID: 739070108}
   sideText: {fileID: 1841067813}
   sideLoc: {fileID: 28764511}
@@ -3451,6 +3455,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1146177944
@@ -3547,6 +3552,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1159501529
@@ -4030,6 +4036,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1294629825
@@ -4205,6 +4212,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1408978973
@@ -4972,6 +4980,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1641475722
@@ -5928,6 +5937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
 --- !u!1 &1995716345

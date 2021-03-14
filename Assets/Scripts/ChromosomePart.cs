@@ -9,6 +9,7 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class ChromosomePart : MonoBehaviour
 {
+    public GameObject chromosome;
     public int startPointsIndex;
     public int endPointsIndex;
     private KdTree<float, int> backbonePointsTree;
@@ -33,10 +34,14 @@ public class ChromosomePart : MonoBehaviour
             backbonePointsTree.Add(new[] { point.position.x, point.position.y, point.position.z }, index + startPointsIndex);
         }
     }
-    public (int closest, int nextClosest) getPointIndexOfWorldPosition(Vector3 point)
+    public (int closest, int nextClosest) getPointIndexOfLocalPosition(Vector3 point)
     {
         var p = backbonePointsTree.GetNearestNeighbours(new[] { point.x, point.y, point.z }, 2);
 
         return (p[0].Value, p[0].Value + (int)Mathf.Sign(p[1].Value - p[0].Value));
+    }
+    public (int closest, int nextClosest) getPointIndexOfWorldPosition(Vector3 point)
+    {
+        return getPointIndexOfLocalPosition(chromosome.transform.InverseTransformPoint(point));
     }
 }

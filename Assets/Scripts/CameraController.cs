@@ -21,6 +21,8 @@ public class CameraController : MonoBehaviour
     public TextMeshProUGUI sideText;
     public TextMeshProUGUI sideLoc;
 
+    public GameObject OneDViewCanvas;
+    public GameObject GeneInfoCanvas;
     public TextMeshProUGUI scaleText;
     public List<TextMeshProUGUI> texts;
 
@@ -45,6 +47,7 @@ public class CameraController : MonoBehaviour
     string lastLit = "";
     void Start()
     {
+        SetupVR();
         createLabels();
 
         OneDView = (0, new List<(string name, int start, int end, bool direction)>());
@@ -143,6 +146,24 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    public void SetupVR()
+    {
+        Debug.Log("Setting up VR 1D view canvas");
+        OneDViewCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+        OneDViewCanvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 1);
+        OneDViewCanvas.transform.SetParent(parentController.leftController.transform);
+        OneDViewCanvas.transform.localPosition = new Vector3(0, -0.05f, 0);
+        OneDViewCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
+
+        GeneInfoCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+        GeneInfoCanvas.transform.localScale = new Vector3(0.0007f, 0.0007f, 1);
+        GeneInfoCanvas.transform.SetParent(parentController.rightController.transform);
+        GeneInfoCanvas.transform.localPosition = new Vector3(0.1f, -0.05f, 0);
+        GeneInfoCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
+
+        //
+    }
+
     public Vector3? highlightHit(Ray ray, bool focus)
     {
         RaycastHit hit;
@@ -152,7 +173,6 @@ public class CameraController : MonoBehaviour
             var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
             if (subrenderer)
             {
-                Debug.Log(subrenderer.name);
                 var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
                 var p1 = ChromosomeController.points.original[pointIndices.closest];
                 var p2 = ChromosomeController.points.original[pointIndices.nextClosest];

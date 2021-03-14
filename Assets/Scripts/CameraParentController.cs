@@ -32,6 +32,7 @@ public class CameraParentController : MonoBehaviour
     public Vector3? repositionPosLastFrame;
     public Quaternion? repositionRotLastFrame;
 
+    bool triggerPressedLastFrame = false;
 
     // Start is called before the first frame update
     void Start()
@@ -147,7 +148,7 @@ public class CameraParentController : MonoBehaviour
 
 
         var ray = new Ray(rightController.transform.position, rightController.transform.forward);
-        var hitPos = mainCamera.GetComponent<CameraController>().highlightHit(ray, SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state);
+        var hitPos = mainCamera.GetComponent<CameraController>().highlightHit(ray, SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state && !triggerPressedLastFrame);
         if (hitPos is Vector3 hitPosValue)
         {
             VRPicker.SetPositions(new Vector3[] { rightController.transform.position, hitPosValue });
@@ -156,10 +157,12 @@ public class CameraParentController : MonoBehaviour
         {
             VRPicker.SetPositions(new Vector3[] { rightController.transform.position, rightController.transform.position + rightController.transform.forward * 10 });
         }
+        triggerPressedLastFrame = SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state;
     }
 
     public void goToGene((string name, int start, int end, bool direction) info)
     {
+        Debug.Log(info.name);
         var startIndex = chromosomeController.basePairIndexToLocationIndex(info.start);
         var endIndex = chromosomeController.basePairIndexToLocationIndex(info.end);
         if (startIndex == endIndex)
@@ -173,9 +176,10 @@ public class CameraParentController : MonoBehaviour
         {
             geneloc += pos / genePositions.Count();
         }
+        geneloc = transform.TransformPoint(geneloc);
 
         Debug.DrawLine(Vector3.zero, geneloc);
-
+        /*
 
         if (mainCamera.transform.localPosition.normalized == geneloc.normalized)
         {
@@ -194,6 +198,12 @@ public class CameraParentController : MonoBehaviour
 
         currentlyTweening = true;
         rott = 0;
+
+        */
+        Debug.Log("Setting position to " + (mainCamera.transform.position - geneloc));
+        transform.position = mainCamera.transform.position - geneloc;
+
+
 
         chromosomeController.highlightGene(info);
 
