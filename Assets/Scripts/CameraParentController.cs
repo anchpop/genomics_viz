@@ -200,6 +200,8 @@ public class CameraParentController : MonoBehaviour
         rott = 0;
 
         */
+
+        // TODO this is actually wrong because it doesn't work correctly when the chromosome is rotated (not sure why). Needs to be fixed before release :/
         Debug.Log("Setting position to " + (mainCamera.transform.position - geneloc));
         transform.position = mainCamera.transform.position - geneloc;
 
