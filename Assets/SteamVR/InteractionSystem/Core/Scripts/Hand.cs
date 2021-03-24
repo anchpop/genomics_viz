@@ -10,7 +10,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using System.Threading;
+
 
 namespace Valve.VR.InteractionSystem
 {
@@ -984,7 +986,8 @@ namespace Valve.VR.InteractionSystem
         {
             if (noSteamVRFallbackCamera)
             {
-                Ray ray = noSteamVRFallbackCamera.ScreenPointToRay(Input.mousePosition);
+                var mouse = Mouse.current;
+                Ray ray = noSteamVRFallbackCamera.ScreenPointToRay(/*Input.mousePosition*/ mouse.position.ReadValue());
 
                 if (attachedObjects.Count > 0)
                 {

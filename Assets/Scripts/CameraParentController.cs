@@ -24,6 +24,7 @@ public class CameraParentController : MonoBehaviour
 
     public GameObject leftController;
     public GameObject rightController;
+    public GameObject fallbackHand;
     public GameObject headset;
 
     public LineRenderer VRPicker;
@@ -43,6 +44,7 @@ public class CameraParentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Interaction();
         VRInteraction();
 
 
@@ -85,79 +87,107 @@ public class CameraParentController : MonoBehaviour
         }
     }
 
+    public void Interaction()
+    {
+
+        if (fallbackHand.active)
+        {
+            var cameraController = mainCamera.GetComponent<CameraController>();
+            RaycastHit hit;
+            var mouse = Mouse.current;
+
+            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
+            //Set up the new Pointer Event
+            var m_PointerEventData = new UnityEngine.EventSystems.PointerEventData(cameraController.m_EventSystem);
+            //Set the Pointer Event Position to that of the mouse position
+            m_PointerEventData.position = mouse.position.ReadValue();
+            //Raycast using the Graphics Raycaster and mouse click position
+            cameraController.GraphicRaycaster.Raycast(m_PointerEventData, results);
+
+            if (results.Count == 0)
+            {
+                Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
+                cameraController.highlightHit(ray, mouse.leftButton.wasPressedThisFrame);
+            }
+        }
+    }
+
     public void VRInteraction()
     {
-        // Repositioning and reorienting
-        if (SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.LeftHand].state)
+        if (!fallbackHand.active)
         {
-            rotatePosLastFrame = null;
-
-            if (repositionPosLastFrame is Vector3 repositionPosLastFrameValue && repositionRotLastFrame is Quaternion repositionRotLastFrameValue)
+            // Repositioning and reorienting
+            if (SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.LeftHand].state)
             {
-                var repositionRotCurrentFrame = leftController.transform.rotation;
-                var repositionPosCurrentFrame = leftController.transform.position;
+                rotatePosLastFrame = null;
 
-                transform.position += repositionPosCurrentFrame - repositionPosLastFrameValue;
+                if (repositionPosLastFrame is Vector3 repositionPosLastFrameValue && repositionRotLastFrame is Quaternion repositionRotLastFrameValue)
+                {
+                    var repositionRotCurrentFrame = leftController.transform.rotation;
+                    var repositionPosCurrentFrame = leftController.transform.position;
 
-                float angle = Quaternion.Angle(repositionRotCurrentFrame, repositionRotLastFrameValue);
+                    transform.position += repositionPosCurrentFrame - repositionPosLastFrameValue;
+
+                    float angle = Quaternion.Angle(repositionRotCurrentFrame, repositionRotLastFrameValue);
+                }
+
+
+                repositionPosLastFrame = leftController.transform.position;
+                repositionRotLastFrame = leftController.transform.rotation;
             }
-
-
-            repositionPosLastFrame = leftController.transform.position;
-            repositionRotLastFrame = leftController.transform.rotation;
-        }
-        // rotating
-        else if (SteamVR_Actions._default.GrabGrip[SteamVR_Input_Sources.LeftHand].state)
-        {
-            repositionPosLastFrame = null;
-            repositionRotLastFrame = null;
-            if (rotatePosLastFrame is Vector3 dragPosLastFrameValue)
+            // rotating
+            else if (SteamVR_Actions._default.GrabGrip[SteamVR_Input_Sources.LeftHand].state)
             {
-                var dragPosCurrentFrame = leftController.transform.position;
-                var rotationChange = Quaternion.FromToRotation(dragPosLastFrameValue - transform.position, dragPosCurrentFrame - transform.position);
+                repositionPosLastFrame = null;
+                repositionRotLastFrame = null;
+                if (rotatePosLastFrame is Vector3 dragPosLastFrameValue)
+                {
+                    var dragPosCurrentFrame = leftController.transform.position;
+                    var rotationChange = Quaternion.FromToRotation(dragPosLastFrameValue - transform.position, dragPosCurrentFrame - transform.position);
 
-                transform.rotation *= rotationChange;
-            }
+                    transform.rotation *= rotationChange;
+                }
 
-            rotatePosLastFrame = leftController.transform.position;
-        }
-        else
-        {
-            rotatePosLastFrame = null;
-            repositionPosLastFrame = null;
-            repositionRotLastFrame = null;
-        }
-
-        if (currentlyTweening)
-        {
-            if (rott >= 1)
-            {
-                currentlyTweening = false;
-                rott = 0;
+                rotatePosLastFrame = leftController.transform.position;
             }
             else
             {
-                rott += Time.deltaTime * tweenSpeed;
-                rott = Mathf.Min(1, rott);
-
-                var o = Util.Math.easeInOutQuart(rott);
-                transform.rotation = Quaternion.Slerp(startQ, endQ, o);
-                transform.localScale = Vector3.Lerp(startS, endS, o);
+                rotatePosLastFrame = null;
+                repositionPosLastFrame = null;
+                repositionRotLastFrame = null;
             }
-        }
+
+            if (currentlyTweening)
+            {
+                if (rott >= 1)
+                {
+                    currentlyTweening = false;
+                    rott = 0;
+                }
+                else
+                {
+                    rott += Time.deltaTime * tweenSpeed;
+                    rott = Mathf.Min(1, rott);
+
+                    var o = Util.Math.easeInOutQuart(rott);
+                    transform.rotation = Quaternion.Slerp(startQ, endQ, o);
+                    transform.localScale = Vector3.Lerp(startS, endS, o);
+                }
+            }
 
 
-        var ray = new Ray(rightController.transform.position, rightController.transform.forward);
-        var hitPos = mainCamera.GetComponent<CameraController>().highlightHit(ray, SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state && !triggerPressedLastFrame);
-        if (hitPos is Vector3 hitPosValue)
-        {
-            VRPicker.SetPositions(new Vector3[] { rightController.transform.position, hitPosValue });
+            var ray = new Ray(rightController.transform.position, rightController.transform.forward);
+            var hitPos = mainCamera.GetComponent<CameraController>().highlightHit(ray, SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state && !triggerPressedLastFrame);
+            if (hitPos is Vector3 hitPosValue)
+            {
+                VRPicker.SetPositions(new Vector3[] { rightController.transform.position, hitPosValue });
+            }
+            else
+            {
+                VRPicker.SetPositions(new Vector3[] { rightController.transform.position, rightController.transform.position + rightController.transform.forward * 10 });
+            }
+            triggerPressedLastFrame = SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state;
         }
-        else
-        {
-            VRPicker.SetPositions(new Vector3[] { rightController.transform.position, rightController.transform.position + rightController.transform.forward * 10 });
-        }
-        triggerPressedLastFrame = SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.RightHand].state;
     }
 
     public void goToGene((string name, int start, int end, bool direction) info)
@@ -204,8 +234,6 @@ public class CameraParentController : MonoBehaviour
         // TODO this is actually wrong because it doesn't work correctly when the chromosome is rotated (not sure why). Needs to be fixed before release :/
         Debug.Log("Setting position to " + (mainCamera.transform.position - geneloc));
         transform.position = mainCamera.transform.position - geneloc;
-
-
 
         chromosomeController.highlightGene(info);
 

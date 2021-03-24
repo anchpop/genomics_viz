@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0.99999905, b: 0.99999905, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -3280,6 +3280,12 @@ MonoBehaviour:
   labelPrefab: {fileID: 890294525034045516, guid: df233dc48458b954a804671fe5cd2a02,
     type: 3}
   geneLabelsParent: {fileID: 1611033062}
+--- !u!1 &1113564694 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 135526, guid: dc06161b6d97feb419f45f03b62e14b9,
+    type: 3}
+  m_PrefabInstance: {fileID: 1486941606}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1115153435
 GameObject:
   m_ObjectHideFlags: 0
@@ -5837,6 +5843,7 @@ MonoBehaviour:
   tweenSpeed: 1
   leftController: {fileID: 0}
   rightController: {fileID: 0}
+  fallbackHand: {fileID: 0}
   headset: {fileID: 0}
   VRPicker: {fileID: 0}
 --- !u!114 &1848595116
@@ -6736,5 +6743,6 @@ MonoBehaviour:
   tweenSpeed: 1
   leftController: {fileID: 1653940383}
   rightController: {fileID: 767331409}
+  fallbackHand: {fileID: 1113564694}
   headset: {fileID: 1083124681}
   VRPicker: {fileID: 439486542}

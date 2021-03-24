@@ -113,19 +113,6 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
-            //Set up the new Pointer Event
-            var m_PointerEventData = new UnityEngine.EventSystems.PointerEventData(m_EventSystem);
-            //Set the Pointer Event Position to that of the mouse position
-            m_PointerEventData.position = mouse.position.ReadValue();
-            //Raycast using the Graphics Raycaster and mouse click position
-            GraphicRaycaster.Raycast(m_PointerEventData, results);
-
-            if (results.Count == 0)
-            {
-                Ray ray = Camera.main.ScreenPointToRay(mouse.position.ReadValue());
-                highlightHit(ray, mouse.leftButton.wasPressedThisFrame);
-            }
         }
 
         if (chromosome.focusedGene != "")
