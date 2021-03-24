@@ -10,6 +10,8 @@ public class CameraParentController : MonoBehaviour
 {
     public float rotationSpeed = 30f;
     public ChromosomeController chromosomeController;
+    public GameObject vrCamera;
+    public GameObject fallbackCamera;
     public GameObject mainCamera;
 
 
@@ -44,6 +46,14 @@ public class CameraParentController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (vrCamera.activeInHierarchy)
+        {
+            mainCamera = vrCamera;
+        }
+        else
+        {
+            mainCamera = fallbackCamera;
+        }
         Interaction();
         VRInteraction();
 
@@ -232,6 +242,7 @@ public class CameraParentController : MonoBehaviour
         */
 
         // TODO this is actually wrong because it doesn't work correctly when the chromosome is rotated (not sure why). Needs to be fixed before release :/
+        Debug.DrawRay(geneloc, Vector3.up, Color.blue, 3);
         Debug.Log("Setting position to " + (mainCamera.transform.position - geneloc));
         transform.position = mainCamera.transform.position - geneloc;
 
