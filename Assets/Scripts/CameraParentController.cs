@@ -99,11 +99,9 @@ public class CameraParentController : MonoBehaviour
 
     public void Interaction()
     {
-
-        if (fallbackHand.active)
+        if (fallbackHand.activeInHierarchy)
         {
             var cameraController = mainCamera.GetComponent<CameraController>();
-            RaycastHit hit;
             var mouse = Mouse.current;
 
             List<UnityEngine.EventSystems.RaycastResult> results = new List<UnityEngine.EventSystems.RaycastResult>();
@@ -124,7 +122,7 @@ public class CameraParentController : MonoBehaviour
 
     public void VRInteraction()
     {
-        if (!fallbackHand.active)
+        if (!fallbackHand.activeInHierarchy)
         {
             // Repositioning and reorienting
             if (SteamVR_Actions._default.GrabPinch[SteamVR_Input_Sources.LeftHand].state)
