@@ -209,14 +209,15 @@ public class CameraParentController : MonoBehaviour
         }
         var genePositions = ChromosomeController.points.original.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
 
-        var geneloc = Vector3.zero;
+        var localloc = Vector3.zero;
         foreach (var pos in genePositions)
         {
-            geneloc += pos / genePositions.Count();
+            localloc += pos / genePositions.Count();
         }
-        geneloc = transform.TransformPoint(geneloc);
-
-        Debug.DrawLine(Vector3.zero, geneloc);
+        var worldloc = transform.TransformPoint(localloc);
+        var camToLoc = worldloc - mainCamera.transform.position;
+        var locToCam = -camToLoc;
+        transform.position += locToCam;
         /*
 
         if (mainCamera.transform.localPosition.normalized == geneloc.normalized)
@@ -240,9 +241,9 @@ public class CameraParentController : MonoBehaviour
         */
 
         // TODO this is actually wrong because it doesn't work correctly when the chromosome is rotated (not sure why). Needs to be fixed before release :/
-        Debug.DrawRay(geneloc, Vector3.up, Color.blue, 3);
-        Debug.Log("Setting position to " + (mainCamera.transform.position - geneloc));
-        transform.position = mainCamera.transform.position - geneloc;
+        Debug.DrawRay(mainCamera.transform.position, Vector3.up, Color.blue, 3);
+        Debug.Log("Setting position to " + (mainCamera.transform.position - localloc));
+        //transform.position = mainCamera.transform.position - geneloc;
 
         chromosomeController.highlightGene(info);
 

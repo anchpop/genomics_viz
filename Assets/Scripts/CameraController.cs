@@ -167,7 +167,6 @@ public class CameraController : MonoBehaviour
                 var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
                 var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
                 var cursorBasePair = (int)Mathf.Lerp(p1.bin, p2.bin, cursorDistance);
-                Debug.DrawRay(cursorPoint, Vector3.up, Color.red);
 
                 var genes = chromosome.getGenesAtBpIndex(cursorBasePair);
 

@@ -472,6 +472,45 @@ RectTransform:
   m_AnchoredPosition: {x: -284.30005, y: -84.5}
   m_SizeDelta: {x: 109.51, y: 30}
   m_Pivot: {x: 1, y: 1}
+--- !u!1 &94954537 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 110716, guid: dc06161b6d97feb419f45f03b62e14b9,
+    type: 3}
+  m_PrefabInstance: {fileID: 1486941606}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &94954541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 94954537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5af6514607dd5364fabf44b65188eb0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chromosome: {fileID: 1428644178}
+  parentController: {fileID: 2139201846}
+  searchInput: {fileID: 739070108}
+  sideText: {fileID: 1841067813}
+  sideLoc: {fileID: 28764511}
+  OneDViewCanvas: {fileID: 1238321400}
+  GeneInfoCanvas: {fileID: 1904681375}
+  scaleText: {fileID: 428381223}
+  texts:
+  - {fileID: 2022667801}
+  - {fileID: 1582510798}
+  - {fileID: 853337426}
+  - {fileID: 869128749}
+  - {fileID: 311169170}
+  GraphicRaycaster: {fileID: 597150233}
+  m_EventSystem: {fileID: 0}
+  slider: {fileID: 2042315972}
+  selectionIndicator: {fileID: 318582132}
+  labelPrefab: {fileID: 890294525034045516, guid: df233dc48458b954a804671fe5cd2a02,
+    type: 3}
+  geneLabelsParent: {fileID: 1611033062}
 --- !u!1 &129360994
 GameObject:
   m_ObjectHideFlags: 0
@@ -4673,6 +4712,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 496744, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 114000013786455312, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: dc06161b6d97feb419f45f03b62e14b9, type: 3}
@@ -5839,6 +5882,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationSpeed: 20
   chromosomeController: {fileID: 1428644178}
+  vrCamera: {fileID: 0}
+  fallbackCamera: {fileID: 0}
   mainCamera: {fileID: 963194225}
   tweenSpeed: 1
   leftController: {fileID: 0}
@@ -6739,6 +6784,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationSpeed: 20
   chromosomeController: {fileID: 1428644178}
+  vrCamera: {fileID: 1083124681}
+  fallbackCamera: {fileID: 94954537}
   mainCamera: {fileID: 1083124681}
   tweenSpeed: 1
   leftController: {fileID: 1653940383}
