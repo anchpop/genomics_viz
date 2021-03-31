@@ -134,7 +134,7 @@ public class ChromosomeController : MonoBehaviour
         createGenesMesh();
         Profiler.EndSample();
         Profiler.BeginSample("createChromatidInterationPredictionLines");
-        //createChromatidInterationPredictionLines();
+        createChromatidInterationPredictionLines();
         Profiler.EndSample();
 
 
