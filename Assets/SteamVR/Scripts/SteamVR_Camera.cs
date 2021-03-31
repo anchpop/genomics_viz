@@ -10,7 +10,7 @@ using System.Reflection;
 using Valve.VR;
 
 #if UNITY_2017_2_OR_NEWER
-    using UnityEngine.XR;
+using UnityEngine.XR;
 #else
 using XRSettings = UnityEngine.VR.VRSettings;
 using XRDevice = UnityEngine.VR.VRDevice;
@@ -27,7 +27,7 @@ namespace Valve.VR
         public Transform offset { get { return _head; } } // legacy
         public Transform origin { get { return _head.parent; } }
 
-        public new Camera camera { get; private set; }
+        public Camera camera { get; private set; }
 
         [SerializeField]
         private Transform _ears;
@@ -41,11 +41,11 @@ namespace Valve.VR
         public bool wireframe = false;
 
 #if UNITY_2017_2_OR_NEWER
-    static public float sceneResolutionScale
-    {
-        get { return XRSettings.eyeTextureResolutionScale; }
-        set { XRSettings.eyeTextureResolutionScale = value; }
-    }
+        static public float sceneResolutionScale
+        {
+            get { return XRSettings.eyeTextureResolutionScale; }
+            set { XRSettings.eyeTextureResolutionScale = value; }
+        }
 #else
         static public float sceneResolutionScale
         {

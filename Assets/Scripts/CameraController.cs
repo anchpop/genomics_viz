@@ -48,8 +48,6 @@ public class CameraController : MonoBehaviour
 
     List<GameObject> geneLabels;
 
-    string lastLit = "";
-
     bool canvases_setup = false;
     void Start()
     {
@@ -70,8 +68,6 @@ public class CameraController : MonoBehaviour
         Tween1DView();
 
 
-
-        RaycastHit hit;
         var mouse = Mouse.current;
         var keyboard = Keyboard.current;
 
@@ -208,7 +204,6 @@ public class CameraController : MonoBehaviour
         else
         {
             chromosome.unhighlightGene();
-            lastLit = "";
         }
 
 

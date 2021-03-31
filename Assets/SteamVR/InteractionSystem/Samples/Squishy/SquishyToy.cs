@@ -9,7 +9,7 @@ namespace Valve.VR.InteractionSystem.Sample
     public class SquishyToy : MonoBehaviour
     {
         public Interactable interactable;
-        public new SkinnedMeshRenderer renderer;
+        public SkinnedMeshRenderer renderer;
 
         public bool affectMaterial = true;
 
@@ -18,7 +18,7 @@ namespace Valve.VR.InteractionSystem.Sample
         public SteamVR_Action_Single pinchSqueeze = SteamVR_Input.GetAction<SteamVR_Action_Single>("Squeeze");
 
 
-        private new Rigidbody rigidbody;
+        private Rigidbody rigidbody;
 
         private void Start()
         {

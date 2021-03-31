@@ -6,7 +6,7 @@ namespace Valve.VR.InteractionSystem
 {
     public class HandCollider : MonoBehaviour
     {
-        private new Rigidbody rigidbody;
+        private Rigidbody rigidbody;
         [HideInInspector]
         public HandPhysics hand;
 
@@ -269,7 +269,7 @@ namespace Valve.VR.InteractionSystem
 
             float energy = collision.relativeVelocity.magnitude;
 
-            if(energy > minCollisionEnergy && Time.time - lastCollisionHapticsTime > minCollisionHapticsTime)
+            if (energy > minCollisionEnergy && Time.time - lastCollisionHapticsTime > minCollisionHapticsTime)
             {
                 lastCollisionHapticsTime = Time.time;
 

@@ -24,7 +24,6 @@ public class ChromosomeController : MonoBehaviour
     public float overallScale = 1.5f;
     public float lineWidth = 1;
 
-    static bool cartoon = false;
     static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
     public GameObject cameraParent;
     public TextAsset locationSequence;
