@@ -238,8 +238,6 @@ public class ChromosomeController : MonoBehaviour
         foreach (var (start, end) in geneSections)
         {
             genePointGroups.Add(getPointsConnectingBpIndices(start, end));
-            //var genePoints = points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList();
-
         }
 
         foreach (var (genePointGroupsForCurrentGeneRenderer, geneRendererIndex) in genePointGroups.Split(geneRenderers.Count).Select((x, i) => (x, i)))
@@ -252,8 +250,12 @@ public class ChromosomeController : MonoBehaviour
             var indices = new List<int>();
             foreach (var (genePoints, startingBackboneIndex) in genePointGroupsForCurrentGeneRenderer)
             {
-                // Assert.AreNotEqual(genePoints.Count, 0); // WTF? todo, investigate why this is sometimes true 
-                if (genePoints.Count > 1) // todo - put make up point in next bin if == 1
+                Assert.AreNotEqual(genePoints.Count, 0);
+                Assert.AreNotEqual(genePoints.Count, 1);
+                if (startingBackboneIndex >= backbonePointNormals.Count) // should only be the case for genes that start on the very last point
+                {
+                }
+                else
                 {
                     var startNormals = backbonePointNormals[startingBackboneIndex];
 
@@ -262,6 +264,7 @@ public class ChromosomeController : MonoBehaviour
                     verticies.AddRange(verticiesToAdd);
                     indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
                 }
+
 
             }
 
@@ -731,6 +734,7 @@ public class ChromosomeController : MonoBehaviour
             index -= 1;
         }
         index = index >= points.original.Count ? points.original.Count - 1 : index;
+        index = index < 0 ? 0 : index;
 
 
 
