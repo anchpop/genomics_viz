@@ -662,20 +662,21 @@ public class ChromosomeController : MonoBehaviour
     {
         var genePoints = getPointsConnectingBpIndices(info.startBpIndex, info.endBpIndex);
 
-        if (genePoints.points.Count > 0) // todo: fix bothersome zero-width genes
-        {
-            Mesh mesh = new Mesh();
-            renderer.mesh = mesh;
+        Assert.AreNotEqual(genePoints.points.Count, 0);
+        Assert.AreNotEqual(genePoints.points.Count, 1);
 
-            var startNormals = backbonePointNormals[genePoints.startBackboneIndex];
-            var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints.points[0]).ToList();
-            var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints.points, startingPoints, true);
+        Mesh mesh = new Mesh();
+        renderer.mesh = mesh;
 
-            mesh.Clear();
-            mesh.vertices = verticies.ToArray();
-            mesh.triangles = indices.ToArray();
-            mesh.RecalculateNormals();
-        }
+        var startNormals = backbonePointNormals[genePoints.startBackboneIndex];
+        var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints.points[0]).ToList();
+        var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints.points, startingPoints, true);
+
+        mesh.Clear();
+        mesh.vertices = verticies.ToArray();
+        mesh.triangles = indices.ToArray();
+        mesh.RecalculateNormals();
+
         /*
         if (name == "") return;
         foreach (var geneRenderer in geneDict[name].renderer)
