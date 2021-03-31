@@ -189,6 +189,27 @@ public class ChromosomeController : MonoBehaviour
         Assert.AreEqual(points.original.Count - 1, backbonePointNormals.Count);
     }
 
+    (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
+    {
+        var startBackboneIndex = basePairIndexToLocationIndex(startBasePairIndex);
+        var endBackboneIndex = basePairIndexToLocationIndex(endBasePairIndex);
+        Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
+
+        var startPoint = basePairIndexToPoint(startBasePairIndex);
+        var endPoint = basePairIndexToPoint(endBasePairIndex);
+        if (startBackboneIndex == endBackboneIndex)
+        {
+            return (new List<Vector3> { startPoint, endPoint }, startBackboneIndex);
+        }
+        else
+        {
+            var l = new List<Vector3> { startPoint };
+            l.AddRange(points.original.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
+            l.Add(endPoint);
+            return (l, startBackboneIndex);
+        }
+    }
+
     void createGenesMesh()
     {
         List<(int start, int end)> getGeneSections()
@@ -216,11 +237,9 @@ public class ChromosomeController : MonoBehaviour
         var genePointGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
         foreach (var (start, end) in geneSections)
         {
-            var startBackboneIndex = basePairIndexToLocationIndex(start);
-            var endBackboneIndex = basePairIndexToLocationIndex(end);
-            Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
-            var genePoints = points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList();
-            genePointGroups.Add((genePoints, startBackboneIndex));
+            genePointGroups.Add(getPointsConnectingBpIndices(start, end));
+            //var genePoints = points.original.GetRange(startBackboneIndex, endBackboneIndex - startBackboneIndex).Select((v) => v.position).ToList();
+
         }
 
         foreach (var (genePointGroupsForCurrentGeneRenderer, geneRendererIndex) in genePointGroups.Split(geneRenderers.Count).Select((x, i) => (x, i)))
@@ -236,7 +255,6 @@ public class ChromosomeController : MonoBehaviour
                 // Assert.AreNotEqual(genePoints.Count, 0); // WTF? todo, investigate why this is sometimes true 
                 if (genePoints.Count > 1) // todo - put make up point in next bin if == 1
                 {
-
                     var startNormals = backbonePointNormals[startingBackboneIndex];
 
                     var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, startNormals.Select((v) => v * 1.1f + genePoints[0]).ToList(), true);
@@ -637,25 +655,18 @@ public class ChromosomeController : MonoBehaviour
 #endif
     }
 
-    public void highlightArea(MeshFilter renderer, (string name, int start, int end, bool direction) info)
+    public void highlightArea(MeshFilter renderer, (string name, int startBpIndex, int endBpIndex, bool direction) info)
     {
-        var startBackboneIndex = basePairIndexToLocationIndex(info.start);
-        var endBackboneIndex = basePairIndexToLocationIndex(info.end);
-        // Once I integrate Hao's new file that tells me what genes he skipped, this should be fixed, the assert can be uncommented, and the next two lines after it can be removed
-        // Assert.IsTrue(endBackboneIndex <= points.original.Count, "Too many genes >:("); 
-        var startBackboneIndexHACK = Mathf.Min(startBackboneIndex, points.original.Count - 1);
-        var endBackboneIndexHACK = Mathf.Min(endBackboneIndex, points.original.Count - 1);
-        Assert.IsTrue(startBackboneIndexHACK <= endBackboneIndexHACK, "start index should be before end index - this is my fault");
-        var genePoints = points.original.GetRange(startBackboneIndexHACK, endBackboneIndexHACK - startBackboneIndexHACK).Select((v) => v.position).ToList();
+        var genePoints = getPointsConnectingBpIndices(info.startBpIndex, info.endBpIndex);
 
-        if (genePoints.Count > 0) // todo: fix bothersome zero-width genes
+        if (genePoints.points.Count > 0) // todo: fix bothersome zero-width genes
         {
             Mesh mesh = new Mesh();
             renderer.mesh = mesh;
 
-            var startNormals = backbonePointNormals[startBackboneIndex];
-            var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints[0]).ToList();
-            var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints, startingPoints, true);
+            var startNormals = backbonePointNormals[genePoints.startBackboneIndex];
+            var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints.points[0]).ToList();
+            var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints.points, startingPoints, true);
 
             mesh.Clear();
             mesh.vertices = verticies.ToArray();

@@ -223,7 +223,7 @@ public class CameraController : MonoBehaviour
     {
         if (ChromosomeController.geneWorldPositions != null)
         {
-            var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position);
+            var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position + .1f * transform.forward);
             var genesToShow = ChromosomeController.geneWorldPositions.NearestNeighbors(
                 new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
                 geneLabels.Count
@@ -234,7 +234,7 @@ public class CameraController : MonoBehaviour
             foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
             {
                 var label = geneLabels[index];
-                label.transform.localPosition = position + position.normalized / 20;
+                label.transform.localPosition = position;
                 label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
                 label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
             }
