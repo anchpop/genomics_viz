@@ -229,11 +229,11 @@ public class CameraController : MonoBehaviour
         if (ChromosomeController.geneWorldPositions != null)
         {
             var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position);
-            var genesToShow = ChromosomeController.geneWorldPositions.GetNearestNeighbours(
+            var genesToShow = ChromosomeController.geneWorldPositions.NearestNeighbors(
                 new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
                 geneLabels.Count
                ).Select((node) =>
-                 (new Vector3(node.Point[0], node.Point[1], node.Point[2]), ChromosomeController.genes[node.Value]));
+                 (new Vector3(node.Item1[0], node.Item1[1], node.Item1[2]), ChromosomeController.genes[node.Item2]));
 
 
             foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))

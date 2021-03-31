@@ -1,5 +1,4 @@
-using KdTree;
-using KdTree.Math;
+using Supercluster.KDTree;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +11,10 @@ public class ChromosomePart : MonoBehaviour
     public GameObject chromosome;
     public int startPointsIndex;
     public int endPointsIndex;
-    private KdTree<float, int> backbonePointsTree;
+    private KDTree<float, int> backbonePointsTree;
     // Start is called before the first frame update
     void Awake()
     {
-        backbonePointsTree = new KdTree<float, int>(3, new FloatMath());
     }
 
     // Update is called once per frame
@@ -29,16 +27,17 @@ public class ChromosomePart : MonoBehaviour
     {
         startPointsIndex = startPointsIndexp;
         endPointsIndex = startPointsIndex + pointRange.Count();
-        foreach (var (point, index) in pointRange.Select((x, i) => (x, i)))
-        {
-            backbonePointsTree.Add(new[] { point.position.x, point.position.y, point.position.z }, index + startPointsIndex);
-        }
+
+        float[][] points = pointRange.Select(point => new float[] { point.position.x, point.position.y, point.position.z }).ToArray();
+        int[] nodes = pointRange.Select((x, i) => i + startPointsIndex).ToArray();
+        backbonePointsTree = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
     }
     public (int closest, int nextClosest) getPointIndexOfLocalPosition(Vector3 point)
     {
-        var p = backbonePointsTree.GetNearestNeighbours(new[] { point.x, point.y, point.z }, 2);
+        var p = backbonePointsTree.NearestNeighbors(new[] { point.x, point.y, point.z }, 2);
+        //var p = backbonePointsTree.GetNearestNeighbours(new[] { point.x, point.y, point.z }, 2);
 
-        return (p[0].Value, p[0].Value + (int)Mathf.Sign(p[1].Value - p[0].Value));
+        return (p[0].Item2, p[0].Item2 + (int)Mathf.Sign(p[1].Item2 - p[0].Item2));
     }
     public (int closest, int nextClosest) getPointIndexOfWorldPosition(Vector3 point)
     {

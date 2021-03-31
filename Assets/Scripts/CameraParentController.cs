@@ -22,7 +22,7 @@ public class CameraParentController : MonoBehaviour
     public float tweenDuration = 1;
     private Tween tween;
 
-
+    public float zoomAwayScale = 1.2f;
 
 
     public GameObject leftController;
@@ -213,10 +213,19 @@ public class CameraParentController : MonoBehaviour
         }
 
         var gene_max_dist = genePositions.Max(p => p.magnitude);
-        var local_pos = gene_local_center.normalized * gene_max_dist * 1.2f;
+        var local_pos = gene_local_center.normalized * gene_max_dist * zoomAwayScale;
 
         var worldloc = transform.TransformPoint(local_pos);
-        var camToLoc = worldloc - mainCamera.transform.position;
+
+        tweenToShowPos(worldloc);
+
+        chromosomeController.highlightGene(info);
+        mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
+    }
+
+    public void tweenToShowPos(Vector3 worldPos)
+    {
+        var camToLoc = worldPos - mainCamera.transform.position;
         var locToCam = -camToLoc;
 
         var current_loc = transform.position;
@@ -235,12 +244,13 @@ public class CameraParentController : MonoBehaviour
             var new_rel_cam = (Quaternion.Slerp(Quaternion.identity, rot, x)) * current_rel_cam.normalized * Mathf.Lerp(current_dist, dest_dist, x);
 
             transform.position = cam_pos + new_rel_cam;
-        }, 1.0f, tweenDuration * Mathf.Clamp((current_rel_cam - dest_rel_cam).magnitude, .5f, 1.5f));
+            if (inVr)
+            {
+                mainCamera.transform.LookAt(transform.position);
+            }
+        }, 1.0f, tweenDuration * Mathf.Clamp((current_rel_cam - dest_rel_cam).magnitude, .5f, 1.5f)).SetEase(Ease.InOutCubic);
 
         tween.SetAutoKill(false);
-
-        chromosomeController.highlightGene(info);
-        mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
     }
 
 
@@ -249,28 +259,9 @@ public class CameraParentController : MonoBehaviour
     {
         var info = chromosomeController.basePairIndexToPoint(bpindex);
 
-        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.position = info.position;
+        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.localPosition = info.position;
 
-        /*
-        if (mainCamera.transform.localPosition.normalized == info.position.normalized)
-        {
-            startQ = transform.rotation;
-            endQ = transform.rotation;
-        }
-        else
-        {
-            startQ = transform.rotation;
-
-            endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, info.position);
-        }
-
-        startS = transform.localScale;
-        var endScale = 1.7f * info.position.magnitude / mainCamera.transform.localPosition.magnitude;
-        endS = new Vector3(endScale, endScale, endScale);
-
-        currentlyTweening = true;
-        rott = 0;
-        */
+        tweenToShowPos(transform.TransformPoint(info.position * zoomAwayScale));
 
         mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }

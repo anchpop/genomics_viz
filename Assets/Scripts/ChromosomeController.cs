@@ -1,5 +1,4 @@
-﻿using KdTree;
-using KdTree.Math;
+﻿using Supercluster.KDTree;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -9,6 +8,9 @@ using UnityEngine.SceneManagement;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using DG.Tweening;
+
+using UnityEngine.Profiling;
+
 
 public struct Point
 {
@@ -34,7 +36,7 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset ChromatinInteractionPrediction;
     public static (List<Point> original, bool dummy) points; // dummy is only here because I wanted this to be a tuple and tuples need at least two elements
     public static List<(string name, int start, int end, bool direction)> genes;
-    public static KdTree<float, int> geneWorldPositions;
+    public static KDTree<float, int> geneWorldPositions;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
     public List<(int start, int end)> irf;
@@ -102,20 +104,37 @@ public class ChromosomeController : MonoBehaviour
         }
 
 
-
         geneDict = new KTrie.StringTrie<(int start, int end, int index)>();
+        Profiler.BeginSample("getPoints");
         points = getPoints();
+        Profiler.EndSample();
+        Profiler.BeginSample("getGenes");
         (genes, geneWorldPositions) = getGenes();
+        Profiler.EndSample();
+        Profiler.BeginSample("getGata");
         gata = getGATA();
+        Profiler.EndSample();
+        Profiler.BeginSample("getCTCF");
         ctcf = getCTCF();
+        Profiler.EndSample();
+        Profiler.BeginSample("getIRF");
         irf = getIRF();
+        Profiler.EndSample();
+        Profiler.BeginSample("getChromatinInteractionPrediction");
         chromatinInteractionPrediction = getChromatinInteractionPrediction();
+        Profiler.EndSample();
 
         randoVector = Random.insideUnitSphere;
 
+        Profiler.BeginSample("createBackboneMesh");
         createBackboneMesh();
+        Profiler.EndSample();
+        Profiler.BeginSample("createGenesMesh");
         createGenesMesh();
-        createChromatidInterationPredictionLines();
+        Profiler.EndSample();
+        Profiler.BeginSample("createChromatidInterationPredictionLines");
+        //createChromatidInterationPredictionLines();
+        Profiler.EndSample();
 
 
     }
@@ -375,10 +394,9 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    (List<(string name, int start, int end, bool direction)> genes, KdTree<float, int> geneWorldPositions) getGenes()
+    (List<(string name, int start, int end, bool direction)> genes, KDTree<float, int> geneWorldPositions) getGenes()
     {
         var genes = new List<(string name, int start, int end, bool direction)>();
-        var geneWorldPositions = new KdTree<float, int>(3, new FloatMath());
 
         int lastStart = 0;
 
@@ -421,19 +439,24 @@ public class ChromosomeController : MonoBehaviour
         int index = 0;
         foreach (var gene in genes)
         {
-            if (basePairIndexToPoint(gene.start).position != basePairIndexToPoint(gene.end).position)
-            {
-                var originBasePair = gene.direction ? gene.start : gene.end;
-                var originPosition = basePairIndexToPoint(originBasePair).position;
-                geneWorldPositions.Add(new float[] { originPosition.x, originPosition.y, originPosition.z }, index);
-            }
-
             if (!geneDict.ContainsKey(gene.name))
             {
                 geneDict.Add(gene.name, (gene.start, gene.end, index));
             }
             index++;
         }
+
+        float[][] points = genes.Select(gene =>
+        {
+            var originBasePair = gene.direction ? gene.start : gene.end;
+            var originPosition = basePairIndexToPoint(originBasePair).position;
+            return new float[] { originPosition.x, originPosition.y, originPosition.z };
+        }).ToArray();
+        int[] nodes = genes.Select((x, i) => i).ToArray();
+        var geneWorldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+
+
+
         return (genes, geneWorldPositions);
     }
 
