@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using DG.Tweening;
+
+
 
 public class CameraParentController : MonoBehaviour
 {
@@ -15,14 +18,11 @@ public class CameraParentController : MonoBehaviour
     public GameObject mainCamera;
 
 
-    public float tweenSpeed = 1;
+    public float tweenDuration = 1;
+    private Tween tween;
 
-    private float rott = 0;
-    private Quaternion startQ = Quaternion.identity;
-    private Quaternion endQ = Quaternion.identity;
-    private Vector3 startS = Vector3.zero;
-    private Vector3 endS = Vector3.zero;
-    private bool currentlyTweening = false;
+
+
 
     public GameObject leftController;
     public GameObject rightController;
@@ -53,32 +53,37 @@ public class CameraParentController : MonoBehaviour
         else
         {
             mainCamera = fallbackCamera;
+            mainCamera.transform.LookAt(transform.position);
         }
         Interaction();
         VRInteraction();
 
 
-        if (!currentlyTweening)
+        if (!isTweening())
         {
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
-            if (keyboard.leftArrowKey.IsPressed() || keyboard.aKey.IsPressed())
+            if (keyboard.rightArrowKey.IsPressed() || keyboard.dKey.IsPressed())
             {
-                transform.Rotate(new Vector3(0, rotationSpeed * Time.deltaTime, 0));
+                var rot = Quaternion.AngleAxis(rotationSpeed * Time.deltaTime, transform.InverseTransformDirection(mainCamera.transform.up));
+                transform.rotation *= rot;
             }
-            else if (keyboard.rightArrowKey.IsPressed() || keyboard.dKey.IsPressed())
+            else if (keyboard.leftArrowKey.IsPressed() || keyboard.aKey.IsPressed())
             {
-                transform.Rotate(new Vector3(0, -rotationSpeed * Time.deltaTime, 0));
+                var rot = Quaternion.AngleAxis(-rotationSpeed * Time.deltaTime, transform.InverseTransformDirection(mainCamera.transform.up));
+                transform.rotation *= rot;
             }
 
 
             if (keyboard.upArrowKey.IsPressed() || keyboard.wKey.IsPressed())
             {
-                transform.Rotate(new Vector3(rotationSpeed * Time.deltaTime, 0, 0));
+                var rot = Quaternion.AngleAxis(rotationSpeed * Time.deltaTime, transform.InverseTransformDirection(-mainCamera.transform.right));
+                transform.rotation *= rot;
             }
             else if (keyboard.downArrowKey.IsPressed() || keyboard.sKey.IsPressed())
             {
-                transform.Rotate(new Vector3(-rotationSpeed * Time.deltaTime, 0, 0));
+                var rot = Quaternion.AngleAxis(-rotationSpeed * Time.deltaTime, transform.InverseTransformDirection(-mainCamera.transform.right));
+                transform.rotation *= rot;
             }
 
             var scroll = mouse.scroll.ReadValue();
@@ -165,23 +170,6 @@ public class CameraParentController : MonoBehaviour
                 repositionRotLastFrame = null;
             }
 
-            if (currentlyTweening)
-            {
-                if (rott >= 1)
-                {
-                    currentlyTweening = false;
-                    rott = 0;
-                }
-                else
-                {
-                    rott += Time.deltaTime * tweenSpeed;
-                    rott = Mathf.Min(1, rott);
-
-                    var o = Util.Math.easeInOutQuart(rott);
-                    transform.rotation = Quaternion.Slerp(startQ, endQ, o);
-                    transform.localScale = Vector3.Lerp(startS, endS, o);
-                }
-            }
 
 
             var ray = new Ray(rightController.transform.position, rightController.transform.forward);
@@ -198,6 +186,11 @@ public class CameraParentController : MonoBehaviour
         }
     }
 
+    public bool isTweening()
+    {
+        return tween != null && !tween.IsComplete();
+    }
+
     public void goToGene((string name, int start, int end, bool direction) info)
     {
         Debug.Log(info.name);
@@ -209,45 +202,40 @@ public class CameraParentController : MonoBehaviour
         }
         var genePositions = ChromosomeController.points.original.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
 
-        var localloc = Vector3.zero;
+        var gene_local_center = Vector3.zero;
         foreach (var pos in genePositions)
         {
-            localloc += pos / genePositions.Count();
+            gene_local_center += pos / genePositions.Count();
         }
-        var worldloc = transform.TransformPoint(localloc);
+
+        var gene_max_dist = genePositions.Max(p => p.magnitude);
+        var local_pos = gene_local_center.normalized * gene_max_dist * 1.2f;
+
+        var worldloc = transform.TransformPoint(local_pos);
         var camToLoc = worldloc - mainCamera.transform.position;
         var locToCam = -camToLoc;
-        transform.position += locToCam;
-        /*
 
-        if (mainCamera.transform.localPosition.normalized == geneloc.normalized)
+        var current_loc = transform.position;
+        var dest_loc = current_loc + locToCam;
+        var cam_pos = mainCamera.transform.position;
+
+        var current_rel_cam = current_loc - cam_pos;
+        var dest_rel_cam = dest_loc - cam_pos;
+        var current_dist = current_rel_cam.magnitude;
+        var dest_dist = dest_rel_cam.magnitude;
+
+        tween = DOTween.To(() => 0.0f, x =>
         {
-            startQ = transform.rotation;
-            endQ = transform.rotation;
-        }
-        else
-        {
-            startQ = transform.rotation;
-            endQ = Quaternion.FromToRotation(mainCamera.transform.localPosition, geneloc);
-        }
+            var rot = Quaternion.FromToRotation(current_rel_cam.normalized, dest_rel_cam.normalized);
 
-        startS = transform.localScale;
-        var endScale = 1.7f * geneloc.magnitude / mainCamera.transform.localPosition.magnitude;
-        endS = new Vector3(endScale, endScale, endScale);
+            var new_rel_cam = (Quaternion.Slerp(Quaternion.identity, rot, x)) * current_rel_cam.normalized * Mathf.Lerp(current_dist, dest_dist, x);
 
-        currentlyTweening = true;
-        rott = 0;
+            transform.position = cam_pos + new_rel_cam;
+        }, 1.0f, tweenDuration * Mathf.Clamp((current_rel_cam - dest_rel_cam).magnitude, .5f, 1.5f));
 
-        */
-
-        // TODO this is actually wrong because it doesn't work correctly when the chromosome is rotated (not sure why). Needs to be fixed before release :/
-        Debug.DrawRay(mainCamera.transform.position, Vector3.up, Color.blue, 3);
-        Debug.Log("Setting position to " + (mainCamera.transform.position - localloc));
-        //transform.position = mainCamera.transform.position - geneloc;
+        tween.SetAutoKill(false);
 
         chromosomeController.highlightGene(info);
-
-
         mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
     }
 
@@ -259,6 +247,7 @@ public class CameraParentController : MonoBehaviour
 
         mainCamera.GetComponent<CameraController>().selectionIndicator.transform.position = info.position;
 
+        /*
         if (mainCamera.transform.localPosition.normalized == info.position.normalized)
         {
             startQ = transform.rotation;
@@ -277,6 +266,7 @@ public class CameraParentController : MonoBehaviour
 
         currentlyTweening = true;
         rott = 0;
+        */
 
         mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }

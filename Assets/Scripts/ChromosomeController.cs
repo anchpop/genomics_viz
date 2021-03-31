@@ -8,6 +8,7 @@ using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using DG.Tweening;
 
 public struct Point
 {

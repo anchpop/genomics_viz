@@ -32,6 +32,7 @@ namespace Valve.VR.InteractionSystem
         //-------------------------------------------------
         void Update()
         {
+            /*
             var mouse = Mouse.current;
             var keyboard = Keyboard.current;
             float forward = 0.0f;
@@ -80,17 +81,18 @@ namespace Valve.VR.InteractionSystem
 
             Vector3 mousePosition = mouse.position.ReadValue();
 
-            if (mouse.leftButton.wasPressedThisFrame/* right mouse */)
+            if (mouse.leftButton.wasPressedThisFrame/* right mouse *//*)
             {
                 startMousePosition = mousePosition;
                 startEulerAngles = transform.localEulerAngles;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame /* right mouse */)
+            if (mouse.leftButton.wasPressedThisFrame /* right mouse *//*)
             {
                 Vector3 offset = mousePosition - startMousePosition;
                 transform.localEulerAngles = startEulerAngles + new Vector3(-offset.y * 360.0f / Screen.height, offset.x * 360.0f / Screen.width, 0.0f);
             }
+            */
         }
 
 

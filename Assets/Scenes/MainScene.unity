@@ -5885,7 +5885,7 @@ MonoBehaviour:
   vrCamera: {fileID: 0}
   fallbackCamera: {fileID: 0}
   mainCamera: {fileID: 963194225}
-  tweenSpeed: 1
+  tweenDuration: 1
   leftController: {fileID: 0}
   rightController: {fileID: 0}
   fallbackHand: {fileID: 0}
@@ -6787,7 +6787,7 @@ MonoBehaviour:
   vrCamera: {fileID: 1083124681}
   fallbackCamera: {fileID: 94954537}
   mainCamera: {fileID: 1083124681}
-  tweenSpeed: 1
+  tweenDuration: 0.8
   leftController: {fileID: 1653940383}
   rightController: {fileID: 767331409}
   fallbackHand: {fileID: 1113564694}
