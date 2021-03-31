@@ -17,6 +17,8 @@ public struct Point
     public Vector3 position;
     public int bin;
     public int originalIndex;
+    public override string ToString() =>
+        $"Point(position: {position}, bin: {bin}, originalIndex: {originalIndex})";
 }
 
 public class ChromosomeController : MonoBehaviour
@@ -276,7 +278,7 @@ public class ChromosomeController : MonoBehaviour
                 var line = bridge.GetComponent<LineRenderer>();
                 line.startWidth *= overallScale * lineWidth * 3;
                 line.endWidth *= overallScale * lineWidth * 3;
-                line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart).position, basePairIndexToPoint(midpointEnd).position });
+                line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart), basePairIndexToPoint(midpointEnd) });
             }
             catch
             {
@@ -448,7 +450,7 @@ public class ChromosomeController : MonoBehaviour
         float[][] points = genes.Select(gene =>
         {
             var originBasePair = gene.direction ? gene.start : gene.end;
-            var originPosition = basePairIndexToPoint(originBasePair).position;
+            var originPosition = basePairIndexToPoint(originBasePair);
             return new float[] { originPosition.x, originPosition.y, originPosition.z };
         }).ToArray();
         int[] nodes = genes.Select((x, i) => i).ToArray();
@@ -705,8 +707,8 @@ public class ChromosomeController : MonoBehaviour
 
     public int basePairIndexToLocationIndex(int bpIndex)
     {
-        if (bpIndex <= 525000) return 0;
-        if (bpIndex >= 249230000) return points.original.Count - 1;
+        if (bpIndex <= points.original[0].bin) return 0;
+        if (bpIndex >= points.original[points.original.Count - 1].bin) return points.original.Count - 1;
 
         // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
         //var a = node[0].Value;
@@ -715,6 +717,7 @@ public class ChromosomeController : MonoBehaviour
         if (index < 0)
         {
             index = ~index; // index of the first element that is larger than the search value
+            index -= 1;
         }
         index = index >= points.original.Count ? points.original.Count - 1 : index;
 
@@ -725,10 +728,28 @@ public class ChromosomeController : MonoBehaviour
         return index;
     }
 
-    public Point basePairIndexToPoint(int bpIndex)
+    public Vector3 basePairIndexToPoint(int bpIndex)
     {
-        var a = points.original[basePairIndexToLocationIndex(bpIndex)];
-        return a;
+        if (bpIndex <= points.original[0].bin)
+        {
+            return points.original[0].position;
+        }
+        else if (bpIndex >= points.original[points.original.Count - 1].bin)
+        {
+            return points.original[points.original.Count - 1].position;
+        }
+        else
+        {
+            var locationIndex = basePairIndexToLocationIndex(bpIndex);
+
+            var a = points.original[locationIndex];
+            var b = points.original[locationIndex + 1];
+            Assert.IsTrue(a.bin <= bpIndex);
+            Assert.IsTrue(bpIndex <= b.bin);
+            return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
+        }
+
+
     }
 
 
