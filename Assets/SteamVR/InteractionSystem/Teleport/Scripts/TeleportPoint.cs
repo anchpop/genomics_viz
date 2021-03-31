@@ -38,7 +38,7 @@ namespace Valve.VR.InteractionSystem
         private MeshRenderer lockedIcon;
         private MeshRenderer pointIcon;
         private Transform lookAtJointTransform;
-        private Animation animation;
+        private new Animation animation;
         private Text titleText;
         private Player player;
         private Vector3 lookAtPosition = Vector3.zero;

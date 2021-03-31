@@ -9,7 +9,7 @@ using DG.Tweening;
 
 
 
-public class CameraParentController : MonoBehaviour
+public class ChromosomeParentController : MonoBehaviour
 {
     public float rotationSpeed = 30f;
     public ChromosomeController chromosomeController;

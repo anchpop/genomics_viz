@@ -16,7 +16,7 @@ using UnityEngine.EventSystems;
 public class CameraController : MonoBehaviour
 {
     public ChromosomeController chromosome;
-    public CameraParentController parentController;
+    public ChromosomeParentController parentController;
     public TextMeshProUGUI searchInput;
 
 

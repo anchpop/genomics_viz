@@ -40,7 +40,7 @@ namespace Valve.VR.InteractionSystem.Sample
 
         private bool held;
 
-        private Rigidbody rigidbody;
+        private new Rigidbody rigidbody;
         private Interactable interactable;
 
         public FireSource fire;

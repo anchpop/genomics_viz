@@ -6,7 +6,7 @@ namespace Valve.VR.InteractionSystem
 {
     public class HandCollider : MonoBehaviour
     {
-        private Rigidbody rigidbody;
+        private new Rigidbody rigidbody;
         [HideInInspector]
         public HandPhysics hand;
 

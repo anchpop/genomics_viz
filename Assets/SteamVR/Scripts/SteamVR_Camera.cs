@@ -27,7 +27,7 @@ namespace Valve.VR
         public Transform offset { get { return _head; } } // legacy
         public Transform origin { get { return _head.parent; } }
 
-        public Camera camera { get; private set; }
+        public new Camera camera { get; private set; }
 
         [SerializeField]
         private Transform _ears;

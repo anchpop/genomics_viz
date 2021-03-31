@@ -32,7 +32,7 @@ namespace Valve.VR.InteractionSystem
 
         private const bool onlyColorOnChange = true;
 
-        public Rigidbody rigidbody;
+        public new Rigidbody rigidbody;
 
         private void Awake()
         {
