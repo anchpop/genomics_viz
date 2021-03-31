@@ -10,6 +10,8 @@ using System.Linq;
 using UnityEngine.Assertions;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
+using UnityEngine.EventSystems;
+
 
 public class CameraController : MonoBehaviour
 {
@@ -23,10 +25,12 @@ public class CameraController : MonoBehaviour
 
     public GameObject OneDViewCanvas;
     public GameObject GeneInfoCanvas;
+    public GameObject ButtonCanvas;
     public TextMeshProUGUI scaleText;
     public List<TextMeshProUGUI> texts;
 
-    public GraphicRaycaster GraphicRaycaster;
+    public GraphicRaycaster OneDViewGraphicRaycaster;
+    public GraphicRaycaster ButtonViewGraphicRaycaster;
     public UnityEngine.EventSystems.EventSystem m_EventSystem;
 
     private int horizontalTextChars = 144;
@@ -45,9 +49,10 @@ public class CameraController : MonoBehaviour
     List<GameObject> geneLabels;
 
     string lastLit = "";
+
+    bool canvases_setup = false;
     void Start()
     {
-        SetupVR();
         createLabels();
 
         OneDView = (0, new List<(string name, int start, int end, bool direction)>());
@@ -60,6 +65,7 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        SetupCanvases();
         ShowLabels();
         Tween1DView();
 
@@ -133,22 +139,33 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    public void SetupVR()
+    public void SetupCanvases()
     {
-        Debug.Log("Setting up VR 1D view canvas");
-        OneDViewCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
-        OneDViewCanvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 1);
-        OneDViewCanvas.transform.SetParent(parentController.leftController.transform);
-        OneDViewCanvas.transform.localPosition = new Vector3(0, -0.05f, 0);
-        OneDViewCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
+        if (!canvases_setup)
+        {
+            if (parentController.inVr)
+            {
+                OneDViewCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+                OneDViewCanvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 1);
+                OneDViewCanvas.transform.SetParent(parentController.leftController.transform);
+                OneDViewCanvas.transform.localPosition = new Vector3(0, -0.05f, 0);
+                OneDViewCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
 
-        GeneInfoCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
-        GeneInfoCanvas.transform.localScale = new Vector3(0.0007f, 0.0007f, 1);
-        GeneInfoCanvas.transform.SetParent(parentController.rightController.transform);
-        GeneInfoCanvas.transform.localPosition = new Vector3(0.1f, -0.05f, 0);
-        GeneInfoCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
+                GeneInfoCanvas.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+                GeneInfoCanvas.transform.localScale = new Vector3(0.0007f, 0.0007f, 1);
+                GeneInfoCanvas.transform.SetParent(parentController.rightController.transform);
+                GeneInfoCanvas.transform.localPosition = new Vector3(0.1f, -0.05f, 0);
+                GeneInfoCanvas.transform.eulerAngles = new Vector3(40, 0, 0);
+            }
+            else
+            {
+                OneDViewCanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+                GeneInfoCanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+                ButtonCanvas.transform.SetParent(OneDViewCanvas.transform);
+            }
 
-        //
+            canvases_setup = true;
+        }
     }
 
     public Vector3? highlightHit(Ray ray, bool focus)
@@ -193,6 +210,8 @@ public class CameraController : MonoBehaviour
             chromosome.unhighlightGene();
             lastLit = "";
         }
+
+
         return null;
     }
 

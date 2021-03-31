@@ -25,8 +25,6 @@ public class ChromosomeController : MonoBehaviour
     static bool cartoon = false;
     static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
     public GameObject cameraParent;
-    public GameObject VisualizeSectionButton;
-    public GameObject SeeFullGenomeButton;
     public TextAsset locationSequence;
     public TextAsset coordinateMapping;
     public TextAsset geneAnnotations;
@@ -101,17 +99,6 @@ public class ChromosomeController : MonoBehaviour
             cameraParent.transform.position = cameraParentCachedPosition.position;
             cameraParent.transform.eulerAngles = cameraParentCachedPosition.rotation;
             cameraParent.transform.localScale = cameraParentCachedPosition.scale;
-        }
-        if (cartoon)
-        {
-            VisualizeSectionButton.SetActive(false);
-            SeeFullGenomeButton.SetActive(true);
-        }
-        else
-        {
-
-            VisualizeSectionButton.SetActive(true);
-            SeeFullGenomeButton.SetActive(false);
         }
 
 

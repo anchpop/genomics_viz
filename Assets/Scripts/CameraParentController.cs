@@ -16,6 +16,7 @@ public class CameraParentController : MonoBehaviour
     public GameObject vrCamera;
     public GameObject fallbackCamera;
     public GameObject mainCamera;
+    public bool inVr;
 
 
     public float tweenDuration = 1;
@@ -49,11 +50,13 @@ public class CameraParentController : MonoBehaviour
         if (vrCamera.activeInHierarchy)
         {
             mainCamera = vrCamera;
+            inVr = true;
         }
         else
         {
             mainCamera = fallbackCamera;
             mainCamera.transform.LookAt(transform.position);
+            inVr = false;
         }
         Interaction();
         VRInteraction();
@@ -115,7 +118,8 @@ public class CameraParentController : MonoBehaviour
             //Set the Pointer Event Position to that of the mouse position
             m_PointerEventData.position = mouse.position.ReadValue();
             //Raycast using the Graphics Raycaster and mouse click position
-            cameraController.GraphicRaycaster.Raycast(m_PointerEventData, results);
+            cameraController.OneDViewGraphicRaycaster.Raycast(m_PointerEventData, results);
+            cameraController.ButtonViewGraphicRaycaster.Raycast(m_PointerEventData, results);
 
             if (results.Count == 0)
             {
