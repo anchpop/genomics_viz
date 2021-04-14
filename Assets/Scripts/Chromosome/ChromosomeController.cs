@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using DG.Tweening;
+using CapnpGen;
 
 using UnityEngine.Profiling;
 
