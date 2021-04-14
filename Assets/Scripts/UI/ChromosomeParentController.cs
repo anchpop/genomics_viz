@@ -254,6 +254,28 @@ public class ChromosomeParentController : MonoBehaviour
     }
 
 
+    public void openGeneInfoOnline()
+    {
+        var geneInfo = chromosomeController.geneDict[chromosomeController.focusedGene];
+        Application.OpenURL(
+            "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
+            + geneInfo.start.ToString("D")
+            + "%2D"
+            + geneInfo.end.ToString("D")
+            + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
+    }
+
+
+    public void clicked_left()
+    {
+        goToBasePairIndex(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+    }
+
+    public void clicked_right()
+    {
+        goToBasePairIndex(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+    }
+
 
     public void goToBasePairIndex(int bpindex)
     {

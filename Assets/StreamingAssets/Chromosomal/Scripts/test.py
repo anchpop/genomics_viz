@@ -1,8 +1,6 @@
 import capnp
 import chromosome_schema_capnp
 
-
-
 def get_coordinates():
     with open("./Data/chr1/5kb/points_GM.txt", "r") as coordinates_file:
         def parse_line(line):
@@ -51,6 +49,8 @@ for_rendering = chromosome_schema_capnp.ForRendering.new_message()
 for_rendering.infos = [chromosome_info]
 
 output = for_rendering.to_bytes()
+with open("./Output/info.chromsdata", "wb") as output_file:
+    output_file.write(output)
 
 """
 temp.value = 100

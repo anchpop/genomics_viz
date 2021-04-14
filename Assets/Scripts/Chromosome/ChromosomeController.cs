@@ -9,7 +9,9 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using DG.Tweening;
 using CapnpGen;
+using Capnp;
 
+using System.IO;
 using UnityEngine.Profiling;
 
 
@@ -88,16 +90,25 @@ public class ChromosomeController : MonoBehaviour
     Vector3 randoVector;
 
 
-
-    // the plan for showing text: we're going to make another kdtree, except this one stores the positions of each gene. 
-    // We create some text gameobjects and leave them disabled at the beginning.
-    // We get the genes closest to the camera with the kdtree, then position the text gameobjects to display them
-    // then profit :sunglasses:
-    // once I do that, the last thing I want to do for today is fix the 1D view, idk why it's so goddamn janky
-
-
     void Start()
     {
+        /*
+        var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
+        var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
+        byte[] data = File.ReadAllBytes(info_file_path);
+        ulong[] data_u = Enumerable.Range(0, data.Length / (sizeof(ulong) / sizeof(byte))).Select((i) => System.BitConverter.ToUInt64(data, i * sizeof(ulong))).ToArray();
+        var data_memory = new System.Memory<ulong>(data_u);
+        var data_list = new List<System.Memory<ulong>> { data_memory }.AsReadOnly();
+
+        var alloc = new SegmentAllocator(data.Length);
+        var slice = new SegmentSlice();
+        var for_rendering = ForRendering.READER.create(DeserializerState.CreateRoot(new WireFrame(data_list)));
+        Debug.Log("hmm...");
+        Debug.Log(sizeof(ulong));
+        Debug.Log(for_rendering.Infos.Count());
+        Debug.Log(for_rendering.Infos[0].TheBackbone.Points.Count());
+        */
+
         if (cameraParentCachedPosition.position != Vector3.zero || cameraParentCachedPosition.rotation != Vector3.zero || cameraParentCachedPosition.scale != Vector3.zero)
         {
             cameraParent.transform.position = cameraParentCachedPosition.position;

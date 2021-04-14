@@ -12,7 +12,6 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using UnityEngine.EventSystems;
 
-
 public class CameraController : MonoBehaviour
 {
     public ChromosomeController chromosome;
@@ -128,10 +127,6 @@ public class CameraController : MonoBehaviour
                 parentController.goToGene(nextGene);
             }
 
-            if (keyboard.gKey.wasPressedThisFrame)
-            {
-                openGeneInfoOnline();
-            }
         }
     }
 
@@ -257,26 +252,6 @@ public class CameraController : MonoBehaviour
             var basePair = Mathf.RoundToInt(pos * getScale() + OneDView.center);
             parentController.goToBasePairIndex(basePair);
         }
-    }
-
-    public void clicked_left()
-    {
-        parentController.goToBasePairIndex(Mathf.Clamp(OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
-    }
-
-    public void clicked_right()
-    {
-        parentController.goToBasePairIndex(Mathf.Clamp(OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
-    }
-    public void openGeneInfoOnline()
-    {
-        var geneInfo = chromosome.geneDict[chromosome.focusedGene];
-        Application.OpenURL(
-            "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
-            + geneInfo.start.ToString("D")
-            + "%2D"
-            + geneInfo.end.ToString("D")
-            + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
     }
 
     public void Update1DViewGene(string geneName)
