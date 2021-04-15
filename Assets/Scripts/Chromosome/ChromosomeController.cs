@@ -31,6 +31,7 @@ public class ChromosomeController : MonoBehaviour
 
     static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
     public GameObject cameraParent;
+    public static ForRendering.READER allCromosomes;
     public TextAsset locationSequence;
     public TextAsset coordinateMapping;
     public TextAsset geneAnnotations;
@@ -92,22 +93,15 @@ public class ChromosomeController : MonoBehaviour
 
     void Start()
     {
-        /*
         var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
         var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
-        byte[] data = File.ReadAllBytes(info_file_path);
-        ulong[] data_u = Enumerable.Range(0, data.Length / (sizeof(ulong) / sizeof(byte))).Select((i) => System.BitConverter.ToUInt64(data, i * sizeof(ulong))).ToArray();
-        var data_memory = new System.Memory<ulong>(data_u);
-        var data_list = new List<System.Memory<ulong>> { data_memory }.AsReadOnly();
 
-        var alloc = new SegmentAllocator(data.Length);
-        var slice = new SegmentSlice();
-        var for_rendering = ForRendering.READER.create(DeserializerState.CreateRoot(new WireFrame(data_list)));
-        Debug.Log("hmm...");
-        Debug.Log(sizeof(ulong));
-        Debug.Log(for_rendering.Infos.Count());
-        Debug.Log(for_rendering.Infos[0].TheBackbone.Points.Count());
-        */
+        using var fs = File.OpenRead(info_file_path);
+        var frame = Framing.ReadSegments(fs);
+        var deserializer = DeserializerState.CreateRoot(frame);
+        allCromosomes = new ForRendering.READER(deserializer);
+
+
 
         if (cameraParentCachedPosition.position != Vector3.zero || cameraParentCachedPosition.rotation != Vector3.zero || cameraParentCachedPosition.scale != Vector3.zero)
         {

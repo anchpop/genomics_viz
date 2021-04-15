@@ -24,3 +24,5 @@ struct ChromosomeInfo {
 struct ForRendering {
 	infos @0 :List(ChromosomeInfo);
 }
+
+capnproto 
