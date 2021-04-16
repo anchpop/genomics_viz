@@ -1,12 +1,13 @@
 @0xd979abd3bf554e38;
 
-struct ChromosomeInfo {
-  	category @0 :Text;
-	index @1 :UInt32;
-	backbone @2 :Backbone;
+struct Chromosome {
+	# Contains all the relevant information about a single chromosome.
 
+	backbone @0 :Backbone;
 	struct Backbone {
-		points @0 :List(Point);
+		description @0 :Text;
+
+		points @1 :List(Point);
 
 		struct Point {
 			coordinate @0 :Vec3;
@@ -19,10 +20,43 @@ struct ChromosomeInfo {
 			}
 		}
 	}
+
+	segmentSets @1 :List(SegmentSet);
+	# Used for storing things like genes, GWAS data, etc.
+
+	struct SegmentSet {
+		name @0 :Text;
+		description @1 :Text;
+		kind :union {
+    		genes @2 :Void;
+			mutations @3 :Void;
+		}
+
+		segments @4 :List(Segment);
+	}
+	struct Segment {
+		info @0 :Text;
+		startBin @1 :UInt32;
+		endBin @2 :UInt32;
+	}
+
+	connectionSets @2 :List(ConnectionSet);
+	struct ConnectionSet {
+		name @0 :Text;
+		description @1 :Text;
+		connections @2 :List(Connection);
+	}
+	struct Connection {
+		startBinLower @0 :UInt32;
+		startBinUpper @1 :UInt32;
+
+		endBinLower @2 :UInt32;
+		endBinUpper @3 :UInt32;
+	} 
 }
 
-struct ForRendering {
-	infos @0 :List(ChromosomeInfo);
+struct ChromosomeSet {
+	name @0 :Text;
+	description @1 :Text;
+	chromosomes @2 :List(Chromosome);
 }
-
-capnproto 
