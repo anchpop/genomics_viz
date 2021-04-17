@@ -6,7 +6,7 @@ def get_coordinates():
         def parse_line(line):
             [x, y, z] = map(float, line.split("\t"))
             
-            vec3 = chromosome_schema_capnp.Chromosome.Backbone.Point.Vec3.new_message()
+            vec3 = chromosome_schema_capnp.Chromosome.Point.Vec3.new_message()
             vec3.x = x
             vec3.y = y 
             vec3.z = z 
@@ -25,7 +25,7 @@ def get_bins():
 
 def make_point(d):
     (coordinate, bin) = d
-    point = chromosome_schema_capnp.Chromosome.Backbone.Point.new_message()
+    point = chromosome_schema_capnp.Chromosome.Point.new_message()
     point.coordinate = coordinate
     point.bin = bin
     return point
@@ -35,18 +35,17 @@ bins = get_bins()
 
 assert len(coordinates) == len(bins)
 
-backbone = chromosome_schema_capnp.Chromosome.Backbone.new_message()
-backbone.points = list(map(make_point, zip(coordinates, bins)))
 
-
-chromosome_info = chromosome_schema_capnp.Chromosome.new_message()
-chromosome_info.backbone = backbone
+chromosome = chromosome_schema_capnp.Chromosome.new_message()
+chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
+chromosome.segmentSets = []
+chromosome.connectionSets = []
 
 
 chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()
 chromosome_set.name = "Human chromosomes"
-chromosome_set.name = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
-chromosome_set.chromosomes = [chromosome_info]
+chromosome_set.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
+chromosome_set.chromosomes = [chromosome]
 
 output = chromosome_set.to_bytes()
 with open("./Output/info.chromsdata", "wb") as output_file:

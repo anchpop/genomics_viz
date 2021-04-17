@@ -1,23 +1,18 @@
-@0xd979abd3bf554e38;
+@0xc14c1fa98840cbb7;
 
 struct Chromosome {
 	# Contains all the relevant information about a single chromosome.
 
-	backbone @0 :Backbone;
-	struct Backbone {
-		description @0 :Text;
+	backbone @0 :List(Point);
 
-		points @1 :List(Point);
+	struct Point {
+		coordinate @0 :Vec3;
+		bin @1 :UInt32;
 
-		struct Point {
-			coordinate @0 :Vec3;
-			bin @1 :UInt32;
-
-			struct Vec3 {
-				x @0 :Float32;
-				y @1 :Float32;
-				z @2 :Float32;
-			}
+		struct Vec3 {
+			x @0 :Float32;
+			y @1 :Float32;
+			z @2 :Float32;
 		}
 	}
 
@@ -27,12 +22,7 @@ struct Chromosome {
 	struct SegmentSet {
 		name @0 :Text;
 		description @1 :Text;
-		kind :union {
-    		genes @2 :Void;
-			mutations @3 :Void;
-		}
-
-		segments @4 :List(Segment);
+		segments @2 :List(Segment);
 	}
 	struct Segment {
 		info @0 :Text;
@@ -41,6 +31,8 @@ struct Chromosome {
 	}
 
 	connectionSets @2 :List(ConnectionSet);
+	# Used for storing things like chromatid interaction predictions.
+
 	struct ConnectionSet {
 		name @0 :Text;
 		description @1 :Text;
