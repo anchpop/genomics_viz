@@ -97,7 +97,7 @@ public class CameraController : MonoBehaviour
                 {
                     IEnumerable<(string segmentSetName, Segment segment)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
                         segmentInfo.Value.nameDict.GetByPrefix(search).Select(entry =>
-                            (segmentSetName: "hell" + segmentInfo.Key,
+                            (segmentSetName: segmentInfo.Key,
                              segment: segmentInfo.Value.segments.Match<Segment>(x => x[entry.Value], x => x[entry.Value]))));
 
                     if (results.Any())
@@ -156,19 +156,22 @@ public class CameraController : MonoBehaviour
             if (subrenderer)
             {
                 var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
-                var p1 = ChromosomeController.points[pointIndices.closest];
-                var p2 = ChromosomeController.points[pointIndices.nextClosest];
+                var p1 = ChromosomeController.chromosomeRenderingInfo.points[pointIndices.closest];
+                var p2 = ChromosomeController.chromosomeRenderingInfo.points[pointIndices.nextClosest];
 
                 var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
                 var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
                 var cursorBasePair = (int)Mathf.Lerp(p1.bin, p2.bin, cursorDistance);
 
-                var genes = chromosome.getGenesAtBpIndex(cursorBasePair);
+                var segments = chromosome.getSegmentsAtBpIndex(ChromosomeController.chromosomeRenderingInfo.segmentInfos, cursorBasePair);
 
                 // Don't have a principled way to do this, so I'll just pick the first gene to display
-                if (genes.Count() > 0)
+                if (segments.Any())
                 {
-                    var gene = genes.ToList()[0];
+                    var segment = segments.First();
+                    /*
+                     * TODO: Uncomment
+                     * 
                     chromosome.highlightGene(gene);
 
                     sideText.text = gene.name;
@@ -179,6 +182,7 @@ public class CameraController : MonoBehaviour
                         chromosome.focusGene(gene);
                         parentController.goToGene(gene);
                     }
+                    */
                 }
                 return hit.point;
             }
@@ -203,25 +207,22 @@ public class CameraController : MonoBehaviour
     }
     private void ShowLabels()
     {
-        if (ChromosomeController.geneWorldPositions != null)
+        var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position + .1f * transform.forward);
+        var genesToShow = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(info => info.Value.worldPositions.NearestNeighbors(
+            new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
+            geneLabels.Count
+            ).Select((node) =>
+                (new Vector3(node.Item1[0], node.Item1[1], node.Item1[2]), info.Value.segments.Match(x => x[node.Item2].Name, x => x[node.Item2].Info))));
+
+
+        foreach (var ((position, name), index) in genesToShow.Select((x, i) => (x, i)))
         {
-            var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position + .1f * transform.forward);
-            var genesToShow = ChromosomeController.geneWorldPositions.NearestNeighbors(
-                new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
-                geneLabels.Count
-               ).Select((node) =>
-                 (new Vector3(node.Item1[0], node.Item1[1], node.Item1[2]), ChromosomeController.genes[node.Item2]));
-
-
-            foreach (var ((position, geneInfoToShow), index) in genesToShow.Select((x, i) => (x, i)))
-            {
-                var label = geneLabels[index];
-                label.transform.localPosition = position;
-                label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = geneInfoToShow.name;
-                label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
-            }
-            //Debug.Log(genesToShow);
+            var label = geneLabels[index];
+            label.transform.localPosition = position;
+            label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
+            label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
         }
+
     }
 
     public void Tween1DView()
@@ -265,8 +266,11 @@ public class CameraController : MonoBehaviour
 
     public void Update1DViewBasePairIndex(int bpindex)
     {
+        /*
+         * TODO: Uncomment
+         * 
         var closestGeneIndex = 0;
-        var closestGeneDistance = 100000000000;
+        var closestGeneDistance = long.MaxValue;
         var numberOfGenes = ChromosomeController.genes.Count;
 
         for (int i = 0; i < numberOfGenes; i++)
@@ -292,6 +296,7 @@ public class CameraController : MonoBehaviour
         }
 
         OneDView = (bpindex, toDisplay);
+        */
     }
 
 

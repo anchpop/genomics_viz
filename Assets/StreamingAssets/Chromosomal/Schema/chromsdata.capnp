@@ -12,7 +12,9 @@ struct Chromosome {
 
 	struct Point {
 		coordinate @0 :Vec3;
+
 		bin @1 :UInt32;
+		# The bin is the lowest "base pair index" that this point in the 3D backbone corresponds to.  
 
 		struct Vec3 {
 			x @0 :Float32;

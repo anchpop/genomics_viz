@@ -15,7 +15,7 @@ using OneOf;
 using System.IO;
 using UnityEngine.Profiling;
 
-//using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
+using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
 using SegmentInfo = System.Collections.Generic.Dictionary<string, (OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>> segments, Supercluster.KDTree.KDTree<float, int> worldPositions, KTrie.StringTrie<int> nameDict)>;
 
 
@@ -60,9 +60,6 @@ public class ChromosomeController : MonoBehaviour
     public static ChromosomeRenderingInfo chromosomeRenderingInfo;
     string currentlyRenderingSetIndex = "1";
 
-    public static List<Point> points;
-    public static List<(string name, int start, int end, bool direction)> genes;
-    public static KDTree<float, int> geneWorldPositions;
     public List<(int start, int end)> gata;
     public List<(int start, int end)> ctcf;
     public List<(int start, int end)> irf;
@@ -119,10 +116,6 @@ public class ChromosomeController : MonoBehaviour
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
 
 
-        points = chromosomeRenderingInfo.points;
-        Profiler.BeginSample("getGenes");
-        //(genes, geneWorldPositions) = getGenes();
-        Profiler.EndSample();
         Profiler.BeginSample("getGata");
         gata = getGATA();
         Profiler.EndSample();
@@ -283,8 +276,6 @@ public class ChromosomeController : MonoBehaviour
         {
             var segmentInfo = new SegmentInfo();
 
-            int lastStart = 0;
-
             foreach (var segmentSet in chromosome.SegmentSets)
             {
 
@@ -312,9 +303,9 @@ public class ChromosomeController : MonoBehaviour
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
                     int[] nodes = segments.Select((x, i) => i).ToArray();
-                    var geneWorldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+                    var worldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
 
-                    segmentInfo[segmentSet.Name] = (segments, geneWorldPositions, nameDict);
+                    segmentInfo[segmentSet.Name] = (segments, worldPositions, nameDict);
                 }
                 else
                 {
@@ -350,7 +341,7 @@ public class ChromosomeController : MonoBehaviour
 
         var lastpoints = new List<Vector3>();
 
-        var pointss = points.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
+        var pointss = chromosomeRenderingInfo.points.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
 
         foreach (var (pointsRangeI, meshIndex) in pointss)
         {
@@ -386,7 +377,7 @@ public class ChromosomeController : MonoBehaviour
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += lastMesh ? pointsRange.Count() : pointsRange.Count() - 2;
         }
-        Assert.AreEqual(points.Count - 1, backbonePointNormals.Count);
+        Assert.AreEqual(chromosomeRenderingInfo.points.Count - 1, backbonePointNormals.Count);
     }
 
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
@@ -404,7 +395,7 @@ public class ChromosomeController : MonoBehaviour
         else
         {
             var l = new List<Vector3> { startPoint };
-            l.AddRange(points.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
+            l.AddRange(chromosomeRenderingInfo.points.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
             l.Add(endPoint);
             return (l, startBackboneIndex);
         }
@@ -412,6 +403,9 @@ public class ChromosomeController : MonoBehaviour
 
     void createGenesMesh()
     {
+        /*
+         * TODO: Uncomment
+         * 
         List<(int start, int end)> getGeneSections()
         {
             var sections = new List<(int start, int end)>();
@@ -473,7 +467,8 @@ public class ChromosomeController : MonoBehaviour
             mesh.vertices = verticies.ToArray();
             mesh.triangles = indices.ToArray();
             mesh.RecalculateNormals();
-        }
+    }
+        */
     }
 
     void createChromatidInterationPredictionLines()
@@ -716,29 +711,36 @@ public class ChromosomeController : MonoBehaviour
     }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
-    public IEnumerable<(string name, int start, int end, bool direction)> getGenesAtBpIndex(int bpIndex)
+    public Dictionary<string, SegmentList> getSegmentsAtBpIndex(SegmentInfo segmentInfos, int bin)
     {
-        return from gene in genes
-               where gene.start <= bpIndex
-               where bpIndex <= gene.end
-               select gene;
+        var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<SegmentList>(
+            segments => (from segment in segments
+                         where segment.SegmentInfo.StartBin <= bin
+                         where bin <= segment.SegmentInfo.EndBin
+                         select segment).ToList(),
+            segments => (from segment in segments
+                         where segment.SegmentInfo.StartBin <= bin
+                         where bin <= segment.SegmentInfo.EndBin
+                         select segment).ToList())
+            )).ToDictionary(x => x.setName, x => x.matchedSegments);
+        return matched_segments;
     }
 
     public int basePairIndexToLocationIndex(int bpIndex)
     {
-        if (bpIndex <= points[0].bin) return 0;
-        if (bpIndex >= points[points.Count - 1].bin) return points.Count - 1;
+        if (bpIndex <= chromosomeRenderingInfo.points.First().bin) return 0;
+        if (bpIndex >= chromosomeRenderingInfo.points.Last().bin) return chromosomeRenderingInfo.points.Count - 1;
 
         // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
         //var a = node[0].Value;
 
-        var index = points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
+        var index = chromosomeRenderingInfo.points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
         if (index < 0)
         {
             index = ~index; // index of the first element that is larger than the search value
             index -= 1;
         }
-        index = index >= points.Count ? points.Count - 1 : index;
+        index = index >= chromosomeRenderingInfo.points.Count ? chromosomeRenderingInfo.points.Count - 1 : index;
         index = index < 0 ? 0 : index;
 
 
@@ -750,20 +752,20 @@ public class ChromosomeController : MonoBehaviour
 
     public Vector3 basePairIndexToPoint(int bpIndex)
     {
-        if (bpIndex <= points[0].bin)
+        if (bpIndex <= chromosomeRenderingInfo.points[0].bin)
         {
-            return points[0].position;
+            return chromosomeRenderingInfo.points[0].position;
         }
-        else if (bpIndex >= points[points.Count - 1].bin)
+        else if (bpIndex >= chromosomeRenderingInfo.points.Last().bin)
         {
-            return points[points.Count - 1].position;
+            return chromosomeRenderingInfo.points.Last().position;
         }
         else
         {
             var locationIndex = basePairIndexToLocationIndex(bpIndex);
 
-            var a = points[locationIndex];
-            var b = points[locationIndex + 1];
+            var a = chromosomeRenderingInfo.points[locationIndex];
+            var b = chromosomeRenderingInfo.points[locationIndex + 1];
             Assert.IsTrue(a.bin <= bpIndex);
             Assert.IsTrue(bpIndex <= b.bin);
             return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
