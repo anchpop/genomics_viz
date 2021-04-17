@@ -169,9 +169,7 @@ public class CameraController : MonoBehaviour
                 if (segments.Any())
                 {
                     var segment = segments.First();
-                    /*
-                     * TODO: Uncomment
-                     * 
+                    /* TODO: Uncomment
                     chromosome.highlightGene(gene);
 
                     sideText.text = gene.name;

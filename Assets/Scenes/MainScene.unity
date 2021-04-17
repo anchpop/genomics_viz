@@ -3514,7 +3514,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1278834136}
   m_Layer: 0
-  m_Name: Genes
+  m_Name: Segment Renderers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4021,28 +4021,9 @@ MonoBehaviour:
   geneTextCanvas: {fileID: 2624446989120790316, guid: 9c8d66b01e9a85c418b14f453064893f,
     type: 3}
   cartoonAmount: 0.03
-  backboneRenderers:
-  - {fileID: 815941624}
-  - {fileID: 1991825873}
-  - {fileID: 556717324}
-  - {fileID: 191831993}
-  - {fileID: 1368140865}
-  - {fileID: 1146177947}
-  - {fileID: 1637184947}
-  - {fileID: 1137258468}
-  - {fileID: 504399944}
-  - {fileID: 1290276907}
-  geneRenderers:
-  - {fileID: 1995716348}
-  - {fileID: 1688591084}
-  - {fileID: 1236346278}
-  - {fileID: 746927361}
-  - {fileID: 238751914}
-  - {fileID: 1428077563}
-  - {fileID: 2083615898}
-  - {fileID: 948876236}
-  - {fileID: 129360997}
-  - {fileID: 1259845970}
+  backboneRenderers: {fileID: 1526947373}
+  segmentRenderers: {fileID: 1278834135}
+  backboneMeshFilters: []
   highlightRenderer: {fileID: 1072041575}
   focusRenderer: {fileID: 1771343153}
   numsides: 3
@@ -4159,7 +4140,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1526947374}
   m_Layer: 0
-  m_Name: Backbone
+  m_Name: Backbone Renderers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5776,7 +5757,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 5.699951, y: -0.2000122}
+  m_AnchoredPosition: {x: 5.699951, y: -0.20007324}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2042315972

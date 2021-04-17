@@ -91,8 +91,11 @@ public class ChromosomeController : MonoBehaviour
 
     // Unity places a limit on the number of verts on a mesh that's quite a bit lower than the amount we need
     // So, we need to use multiple meshes, which means multiple mesh renderers
-    public List<MeshFilter> backboneRenderers;
-    public List<MeshFilter> geneRenderers;
+    public GameObject backboneRenderers;
+    public GameObject segmentRenderers;
+    public List<MeshFilter> backboneMeshFilters;
+    public Dictionary<string, List<MeshFilter>> segmentMeshFilters;
+
     public MeshFilter highlightRenderer;
     public MeshFilter focusRenderer;
 
@@ -114,6 +117,16 @@ public class ChromosomeController : MonoBehaviour
         chromosomeSetRenderingInfo = getChromosomeSetRenderingInfo();
 
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
+
+
+        backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
+        segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.ToDictionary(k => k, k =>
+            {
+                var renderers = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
+                renderers.name = k;
+                return renderers.GetComponentsInChildren<MeshFilter>().ToList();
+            }
+        );
 
 
         Profiler.BeginSample("getGata");
@@ -272,7 +285,7 @@ public class ChromosomeController : MonoBehaviour
             return points;
         }
 
-        SegmentInfo getSegmentInfo()
+        SegmentInfo getSegmentInfo(List<Point> points)
         {
             var segmentInfo = new SegmentInfo();
 
@@ -292,18 +305,22 @@ public class ChromosomeController : MonoBehaviour
 
                     foreach (var (segment, index) in segments.Select((segment, index) => (segment, index)))
                     {
-                        Assert.IsFalse(nameDict.ContainsKey(segment.Name), segment.Name + " appears multiple times in SegmentSet!");
-                        nameDict.Add(segment.Name, index);
+                        // TODO: ask hao why this is sometimes true
+                        // Assert.IsFalse(nameDict.ContainsKey(segment.Name), segment.Name + " appears multiple times in SegmentSet!");
+                        if (!nameDict.ContainsKey(segment.Name))
+                        {
+                            nameDict.Add(segment.Name, index);
+                        }
                     }
 
-                    float[][] points = segments.Select(segment =>
+                    float[][] segment_points = segments.Select(segment =>
                     {
-                        var originBin = checked((int)(segment.Ascending ? segment.SegmentInfo.StartBin : segment.SegmentInfo.StartBin));
-                        var originPosition = basePairIndexToPoint(originBin);
+                        var originBin = checked((int)(segment.Ascending ? segment.SegmentInfo.StartBin : segment.SegmentInfo.EndBin));
+                        var originPosition = basePairIndexToPoint(points, originBin);
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
                     int[] nodes = segments.Select((x, i) => i).ToArray();
-                    var worldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+                    var worldPositions = new KDTree<float, int>(3, segment_points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
 
                     segmentInfo[segmentSet.Name] = (segments, worldPositions, nameDict);
                 }
@@ -325,7 +342,7 @@ public class ChromosomeController : MonoBehaviour
         Profiler.EndSample();
 
         Profiler.BeginSample("getGenes");
-        info.segmentInfos = getSegmentInfo();
+        info.segmentInfos = getSegmentInfo(info.points);
         Profiler.EndSample();
 
         return info;
@@ -341,18 +358,18 @@ public class ChromosomeController : MonoBehaviour
 
         var lastpoints = new List<Vector3>();
 
-        var pointss = chromosomeRenderingInfo.points.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
+        var pointss = chromosomeRenderingInfo.points.Split(backboneMeshFilters.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
 
         foreach (var (pointsRangeI, meshIndex) in pointss)
         {
-            var lastMesh = meshIndex == backboneRenderers.Count - 1;
+            var lastMesh = meshIndex == backboneMeshFilters.Count - 1;
             // Create mesh
             var pointsRange = !lastMesh ?
                 pointsRangeI.Append(pointss[meshIndex + 1].points[0]).Append(pointss[meshIndex + 1].points[1])
                 : pointsRangeI.AsEnumerable();
 
             Mesh mesh = new Mesh();
-            backboneRenderers[meshIndex].mesh = mesh;
+            backboneMeshFilters[meshIndex].mesh = mesh;
 
             var (verticies, indices, normies, lastpointsp) = lastpoints.Count == 0 ?
                 createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth, false) :
@@ -368,12 +385,12 @@ public class ChromosomeController : MonoBehaviour
             mesh.RecalculateNormals();
 
             // Add collider
-            var meshCollider = backboneRenderers[meshIndex].gameObject.AddComponent<MeshCollider>();
+            var meshCollider = backboneMeshFilters[meshIndex].gameObject.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = mesh;
 
 
             // Set up renderer info
-            var chromosomeSubrenderer = backboneRenderers[meshIndex].gameObject.GetComponent<ChromosomePart>();
+            var chromosomeSubrenderer = backboneMeshFilters[meshIndex].gameObject.GetComponent<ChromosomePart>();
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += lastMesh ? pointsRange.Count() : pointsRange.Count() - 2;
         }
@@ -685,7 +702,7 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightGene((string name, int start, int end, bool direction) info)
+    public void highlightSegment((string name, int start, int end, bool direction) info)
     {
         highlightArea(highlightRenderer, info);
     }
@@ -726,52 +743,57 @@ public class ChromosomeController : MonoBehaviour
         return matched_segments;
     }
 
-    public int basePairIndexToLocationIndex(int bpIndex)
+    public int basePairIndexToLocationIndex(List<Point> points, int bpIndex)
     {
-        if (bpIndex <= chromosomeRenderingInfo.points.First().bin) return 0;
-        if (bpIndex >= chromosomeRenderingInfo.points.Last().bin) return chromosomeRenderingInfo.points.Count - 1;
+        if (bpIndex <= points.First().bin) return 0;
+        if (bpIndex >= points.Last().bin) return points.Count - 1;
 
         // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
         //var a = node[0].Value;
 
-        var index = chromosomeRenderingInfo.points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
+        var index = points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
         if (index < 0)
         {
             index = ~index; // index of the first element that is larger than the search value
             index -= 1;
         }
-        index = index >= chromosomeRenderingInfo.points.Count ? chromosomeRenderingInfo.points.Count - 1 : index;
+        index = index >= points.Count ? points.Count - 1 : index;
         index = index < 0 ? 0 : index;
-
-
 
 
         //var a = bpIndex / basePairsPerRow;
         return index;
     }
 
-    public Vector3 basePairIndexToPoint(int bpIndex)
+    public int basePairIndexToLocationIndex(int bpIndex)
     {
-        if (bpIndex <= chromosomeRenderingInfo.points[0].bin)
+        return basePairIndexToLocationIndex(chromosomeRenderingInfo.points, bpIndex);
+    }
+
+    public Vector3 basePairIndexToPoint(List<Point> points, int bpIndex)
+    {
+        if (bpIndex <= points[0].bin)
         {
-            return chromosomeRenderingInfo.points[0].position;
+            return points[0].position;
         }
-        else if (bpIndex >= chromosomeRenderingInfo.points.Last().bin)
+        else if (bpIndex >= points.Last().bin)
         {
-            return chromosomeRenderingInfo.points.Last().position;
+            return points.Last().position;
         }
         else
         {
-            var locationIndex = basePairIndexToLocationIndex(bpIndex);
+            var locationIndex = basePairIndexToLocationIndex(points, bpIndex);
 
-            var a = chromosomeRenderingInfo.points[locationIndex];
-            var b = chromosomeRenderingInfo.points[locationIndex + 1];
+            var a = points[locationIndex];
+            var b = points[locationIndex + 1];
             Assert.IsTrue(a.bin <= bpIndex);
             Assert.IsTrue(bpIndex <= b.bin);
             return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
         }
-
-
+    }
+    public Vector3 basePairIndexToPoint(int bpIndex)
+    {
+        return basePairIndexToPoint(chromosomeRenderingInfo.points, bpIndex);
     }
 
 

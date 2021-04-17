@@ -219,7 +219,7 @@ public class ChromosomeParentController : MonoBehaviour
 
         tweenToShowPos(worldloc);
 
-        chromosomeController.highlightGene(info);
+        chromosomeController.highlightSegment(info);
         mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
     }
 

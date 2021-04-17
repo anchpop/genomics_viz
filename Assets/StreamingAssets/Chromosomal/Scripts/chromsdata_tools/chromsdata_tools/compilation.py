@@ -72,13 +72,14 @@ def compile_text_to_binary():
     bins = get_bins()
     segment_set = chromosome_schema_capnp.Chromosome.SegmentSet.new_message() 
     segment_set.segments.geneSegments = get_genes()[str(index)]
+    segment_set.name = "genes"
 
     assert len(coordinates) == len(bins)
 
     chromosome = chromosome_schema_capnp.Chromosome.new_message()
     chromosome.index.numbered = index
     chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
-    chromosome.segmentSets = []
+    chromosome.segmentSets = [segment_set]
     chromosome.connectionSets = []
 
 
