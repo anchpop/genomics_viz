@@ -168,10 +168,12 @@ public class CameraController : MonoBehaviour
                 // Don't have a principled way to do this, so I'll just pick the first gene to display
                 if (segments.Any())
                 {
-                    var segment = segments.First();
-                    /* TODO: Uncomment
-                    chromosome.highlightGene(gene);
+                    var segmentSet = segments.First().Key;
+                    var segment = segments.First().Value.Match<Segment>(s => s.First(), s => s.First());
+                    chromosome.highlightSegment(segmentSet, segment);
 
+                    /*
+                     * TODO: Uncomment
                     sideText.text = gene.name;
                     sideLoc.text = cursorBasePair.ToString("D");
 
@@ -181,6 +183,7 @@ public class CameraController : MonoBehaviour
                         parentController.goToGene(gene);
                     }
                     */
+
                 }
                 return hit.point;
             }

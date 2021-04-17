@@ -15,6 +15,7 @@ using OneOf;
 using System.IO;
 using UnityEngine.Profiling;
 
+using Segment = OneOf.OneOf<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER, CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>;
 using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
 using SegmentInfo = System.Collections.Generic.Dictionary<string, (OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>> segments, Supercluster.KDTree.KDTree<float, int> worldPositions, KTrie.StringTrie<int> nameDict)>;
 
@@ -117,7 +118,6 @@ public class ChromosomeController : MonoBehaviour
         chromosomeSetRenderingInfo = getChromosomeSetRenderingInfo();
 
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
-
 
         backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
         segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.ToDictionary(k => k, k =>
@@ -674,9 +674,9 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    public void highlightArea(MeshFilter renderer, (string name, int startBpIndex, int endBpIndex, bool direction) info)
+    public void highlightArea(MeshFilter renderer, (int startBin, int endBin) info)
     {
-        var genePoints = getPointsConnectingBpIndices(info.startBpIndex, info.endBpIndex);
+        var genePoints = getPointsConnectingBpIndices(info.startBin, info.endBin);
 
         Assert.AreNotEqual(genePoints.points.Count, 0);
         Assert.AreNotEqual(genePoints.points.Count, 1);
@@ -702,9 +702,10 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightSegment((string name, int start, int end, bool direction) info)
+    public void highlightSegment(string segmentSet, Segment segment)
     {
-        highlightArea(highlightRenderer, info);
+        var segmentInfo = segment.Match(s => s.SegmentInfo, s => s.SegmentInfo);
+        highlightArea(highlightRenderer, (startBin: checked((int)segmentInfo.StartBin), endBin: checked((int)segmentInfo.EndBin)));
     }
 
     public void unhighlightGene()
@@ -717,8 +718,11 @@ public class ChromosomeController : MonoBehaviour
     {
         if (name == "") return;
         focusedGene = info.name;
-
+        /*
+         * TODO: Uncomment
+         * 
         highlightArea(focusRenderer, info);
+        */
     }
 
     public void unfocusGene()
@@ -739,7 +743,8 @@ public class ChromosomeController : MonoBehaviour
                          where segment.SegmentInfo.StartBin <= bin
                          where bin <= segment.SegmentInfo.EndBin
                          select segment).ToList())
-            )).ToDictionary(x => x.setName, x => x.matchedSegments);
+            )).Where(x => x.matchedSegments.Match(segments => segments.Any(), segments => segments.Any())).ToDictionary(x => x.setName, x => x.matchedSegments);
+
         return matched_segments;
     }
 
@@ -747,9 +752,6 @@ public class ChromosomeController : MonoBehaviour
     {
         if (bpIndex <= points.First().bin) return 0;
         if (bpIndex >= points.Last().bin) return points.Count - 1;
-
-        // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
-        //var a = node[0].Value;
 
         var index = points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
         if (index < 0)
@@ -760,8 +762,6 @@ public class ChromosomeController : MonoBehaviour
         index = index >= points.Count ? points.Count - 1 : index;
         index = index < 0 ? 0 : index;
 
-
-        //var a = bpIndex / basePairsPerRow;
         return index;
     }
 
