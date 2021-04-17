@@ -204,7 +204,7 @@ public class ChromosomeParentController : MonoBehaviour
         {
             endIndex += 1;
         }
-        var genePositions = ChromosomeController.points.original.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
+        var genePositions = ChromosomeController.points.GetRange(startIndex, endIndex - startIndex).Select((v) => v.position);
 
         var gene_local_center = Vector3.zero;
         foreach (var pos in genePositions)

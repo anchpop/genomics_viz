@@ -169,8 +169,8 @@ public class CameraController : MonoBehaviour
             if (subrenderer)
             {
                 var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
-                var p1 = ChromosomeController.points.original[pointIndices.closest];
-                var p2 = ChromosomeController.points.original[pointIndices.nextClosest];
+                var p1 = ChromosomeController.points[pointIndices.closest];
+                var p2 = ChromosomeController.points[pointIndices.nextClosest];
 
                 var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
                 var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);

@@ -23,6 +23,13 @@ public struct Point
     public override string ToString() =>
         $"Point(position: {position}, bin: {bin}, originalIndex: {originalIndex})";
 }
+public struct ChromosomeRenderingInfo
+{
+    public List<Point> points;
+    public List<(string name, int start, int end, bool direction)> genes;
+    public KDTree<float, int> geneWorldPositions;
+
+}
 
 public class ChromosomeController : MonoBehaviour
 {
@@ -31,15 +38,19 @@ public class ChromosomeController : MonoBehaviour
 
     static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
     public GameObject cameraParent;
-    public static ForRendering.READER allCromosomes;
     public TextAsset locationSequence;
     public TextAsset coordinateMapping;
     public TextAsset geneAnnotations;
+
     public TextAsset GATA;
     public TextAsset CTCF;
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
-    public static (List<Point> original, bool dummy) points; // dummy is only here because I wanted this to be a tuple and tuples need at least two elements
+
+    public static ChromosomeSet.READER chromosomeSet;
+    int currentlyRenderingSetIndex = 0;
+    public static ChromosomeRenderingInfo chromosomeRenderingInfo;
+    public static List<Point> points;
     public static List<(string name, int start, int end, bool direction)> genes;
     public static KDTree<float, int> geneWorldPositions;
     public List<(int start, int end)> gata;
@@ -91,6 +102,7 @@ public class ChromosomeController : MonoBehaviour
     Vector3 randoVector;
 
 
+
     void Start()
     {
         var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
@@ -99,21 +111,20 @@ public class ChromosomeController : MonoBehaviour
         using var fs = File.OpenRead(info_file_path);
         var frame = Framing.ReadSegments(fs);
         var deserializer = DeserializerState.CreateRoot(frame);
-        allCromosomes = new ForRendering.READER(deserializer);
+        chromosomeSet = new ChromosomeSet.READER(deserializer);
 
+        chromosomeRenderingInfo = createRenderingInfo(chromosomeSet, currentlyRenderingSetIndex);
 
-
-        if (cameraParentCachedPosition.position != Vector3.zero || cameraParentCachedPosition.rotation != Vector3.zero || cameraParentCachedPosition.scale != Vector3.zero)
-        {
-            cameraParent.transform.position = cameraParentCachedPosition.position;
-            cameraParent.transform.eulerAngles = cameraParentCachedPosition.rotation;
-            cameraParent.transform.localScale = cameraParentCachedPosition.scale;
-        }
+        Debug.Log(chromosomeSet.Name);
+        Debug.Log(chromosomeSet.Description);
+        Debug.Log(chromosomeSet.Chromosomes.Count);
+        Debug.Log(chromosomeSet.Chromosomes[0].Backbone.Count);
 
 
         geneDict = new KTrie.StringTrie<(int start, int end, int index)>();
+
         Profiler.BeginSample("getPoints");
-        points = getPoints();
+        points = chromosomeRenderingInfo.points;
         Profiler.EndSample();
         Profiler.BeginSample("getGenes");
         (genes, geneWorldPositions) = getGenes();
@@ -146,6 +157,85 @@ public class ChromosomeController : MonoBehaviour
 
     }
 
+    ChromosomeRenderingInfo createRenderingInfo(ChromosomeSet.READER chromosomeSet, int currentlyRenderingSetIndex)
+    {
+        List<Point> getPoints()
+        {
+            var center = Vector3.zero;
+
+            var pointsRaw = new List<(Vector3 point, int bin)>();
+
+            var points = new List<Point>();
+
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+
+
+            var splitCoordinateMapping = coordinateMapping.text.Split('\n').ToArray();
+            var splitLocationSequence = locationSequence.text.Split('\n').ToArray();
+            Assert.AreEqual(splitCoordinateMapping.Length, splitLocationSequence.Length);
+
+            //var basePairMapping = new KdTree<float, int>(1, new FloatMath());
+
+            foreach (var pointI in chromosomeSet.Chromosomes[currentlyRenderingSetIndex].Backbone)
+            {
+                var point = new Vector3(pointI.Coordinate.X, pointI.Coordinate.Y, pointI.Coordinate.Z);
+
+                var bin = pointI.Bin;
+                pointsRaw.Add((point, bin: checked((int)bin)));
+                center += point;
+
+
+                if (point.x < min.x)
+                {
+                    min = new Vector3(point.x, min.y, min.z);
+                }
+                if (point.y < min.y)
+                {
+                    min = new Vector3(min.x, point.y, min.z);
+                }
+                if (point.z < min.z)
+                {
+                    min = new Vector3(min.x, min.y, point.z);
+                }
+                if (point.x > max.x)
+                {
+                    max = new Vector3(point.x, max.y, max.z);
+                }
+                if (point.y > max.y)
+                {
+                    max = new Vector3(max.x, point.y, max.z);
+                }
+                if (point.z > max.z)
+                {
+                    max = new Vector3(max.x, max.y, point.z);
+                }
+            }
+
+
+            center = center / pointsRaw.Count;
+
+            var count = 0;
+            foreach (var (point, bin) in pointsRaw)
+            {
+                var scaling = Mathf.Max(Mathf.Max(min.x - max.x, min.y - max.y), min.z - max.z);
+                var p = new Point();
+                p.position = (point - center) * overallScale / scaling;
+                p.originalIndex = count;
+                p.bin = bin;
+
+                points.Add(p);
+                count++;
+            }
+
+            return points;
+        }
+
+        var info = new ChromosomeRenderingInfo { };
+        info.points = getPoints();
+        return info;
+    }
+
     void createBackboneMesh()
     {
         backbonePointNormals = new List<List<Vector3>>();
@@ -156,7 +246,7 @@ public class ChromosomeController : MonoBehaviour
 
         var lastpoints = new List<Vector3>();
 
-        var pointss = points.original.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
+        var pointss = points.Split(backboneRenderers.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
 
         foreach (var (pointsRangeI, meshIndex) in pointss)
         {
@@ -192,7 +282,7 @@ public class ChromosomeController : MonoBehaviour
             chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
             pointsAdded += lastMesh ? pointsRange.Count() : pointsRange.Count() - 2;
         }
-        Assert.AreEqual(points.original.Count - 1, backbonePointNormals.Count);
+        Assert.AreEqual(points.Count - 1, backbonePointNormals.Count);
     }
 
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
@@ -210,7 +300,7 @@ public class ChromosomeController : MonoBehaviour
         else
         {
             var l = new List<Vector3> { startPoint };
-            l.AddRange(points.original.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
+            l.AddRange(points.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
             l.Add(endPoint);
             return (l, startBackboneIndex);
         }
@@ -542,127 +632,6 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    (List<Point> original, bool dummy) getPoints()
-    {
-        if (ChromosomeController.points.original != null)
-        {
-            return ChromosomeController.points;
-        }
-
-        var center = Vector3.zero;
-
-        var pointsRaw = new List<(Vector3 point, int bin)>();
-
-        var points = new List<Point>();
-
-        Vector3 min = Vector3.zero;
-        Vector3 max = Vector3.zero;
-
-
-        var splitCoordinateMapping = coordinateMapping.text.Split('\n').ToArray();
-        var splitLocationSequence = locationSequence.text.Split('\n').ToArray();
-        Assert.AreEqual(splitCoordinateMapping.Length, splitLocationSequence.Length);
-
-        //var basePairMapping = new KdTree<float, int>(1, new FloatMath());
-
-        for (int i = 0; i < splitLocationSequence.Length; i++)
-        {
-            var locationSequenceLine = splitLocationSequence[i];
-            var mappingLine = splitCoordinateMapping[i];
-            if (locationSequenceLine != "" && mappingLine != "")
-            {
-                // look at coordinate mapping
-                var info = mappingLine.Split('\t');
-                var bin = int.Parse(info[0]);
-                var associatedIndex = int.Parse(info[1]);
-                //basePairMapping.Add(new float[] { bin }, associatedIndex);
-                totalBasePairs = bin;
-
-                // look at coordinate sequence
-                var coords = locationSequenceLine.Split('\t');
-                var point = new Vector3(float.Parse(coords[0]), float.Parse(coords[1]), float.Parse(coords[2]));
-
-                if (point.x < min.x)
-                {
-                    min = new Vector3(point.x, min.y, min.z);
-                }
-                if (point.y < min.y)
-                {
-                    min = new Vector3(min.x, point.y, min.z);
-                }
-                if (point.z < min.z)
-                {
-                    min = new Vector3(min.x, min.y, point.z);
-                }
-                if (point.x > max.x)
-                {
-                    max = new Vector3(point.x, max.y, max.z);
-                }
-                if (point.y > max.y)
-                {
-                    max = new Vector3(max.x, point.y, max.z);
-                }
-                if (point.z > max.z)
-                {
-                    max = new Vector3(max.x, max.y, point.z);
-                }
-
-                pointsRaw.Add((point, bin));
-                center += point;
-            }
-        }
-
-        center = center / pointsRaw.Count;
-
-        var count = 0;
-        foreach (var (point, bin) in pointsRaw)
-        {
-            var scaling = Mathf.Max(Mathf.Max(min.x - max.x, min.y - max.y), min.z - max.z);
-            var p = new Point();
-            p.position = (point - center) * overallScale / scaling;
-            p.originalIndex = count;
-            p.bin = bin;
-
-            points.Add(p);
-            count++;
-        }
-#if true
-
-        //var removalOrder = GetSimplificationOrder(points);
-
-
-        /*
-        for (var i = 0; i < numberOfRows * simplificationFactorCoarse; i++)
-        {
-            pointsCoarse.RemoveAt(removalOrder[i]);
-        }
-
-
-        for (var i = 0; i < numberOfRows * simplificationFactorFine; i++)
-        {
-            pointsFine.RemoveAt(removalOrder[i]);
-        }
-        */
-
-        return (original: points, dummy: false/*, basePairMapping*/);
-#else
-        var pointsOriginal = points.ToList();
-
-        bool highQualityEnabled = true;
-        var pointsCoarse = SimplificationHelpers.Simplify<Point>(
-                        points,
-                        (p1, p2) => p1.position == p2.position,
-                        (p) => p.position.x * 1000,
-                        (p) => p.position.y * 1000,
-                        (p) => p.position.z * 1000,
-                        .95,
-                        highQualityEnabled
-                        );
-
-
-        return (original: pointsOriginal, coarse: pointsCoarse.ToList());
-#endif
-    }
 
     public void highlightArea(MeshFilter renderer, (string name, int startBpIndex, int endBpIndex, bool direction) info)
     {
@@ -728,19 +697,19 @@ public class ChromosomeController : MonoBehaviour
 
     public int basePairIndexToLocationIndex(int bpIndex)
     {
-        if (bpIndex <= points.original[0].bin) return 0;
-        if (bpIndex >= points.original[points.original.Count - 1].bin) return points.original.Count - 1;
+        if (bpIndex <= points[0].bin) return 0;
+        if (bpIndex >= points[points.Count - 1].bin) return points.Count - 1;
 
         // var node = points.basePairMapping.GetNearestNeighbours(new float[] { bpIndex }, 1);
         //var a = node[0].Value;
 
-        var index = points.original.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
+        var index = points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
         if (index < 0)
         {
             index = ~index; // index of the first element that is larger than the search value
             index -= 1;
         }
-        index = index >= points.original.Count ? points.original.Count - 1 : index;
+        index = index >= points.Count ? points.Count - 1 : index;
         index = index < 0 ? 0 : index;
 
 
@@ -752,20 +721,20 @@ public class ChromosomeController : MonoBehaviour
 
     public Vector3 basePairIndexToPoint(int bpIndex)
     {
-        if (bpIndex <= points.original[0].bin)
+        if (bpIndex <= points[0].bin)
         {
-            return points.original[0].position;
+            return points[0].position;
         }
-        else if (bpIndex >= points.original[points.original.Count - 1].bin)
+        else if (bpIndex >= points[points.Count - 1].bin)
         {
-            return points.original[points.original.Count - 1].position;
+            return points[points.Count - 1].position;
         }
         else
         {
             var locationIndex = basePairIndexToLocationIndex(bpIndex);
 
-            var a = points.original[locationIndex];
-            var b = points.original[locationIndex + 1];
+            var a = points[locationIndex];
+            var b = points[locationIndex + 1];
             Assert.IsTrue(a.bin <= bpIndex);
             Assert.IsTrue(bpIndex <= b.bin);
             return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
