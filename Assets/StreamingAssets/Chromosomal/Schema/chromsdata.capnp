@@ -2,8 +2,13 @@
 
 struct Chromosome {
 	# Contains all the relevant information about a single chromosome.
+	index :union {
+		numbered @0 :UInt32;
+		x @1 :Void;
+		y @2 :Void;
+	}
 
-	backbone @0 :List(Point);
+	backbone @3 :List(Point);
 
 	struct Point {
 		coordinate @0 :Vec3;
@@ -16,21 +21,35 @@ struct Chromosome {
 		}
 	}
 
-	segmentSets @1 :List(SegmentSet);
+	segmentSets @4 :List(SegmentSet);
 	# Used for storing things like genes, GWAS data, etc.
 
 	struct SegmentSet {
 		name @0 :Text;
 		description @1 :Text;
-		segments @2 :List(Segment);
-	}
-	struct Segment {
-		info @0 :Text;
-		startBin @1 :UInt32;
-		endBin @2 :UInt32;
+		segments :union {
+			geneSegments @2 :List(GeneSegment);
+			otherSegments @3 :List(OtherSegment);
+		}
+
+		struct GeneSegment {
+			ascending @0 :Bool;
+			stat @1 :Text;
+			name @2 :Text;
+			id @3 :Text;
+			segmentInfo @4 :SegmentInfo;
+		}
+		struct OtherSegment {
+			info @0 :Text;
+			segmentInfo @1 :SegmentInfo;
+		}
+		struct SegmentInfo {
+			startBin @0 :UInt32;
+			endBin @1 :UInt32;
+		}
 	}
 
-	connectionSets @2 :List(ConnectionSet);
+	connectionSets @5 :List(ConnectionSet);
 	# Used for storing things like chromatid interaction predictions.
 
 	struct ConnectionSet {

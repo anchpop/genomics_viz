@@ -12,6 +12,8 @@ using Valve.VR;
 using Valve.VR.InteractionSystem;
 using UnityEngine.EventSystems;
 
+using Segment = OneOf.OneOf<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER, CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>;
+
 public class CameraController : MonoBehaviour
 {
     public ChromosomeController chromosome;
@@ -93,38 +95,23 @@ public class CameraController : MonoBehaviour
                 }
                 else
                 {
-                    var results = chromosome.geneDict.GetByPrefix(search);
-                    foreach (var result in results)
+                    IEnumerable<(string segmentSetName, Segment segment)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
+                        segmentInfo.Value.nameDict.GetByPrefix(search).Select(entry =>
+                            (segmentSetName: "hell" + segmentInfo.Key,
+                             segment: segmentInfo.Value.segments.Match<Segment>(x => x[entry.Value], x => x[entry.Value]))));
+
+                    if (results.Any())
                     {
-                        Debug.Log(result);
-                    }
-                    if (chromosome.geneDict.ContainsKey(search))
-                    {
-                        var gene = ChromosomeController.genes[chromosome.geneDict[search].index];
-                        chromosome.focusGene(gene);
-                        parentController.goToGene(gene);
+                        var (segmentSetName, segment) = results.First();
+                        // TODO: Uncomment
+                        //chromosome.focusSegment((segmentSetName, segment));
+                        //parentController.focusSegment((segmentSetName, segment));
                     }
                     else
                     {
                         Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
                     }
                 }
-            }
-
-        }
-        else
-        {
-        }
-
-        if (chromosome.focusedGene != "")
-        {
-            if (keyboard.qKey.wasPressedThisFrame)
-            {
-                var geneInfo = chromosome.geneDict[chromosome.focusedGene];
-                var nextGene = ChromosomeController.genes[geneInfo.index + 1];
-
-                chromosome.focusGene(nextGene);
-                parentController.goToGene(nextGene);
             }
 
         }
@@ -256,6 +243,9 @@ public class CameraController : MonoBehaviour
 
     public void Update1DViewGene(string geneName)
     {
+        /*
+         * TODO: Uncomment
+         * 
         var info = chromosome.geneDict[geneName];
         var scale = slider.value * baseScale;
 
@@ -270,6 +260,7 @@ public class CameraController : MonoBehaviour
         }
 
         OneDView = (info.start / 2 + info.end / 2, toDisplay);
+        */
     }
 
     public void Update1DViewBasePairIndex(int bpindex)

@@ -256,6 +256,7 @@ public class ChromosomeParentController : MonoBehaviour
 
     public void openGeneInfoOnline()
     {
+        /*
         var geneInfo = chromosomeController.geneDict[chromosomeController.focusedGene];
         Application.OpenURL(
             "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
@@ -263,6 +264,7 @@ public class ChromosomeParentController : MonoBehaviour
             + "%2D"
             + geneInfo.end.ToString("D")
             + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
+        */
     }
 
 

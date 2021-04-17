@@ -10,9 +10,13 @@ using Valve.VR.InteractionSystem;
 using DG.Tweening;
 using CapnpGen;
 using Capnp;
+using OneOf;
 
 using System.IO;
 using UnityEngine.Profiling;
+
+//using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
+using SegmentInfo = System.Collections.Generic.Dictionary<string, (OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>> segments, Supercluster.KDTree.KDTree<float, int> worldPositions, KTrie.StringTrie<int> nameDict)>;
 
 
 public struct Point
@@ -23,12 +27,18 @@ public struct Point
     public override string ToString() =>
         $"Point(position: {position}, bin: {bin}, originalIndex: {originalIndex})";
 }
+
+public struct ChromosomeSetRenderingInfo
+{
+    public ChromosomeSet.READER chromosomeSet;
+    public Dictionary<string, Chromosome.READER> chromosomes;
+}
+
 public struct ChromosomeRenderingInfo
 {
+    public Chromosome.READER chromosome;
     public List<Point> points;
-    public List<(string name, int start, int end, bool direction)> genes;
-    public KDTree<float, int> geneWorldPositions;
-
+    public SegmentInfo segmentInfos;
 }
 
 public class ChromosomeController : MonoBehaviour
@@ -36,7 +46,6 @@ public class ChromosomeController : MonoBehaviour
     public float overallScale = 1.5f;
     public float lineWidth = 1;
 
-    static (Vector3 position, Vector3 rotation, Vector3 scale) cameraParentCachedPosition;
     public GameObject cameraParent;
     public TextAsset locationSequence;
     public TextAsset coordinateMapping;
@@ -47,9 +56,10 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset IRF1;
     public TextAsset ChromatinInteractionPrediction;
 
-    public static ChromosomeSet.READER chromosomeSet;
-    int currentlyRenderingSetIndex = 0;
+    public static ChromosomeSetRenderingInfo chromosomeSetRenderingInfo;
     public static ChromosomeRenderingInfo chromosomeRenderingInfo;
+    string currentlyRenderingSetIndex = "1";
+
     public static List<Point> points;
     public static List<(string name, int start, int end, bool direction)> genes;
     public static KDTree<float, int> geneWorldPositions;
@@ -91,7 +101,6 @@ public class ChromosomeController : MonoBehaviour
 
     public int numsides = 3;
 
-    public KTrie.StringTrie<(int start, int end, int index)> geneDict;
 
     static public int totalBasePairs = 0;
     static public int basePairsPerRow = 5000;
@@ -105,29 +114,14 @@ public class ChromosomeController : MonoBehaviour
 
     void Start()
     {
-        var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
-        var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
+        chromosomeSetRenderingInfo = getChromosomeSetRenderingInfo();
 
-        using var fs = File.OpenRead(info_file_path);
-        var frame = Framing.ReadSegments(fs);
-        var deserializer = DeserializerState.CreateRoot(frame);
-        chromosomeSet = new ChromosomeSet.READER(deserializer);
-
-        chromosomeRenderingInfo = createRenderingInfo(chromosomeSet, currentlyRenderingSetIndex);
-
-        Debug.Log(chromosomeSet.Name);
-        Debug.Log(chromosomeSet.Description);
-        Debug.Log(chromosomeSet.Chromosomes.Count);
-        Debug.Log(chromosomeSet.Chromosomes[0].Backbone.Count);
+        chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
 
 
-        geneDict = new KTrie.StringTrie<(int start, int end, int index)>();
-
-        Profiler.BeginSample("getPoints");
         points = chromosomeRenderingInfo.points;
-        Profiler.EndSample();
         Profiler.BeginSample("getGenes");
-        (genes, geneWorldPositions) = getGenes();
+        //(genes, geneWorldPositions) = getGenes();
         Profiler.EndSample();
         Profiler.BeginSample("getGata");
         gata = getGATA();
@@ -157,8 +151,62 @@ public class ChromosomeController : MonoBehaviour
 
     }
 
-    ChromosomeRenderingInfo createRenderingInfo(ChromosomeSet.READER chromosomeSet, int currentlyRenderingSetIndex)
+    ChromosomeSetRenderingInfo getChromosomeSetRenderingInfo()
     {
+        ChromosomeSet.READER getSet()
+        {
+            var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
+            var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
+
+            using var fs = File.OpenRead(info_file_path);
+            var frame = Framing.ReadSegments(fs);
+            var deserializer = DeserializerState.CreateRoot(frame);
+            return new ChromosomeSet.READER(deserializer);
+        }
+
+        Dictionary<string, Chromosome.READER> getChromosomes(ChromosomeSet.READER set)
+        {
+            var result = new Dictionary<string, Chromosome.READER>();
+            foreach (var chromosome in set.Chromosomes)
+            {
+                Assert.AreNotEqual(chromosome.Index.which, Chromosome.index.WHICH.undefined);
+
+                if (chromosome.Index.which == Chromosome.index.WHICH.Numbered)
+                {
+                    result[chromosome.Index.Numbered.ToString()] = chromosome;
+                }
+                else if (chromosome.Index.which == Chromosome.index.WHICH.X)
+                {
+                    result["X"] = chromosome;
+                }
+                else if (chromosome.Index.which == Chromosome.index.WHICH.Y)
+                {
+                    result["Y"] = chromosome;
+                }
+                else
+                {
+                    Debug.LogError("Unknown type!");
+                }
+
+            }
+            return result;
+        }
+
+        var set = getSet();
+        var chromosomes = getChromosomes(set);
+
+
+        var info = new ChromosomeSetRenderingInfo { };
+        info.chromosomeSet = set;
+        info.chromosomes = chromosomes;
+
+        return info;
+    }
+
+    ChromosomeRenderingInfo createRenderingInfo(ChromosomeSetRenderingInfo chromosomeSetRenderingInfo, string currentlyRenderingSetIndex)
+    {
+        var chromosome = chromosomeSetRenderingInfo.chromosomes[currentlyRenderingSetIndex];
+
         List<Point> getPoints()
         {
             var center = Vector3.zero;
@@ -177,7 +225,7 @@ public class ChromosomeController : MonoBehaviour
 
             //var basePairMapping = new KdTree<float, int>(1, new FloatMath());
 
-            foreach (var pointI in chromosomeSet.Chromosomes[currentlyRenderingSetIndex].Backbone)
+            foreach (var pointI in chromosome.Backbone)
             {
                 var point = new Vector3(pointI.Coordinate.X, pointI.Coordinate.Y, pointI.Coordinate.Z);
 
@@ -231,8 +279,64 @@ public class ChromosomeController : MonoBehaviour
             return points;
         }
 
+        SegmentInfo getSegmentInfo()
+        {
+            var segmentInfo = new SegmentInfo();
+
+            int lastStart = 0;
+
+            foreach (var segmentSet in chromosome.SegmentSets)
+            {
+
+                if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.GeneSegments)
+                {
+                    var segments = segmentSet.Segments.GeneSegments.ToList();
+                    segments.Sort(delegate (Chromosome.SegmentSet.GeneSegment.READER x, Chromosome.SegmentSet.GeneSegment.READER y)
+                    {
+                        return (x.SegmentInfo.StartBin).CompareTo(y.SegmentInfo.StartBin);
+                    });
+
+
+                    var nameDict = new KTrie.StringTrie<int>();
+
+                    foreach (var (segment, index) in segments.Select((segment, index) => (segment, index)))
+                    {
+                        Assert.IsFalse(nameDict.ContainsKey(segment.Name), segment.Name + " appears multiple times in SegmentSet!");
+                        nameDict.Add(segment.Name, index);
+                    }
+
+                    float[][] points = segments.Select(segment =>
+                    {
+                        var originBin = checked((int)(segment.Ascending ? segment.SegmentInfo.StartBin : segment.SegmentInfo.StartBin));
+                        var originPosition = basePairIndexToPoint(originBin);
+                        return new float[] { originPosition.x, originPosition.y, originPosition.z };
+                    }).ToArray();
+                    int[] nodes = segments.Select((x, i) => i).ToArray();
+                    var geneWorldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+
+                    segmentInfo[segmentSet.Name] = (segments, geneWorldPositions, nameDict);
+                }
+                else
+                {
+                    Debug.LogError("Currently, we only support gene segments!");
+                }
+            }
+
+            return segmentInfo;
+        }
+
         var info = new ChromosomeRenderingInfo { };
+
+        info.chromosome = chromosome;
+
+        Profiler.BeginSample("getPoints");
         info.points = getPoints();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("getGenes");
+        info.segmentInfos = getSegmentInfo();
+        Profiler.EndSample();
+
         return info;
     }
 
@@ -481,7 +585,7 @@ public class ChromosomeController : MonoBehaviour
                         (1            + sideIndex) % numsides + numsides,
                         (0            + sideIndex) % numsides + numsides,}
                     /*Enumerable.Range(0, numsides).SelectMany((j) => 
-                        
+
                     )*/
 
                     .Select((j) => j - numsides)
@@ -501,81 +605,6 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    }
-
-
-
-    public void loadMain()
-    {
-        cameraParentCachedPosition = (cameraParent.transform.position, cameraParent.transform.eulerAngles, cameraParent.transform.localScale);
-        SceneManager.LoadScene("mainScene");
-    }
-
-
-    (List<(string name, int start, int end, bool direction)> genes, KDTree<float, int> geneWorldPositions) getGenes()
-    {
-        var genes = new List<(string name, int start, int end, bool direction)>();
-
-        int lastStart = 0;
-
-        var splitAnnotations = geneAnnotations.text.Split('\n').Skip(1).ToArray();
-
-
-        for (int i = 0; i < splitAnnotations.Length; i++)
-        {
-            var annotationLine = splitAnnotations[i];
-
-            if (annotationLine != "")
-            {
-                // look at gene positions
-                var info = annotationLine.Split('\t');
-                var chromosome = info[1];
-                if (chromosome == "chr1")
-                {
-                    var name = info[6];
-                    var start = int.Parse(info[2]);
-                    var end = int.Parse(info[3]);
-
-                    var direction = info[4] == "+";
-
-                    Assert.AreNotEqual(name, "");
-                    genes.Add((name, start, end, direction));
-
-                    Assert.IsTrue(start >= lastStart, "gene " + name + " starts before its predecessor!");
-                    lastStart = start;
-                }
-
-            }
-        }
-
-        genes.Sort(delegate ((string name, int start, int end, bool direction) x, (string name, int start, int end, bool direction) y)
-        {
-            return (x.start).CompareTo(y.start);
-        });
-
-
-        int index = 0;
-        foreach (var gene in genes)
-        {
-            if (!geneDict.ContainsKey(gene.name))
-            {
-                geneDict.Add(gene.name, (gene.start, gene.end, index));
-            }
-            index++;
-        }
-
-        float[][] points = genes.Select(gene =>
-        {
-            var originBasePair = gene.direction ? gene.start : gene.end;
-            var originPosition = basePairIndexToPoint(originBasePair);
-            return new float[] { originPosition.x, originPosition.y, originPosition.z };
-        }).ToArray();
-        int[] nodes = genes.Select((x, i) => i).ToArray();
-        var geneWorldPositions = new KDTree<float, int>(3, points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
-
-
-
-        return (genes, geneWorldPositions);
     }
 
     List<(int start, int end)> readFileBed(TextAsset file)
