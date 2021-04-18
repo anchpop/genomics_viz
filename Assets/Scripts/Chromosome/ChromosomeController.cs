@@ -148,7 +148,7 @@ public class ChromosomeController : MonoBehaviour
         createBackboneMesh();
         Profiler.EndSample();
         Profiler.BeginSample("createGenesMesh");
-        createGenesMesh();
+        createSegmentsMesh();
         Profiler.EndSample();
         Profiler.BeginSample("createChromatidInterationPredictionLines");
         createChromatidInterationPredictionLines();
@@ -418,32 +418,32 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    void createGenesMesh()
+    void createSegmentsMesh()
     {
-        /*
-         * TODO: Uncomment
-         * 
-        List<(int start, int end)> getGeneSections()
+        List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.SegmentInfo.READER> segments)
         {
-            var sections = new List<(int start, int end)>();
-            var current_section = (genes[0].start, genes[0].end);
-            foreach (var gene in genes.GetRange(1, genes.Count - 1))
+            var combined = new List<(int startBin, int endBin)>();
+            var current_section = (startBin: (int)segments[0].StartBin, endBin: (int)segments[0].EndBin);
+            foreach (var segment in segments.GetRange(1, segments.Count - 1))
             {
-                if (current_section.end < gene.start)
+                if (current_section.endBin < segment.StartBin)
                 {
-                    sections.Add(current_section);
-                    current_section = (gene.start, gene.end);
+                    combined.Add(current_section);
+                    current_section = (startBin: (int)segment.StartBin, endBin: (int)segment.EndBin);
                 }
                 else
                 {
-                    current_section = (current_section.start, Mathf.Max(gene.end, current_section.end));
+                    current_section = (current_section.startBin, Mathf.Max((int)segment.EndBin, current_section.endBin));
                 }
             }
-            sections.Add(current_section);
-            return sections;
+            combined.Add(current_section);
+            return combined;
         }
 
 
+        /*
+         * TODO: Uncomment
+         * 
         var geneSections = getGeneSections();
         var genePointGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
         foreach (var (start, end) in geneSections)
