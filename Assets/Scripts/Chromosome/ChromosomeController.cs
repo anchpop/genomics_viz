@@ -95,7 +95,7 @@ public class ChromosomeController : MonoBehaviour
     public GameObject backboneRenderers;
     public GameObject segmentRenderers;
     public List<MeshFilter> backboneMeshFilters;
-    public Dictionary<string, List<MeshFilter>> segmentMeshFilters;
+    public Dictionary<int, List<MeshFilter>> segmentMeshFilters;
 
     public MeshFilter highlightRenderer;
     public MeshFilter focusRenderer;
@@ -120,10 +120,10 @@ public class ChromosomeController : MonoBehaviour
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
 
         backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
-        segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.ToDictionary(k => k, k =>
+        segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.Select((name, index) => (name, index)).ToDictionary(k => k.index, k =>
             {
                 var renderers = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
-                renderers.name = k;
+                renderers.name = k.name;
                 return renderers.GetComponentsInChildren<MeshFilter>().ToList();
             }
         );
@@ -148,7 +148,7 @@ public class ChromosomeController : MonoBehaviour
         createBackboneMesh();
         Profiler.EndSample();
         Profiler.BeginSample("createGenesMesh");
-        createSegmentsMesh();
+        createSegmentsMeshes(chromosomeRenderingInfo);
         Profiler.EndSample();
         Profiler.BeginSample("createChromatidInterationPredictionLines");
         createChromatidInterationPredictionLines();
@@ -418,74 +418,76 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    void createSegmentsMesh()
+    void createSegmentsMeshes(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.SegmentInfo.READER> segments)
+        foreach (var (segmentSetName, segmentSetInfo, segmentSetIndex) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value, index)))
         {
-            var combined = new List<(int startBin, int endBin)>();
-            var current_section = (startBin: (int)segments[0].StartBin, endBin: (int)segments[0].EndBin);
-            foreach (var segment in segments.GetRange(1, segments.Count - 1))
+            List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.SegmentInfo.READER> segments)
             {
-                if (current_section.endBin < segment.StartBin)
+                var combined = new List<(int startBin, int endBin)>();
+                var current_section = (startBin: (int)segments[0].StartBin, endBin: (int)segments[0].EndBin);
+                foreach (var segment in segments.GetRange(1, segments.Count - 1))
                 {
-                    combined.Add(current_section);
-                    current_section = (startBin: (int)segment.StartBin, endBin: (int)segment.EndBin);
+                    if (current_section.endBin < segment.StartBin)
+                    {
+                        combined.Add(current_section);
+                        current_section = (startBin: (int)segment.StartBin, endBin: (int)segment.EndBin);
+                    }
+                    else
+                    {
+                        current_section = (current_section.startBin, Mathf.Max((int)segment.EndBin, current_section.endBin));
+                    }
                 }
-                else
-                {
-                    current_section = (current_section.startBin, Mathf.Max((int)segment.EndBin, current_section.endBin));
-                }
+                combined.Add(current_section);
+                return combined;
             }
-            combined.Add(current_section);
-            return combined;
-        }
 
+            var meshFilters = segmentMeshFilters[segmentSetIndex];
 
-        /*
-         * TODO: Uncomment
-         * 
-        var geneSections = getGeneSections();
-        var genePointGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
-        foreach (var (start, end) in geneSections)
-        {
-            genePointGroups.Add(getPointsConnectingBpIndices(start, end));
-        }
-
-        foreach (var (genePointGroupsForCurrentGeneRenderer, geneRendererIndex) in genePointGroups.Split(geneRenderers.Count).Select((x, i) => (x, i)))
-        {
-            Mesh mesh = new Mesh();
-            geneRenderers[geneRendererIndex].mesh = mesh;
-
-
-            var verticies = new List<Vector3>();
-            var indices = new List<int>();
-            foreach (var (genePoints, startingBackboneIndex) in genePointGroupsForCurrentGeneRenderer)
+            var segmentInfos = segmentSetInfo.segments.Match(segments => segments.Select(segment => segment.SegmentInfo), segments => segments.Select(segment => segment.SegmentInfo)).ToList();
+            var combinedSegments = combineSegments(segmentInfos);
+            var segmentsPointsGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
+            foreach (var (start, end) in combinedSegments)
             {
-                Assert.AreNotEqual(genePoints.Count, 0);
-                Assert.AreNotEqual(genePoints.Count, 1);
-                if (startingBackboneIndex >= backbonePointNormals.Count) // should only be the case for genes that start on the very last point
-                {
-                }
-                else
-                {
-                    var startNormals = backbonePointNormals[startingBackboneIndex];
-
-                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, startNormals.Select((v) => v * 1.1f + genePoints[0]).ToList(), true);
-                    var preexistingVerticies = verticies.Count;
-                    verticies.AddRange(verticiesToAdd);
-                    indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
-                }
-
-
+                segmentsPointsGroups.Add(getPointsConnectingBpIndices(start, end));
             }
 
 
-            mesh.Clear();
-            mesh.vertices = verticies.ToArray();
-            mesh.triangles = indices.ToArray();
-            mesh.RecalculateNormals();
-    }
-        */
+            foreach (var (segmentsPointGroupsForCurrentGeneRenderer, meshFiltersIndex) in segmentsPointsGroups.Split(meshFilters.Count).Select((x, i) => (x, i)))
+            {
+                Mesh mesh = new Mesh();
+                meshFilters[meshFiltersIndex].mesh = mesh;
+
+
+                var verticies = new List<Vector3>();
+                var indices = new List<int>();
+                foreach (var (genePoints, startingBackboneIndex) in segmentsPointGroupsForCurrentGeneRenderer)
+                {
+                    Assert.AreNotEqual(genePoints.Count, 0);
+                    Assert.AreNotEqual(genePoints.Count, 1);
+                    if (startingBackboneIndex >= backbonePointNormals.Count) // should only be the case for genes that start on the very last point
+                    {
+                    }
+                    else
+                    {
+                        var startNormals = backbonePointNormals[startingBackboneIndex];
+
+                        var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, startNormals.Select((v) => v * 1.1f + genePoints[0]).ToList(), true);
+                        var preexistingVerticies = verticies.Count;
+                        verticies.AddRange(verticiesToAdd);
+                        indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
+                    }
+
+
+                }
+
+
+                mesh.Clear();
+                mesh.vertices = verticies.ToArray();
+                mesh.triangles = indices.ToArray();
+                mesh.RecalculateNormals();
+            }
+        }
     }
 
     void createChromatidInterationPredictionLines()
