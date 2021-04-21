@@ -15,9 +15,23 @@ using OneOf;
 using System.IO;
 using UnityEngine.Profiling;
 
-using Segment = OneOf.OneOf<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER, CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>;
-using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
-using SegmentInfo = System.Collections.Generic.Dictionary<string, (OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>> segments, Supercluster.KDTree.KDTree<float, int> worldPositions, KTrie.StringTrie<int> nameDict)>;
+using Segment = OneOf.OneOf<
+    CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>,
+    CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>;
+using SegmentList =
+    OneOf.OneOf<
+        System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>,
+        System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>
+    >;
+using SegmentInfo = System.Collections.Generic.Dictionary<
+    string,
+    (
+        OneOf.OneOf<
+            System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>,
+            System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>> segments,
+        Supercluster.KDTree.KDTree<float, int> worldPositions,
+    KTrie.StringTrie<int> nameDict)
+>;
 
 
 public struct Point
@@ -31,13 +45,13 @@ public struct Point
 
 public struct ChromosomeSetRenderingInfo
 {
-    public ChromosomeSet.READER chromosomeSet;
-    public Dictionary<string, Chromosome.READER> chromosomes;
+    public ChromosomeSet chromosomeSet;
+    public Dictionary<string, Chromosome> chromosomes;
 }
 
 public struct ChromosomeRenderingInfo
 {
-    public Chromosome.READER chromosome;
+    public Chromosome chromosome;
     public List<Point> points;
     public SegmentInfo segmentInfos;
 }
@@ -153,7 +167,7 @@ public class ChromosomeController : MonoBehaviour
 
     ChromosomeSetRenderingInfo getChromosomeSetRenderingInfo()
     {
-        ChromosomeSet.READER getSet()
+        ChromosomeSet getSet()
         {
             var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
             var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
@@ -161,12 +175,14 @@ public class ChromosomeController : MonoBehaviour
             using var fs = File.OpenRead(info_file_path);
             var frame = Framing.ReadSegments(fs);
             var deserializer = DeserializerState.CreateRoot(frame);
-            return new ChromosomeSet.READER(deserializer);
+            var set = CapnpSerializable.Create<ChromosomeSet>(deserializer);
+            Debug.Log("Read " + set.Chromosomes.Count + " chromosomes");
+            return set;//ChromosomeSet(deserializer);
         }
 
-        Dictionary<string, Chromosome.READER> getChromosomes(ChromosomeSet.READER set)
+        Dictionary<string, Chromosome> getChromosomes(ChromosomeSet set)
         {
-            var result = new Dictionary<string, Chromosome.READER>();
+            var result = new Dictionary<string, Chromosome>();
             foreach (var chromosome in set.Chromosomes)
             {
                 Assert.AreNotEqual(chromosome.Index.which, Chromosome.index.WHICH.undefined);
@@ -289,9 +305,9 @@ public class ChromosomeController : MonoBehaviour
                 if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.GeneSegments)
                 {
                     var segments = segmentSet.Segments.GeneSegments.ToList();
-                    segments.Sort(delegate (Chromosome.SegmentSet.GeneSegment.READER x, Chromosome.SegmentSet.GeneSegment.READER y)
+                    segments.Sort(delegate (Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> x, Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> y)
                     {
-                        return (x.SegmentInfo.StartBin).CompareTo(y.SegmentInfo.StartBin);
+                        return (x.Location.StartBin).CompareTo(y.Location.StartBin);
                     });
 
 
@@ -301,22 +317,22 @@ public class ChromosomeController : MonoBehaviour
                     {
                         // TODO: ask hao why this is sometimes true
                         // Assert.IsFalse(nameDict.ContainsKey(segment.Name), segment.Name + " appears multiple times in SegmentSet!");
-                        if (!nameDict.ContainsKey(segment.Name))
+                        if (!nameDict.ContainsKey(segment.ExtraInfo.Name))
                         {
-                            nameDict.Add(segment.Name, index);
+                            nameDict.Add(segment.ExtraInfo.Name, index);
                         }
                     }
 
                     float[][] segment_points = segments.Select(segment =>
                     {
-                        var originBin = checked((int)(segment.Ascending ? segment.SegmentInfo.StartBin : segment.SegmentInfo.EndBin));
+                        var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.StartBin : segment.Location.EndBin));
                         var originPosition = basePairIndexToPoint(points, originBin);
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
                     int[] nodes = segments.Select((x, i) => i).ToArray();
                     var worldPositions = new KDTree<float, int>(3, segment_points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
 
-                    segmentInfo[segmentSet.Name] = (segments, worldPositions, nameDict);
+                    segmentInfo[segmentSet.Description.Name] = (segments, worldPositions, nameDict);
                 }
                 else
                 {
@@ -416,7 +432,7 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var (segmentSetName, segmentSetInfo, segmentSetIndex) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value, index)))
         {
-            List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.SegmentInfo.READER> segments)
+            List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.Location> segments)
             {
                 var combined = new List<(int startBin, int endBin)>();
                 var current_section = (startBin: (int)segments[0].StartBin, endBin: (int)segments[0].EndBin);
@@ -438,7 +454,7 @@ public class ChromosomeController : MonoBehaviour
 
             var meshFilters = segmentMeshFilters[segmentSetIndex];
 
-            var segmentInfos = segmentSetInfo.segments.Match(segments => segments.Select(segment => segment.SegmentInfo), segments => segments.Select(segment => segment.SegmentInfo)).ToList();
+            var segmentInfos = segmentSetInfo.segments.Match(segments => segments.Select(segment => segment.Location), segments => segments.Select(segment => segment.Location)).ToList();
             var combinedSegments = combineSegments(segmentInfos);
             var segmentsPointsGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
             foreach (var (start, end) in combinedSegments)
@@ -670,7 +686,7 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    public void highlightSegment(MeshFilter renderer, Chromosome.SegmentSet.SegmentInfo.READER info)
+    public void highlightSegment(MeshFilter renderer, Chromosome.SegmentSet.Location info)
     {
         var genePoints = getPointsConnectingBpIndices((int)info.StartBin, (int)info.EndBin);
 
@@ -698,7 +714,7 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightSegment(string segmentSet, Chromosome.SegmentSet.SegmentInfo.READER info)
+    public void highlightSegment(string segmentSet, Chromosome.SegmentSet.Location info)
     {
         highlightSegment(highlightRenderer, info);
     }
@@ -716,12 +732,12 @@ public class ChromosomeController : MonoBehaviour
     {
         var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<IEnumerable<int>>(
             segments => (from info in segments.Select((segment, index) => (segment, index))
-                         where info.segment.SegmentInfo.StartBin <= bin
-                         where bin <= info.segment.SegmentInfo.EndBin
+                         where info.segment.Location.StartBin <= bin
+                         where bin <= info.segment.Location.EndBin
                          select info.index),
             segments => (from info in segments.Select((segment, index) => (segment, index))
-                         where info.segment.SegmentInfo.StartBin <= bin
-                         where bin <= info.segment.SegmentInfo.EndBin
+                         where info.segment.Location.StartBin <= bin
+                         where bin <= info.segment.Location.EndBin
                          select info.index)
             )));
         var segmentsDict = matched_segments.Where(x => x.matchedSegments.Any()).ToDictionary(x => x.setName, x => x.matchedSegments);
@@ -788,9 +804,9 @@ public class ChromosomeController : MonoBehaviour
     {
     }
 
-    public static Chromosome.SegmentSet.SegmentInfo.READER GetSegmentInfo(Segment segment)
+    public static Chromosome.SegmentSet.Location GetSegmentInfo(Segment segment)
     {
-        return segment.Match(s => s.SegmentInfo, s => s.SegmentInfo);
+        return segment.Match(s => s.Location, s => s.Location);
     }
 
     public static Segment GetSegmentFromCurrentChromosome(string segmentSet, int index)

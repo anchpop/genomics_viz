@@ -7,6 +7,7 @@ base_path = Path('../../')
 schema_path = (base_path / Path('Schema/chromsdata.capnp')).resolve()
 capnp.remove_import_hook()
 chromosome_schema_capnp = capnp.load(str(schema_path))
+SegmentSet = chromosome_schema_capnp.Chromosome.SegmentSet
 
 def compile_text_to_binary():
 
@@ -52,27 +53,44 @@ def compile_text_to_binary():
                 return chromosome, start_bin, end_bin, ascending, stat.strip(), name.strip(), id.strip()
             def to_message(info):
                 chromosome, start_bin, end_bin, ascending, stat, name, id = info 
-                segment_info = chromosome_schema_capnp.Chromosome.SegmentSet.SegmentInfo.new_message()
-                gene_segment = chromosome_schema_capnp.Chromosome.SegmentSet.GeneSegment.new_message()
-                gene_segment.ascending = ascending
-                gene_segment.stat = stat
-                gene_segment.name = name
-                gene_segment.id = id
-                segment_info.startBin = start_bin
-                segment_info.endBin = end_bin
+                location = SegmentSet.Location.new_message()
+                gene = SegmentSet.Gene.new_message()
 
-                gene_segment.segmentInfo = segment_info
-                return chromosome, gene_segment
+                gene.ascending = ascending
+                gene.stat = stat
+                gene.name = name
+                gene.id = id
+                location.startBin = start_bin
+                location.endBin = end_bin
+
+                #segment = SegmentSet.Segment.new_message(location=location, extraInfo=gene)
+
+                return chromosome, {'location': location, 'extraInfo': gene} # need to use a struct for generic types
                 
-            return {k: list(map(lambda segment: segment[1], v)) for k, v in groupby(lambda segment: segment[0], map(to_message, map(parse_line, filter(lambda line: line != "", genes_file)))).items()}
+            return {
+                k: list(map(lambda segment: segment[1], v)) 
+                for k, v 
+                in groupby(
+                    lambda segment: segment[0], 
+                    map(
+                        to_message, 
+                        map(
+                            parse_line, 
+                            filter(
+                                lambda line: line != "", 
+                                genes_file)
+                                )
+                            )
+                        ).items()
+                    }
 
 
     index = 1
     coordinates = get_coordinates()
     bins = get_bins()
-    segment_set = chromosome_schema_capnp.Chromosome.SegmentSet.new_message() 
-    segment_set.segments.geneSegments = get_genes()[str(index)]
-    segment_set.name = "genes"
+    segment_set = SegmentSet.new_message() 
+    segment_set.segments.genes = get_genes()[str(index)]
+    segment_set.description.name = "genes"
 
     assert len(coordinates) == len(bins)
 
@@ -84,8 +102,8 @@ def compile_text_to_binary():
 
 
     chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()
-    chromosome_set.name = "Human chromosomes"
-    chromosome_set.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
+    chromosome_set.description.name = "Human chromosomes"
+    chromosome_set.description.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
     chromosome_set.chromosomes = [chromosome]
 
     output = chromosome_set.to_bytes()

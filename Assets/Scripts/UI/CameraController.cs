@@ -14,9 +14,23 @@ using UnityEngine.EventSystems;
 using CapnpGen;
 using Capnp;
 
-using Segment = OneOf.OneOf<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER, CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>;
-using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
-
+using Segment = OneOf.OneOf<
+    CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>,
+    CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>;
+using SegmentList =
+    OneOf.OneOf<
+        System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>,
+        System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>
+    >;
+using SegmentInfo = System.Collections.Generic.Dictionary<
+    string,
+    (
+        OneOf.OneOf<
+            System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>,
+            System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>> segments,
+        Supercluster.KDTree.KDTree<float, int> worldPositions,
+    KTrie.StringTrie<int> nameDict)
+>;
 
 public class CameraController : MonoBehaviour
 {
@@ -62,7 +76,7 @@ public class CameraController : MonoBehaviour
     {
         createLabels();
 
-        OneDView = (0, (0, new List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>()));
+        OneDView = (0, (0, new List<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>()));
         foreach (var t in texts)
         {
             t.text = "";
@@ -185,17 +199,14 @@ public class CameraController : MonoBehaviour
                     chromosome.highlightSegment(segmentSet.Key, ChromosomeController.GetSegmentInfo(segment));
                     segment.Switch(gene =>
                     {
-                        sideText.text = gene.Name;
+                        sideText.text = gene.ExtraInfo.Name;
                         sideLoc.text = cursorBasePair.ToString("D");
 
                         if (focus)
                         {
                             focusSegment(focusedSegmentSet, segmentIndex);
                         }
-                    }, segment => { });
-
-
-
+                    }, segment => { Debug.LogError("Only support genes right now!"); });
                 }
                 return hit.point;
             }
@@ -244,7 +255,7 @@ public class CameraController : MonoBehaviour
             new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
             geneLabels.Count
             ).Select((node) =>
-                (new Vector3(node.Item1[0], node.Item1[1], node.Item1[2]), info.Value.segments.Match(x => x[node.Item2].Name, x => x[node.Item2].Info))));
+                (new Vector3(node.Item1[0], node.Item1[1], node.Item1[2]), info.Value.segments.Match(x => x[node.Item2].ExtraInfo.Name, x => x[node.Item2].ExtraInfo.Info))));
 
 
         foreach (var ((position, name), index) in genesToShow.Select((x, i) => (x, i)))
@@ -290,7 +301,7 @@ public class CameraController : MonoBehaviour
 
             var adjecentsToCheck = 30;
 
-            var toDisplay = new List<Chromosome.SegmentSet.GeneSegment.READER>();
+            var toDisplay = new List<Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene>>();
 
             var numberOfGenes = segmentSet.Count;
 
@@ -305,7 +316,7 @@ public class CameraController : MonoBehaviour
                 toDisplay.Add(segmentSet[i]);
             }
 
-            OneDView = ((int)info.SegmentInfo.StartBin / 2 + (int)info.SegmentInfo.EndBin / 2, (startIndex, toDisplay));
+            OneDView = ((int)info.Location.StartBin / 2 + (int)info.Location.EndBin / 2, (startIndex, toDisplay));
         }
         , segmentSet => Debug.LogError("ONly genes supported right now!"));
     }
@@ -321,7 +332,7 @@ public class CameraController : MonoBehaviour
             for (int i = 0; i < numberOfGenes; i++)
             {
                 var info = segmentSet[i];
-                var distance = (info.SegmentInfo.StartBin < bpindex && info.SegmentInfo.EndBin > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.SegmentInfo.StartBin), Mathf.Abs(bpindex - info.SegmentInfo.EndBin));
+                var distance = (info.Location.StartBin < bpindex && info.Location.EndBin > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.Location.StartBin), Mathf.Abs(bpindex - info.Location.EndBin));
                 if (distance < closestGeneDistance)
                 {
                     closestGeneIndex = i;
@@ -333,7 +344,7 @@ public class CameraController : MonoBehaviour
 
             var adjecentsToCheck = 30;
 
-            var toDisplay = new List<Chromosome.SegmentSet.GeneSegment.READER>();
+            var toDisplay = new List<Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene>>();
 
             var startIndex = int.MaxValue;
 
@@ -394,7 +405,10 @@ public class CameraController : MonoBehaviour
 
         var reservedAreas = new List<List<(int start, int end)>> { new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), };
 
-        IEnumerable<(int index, (string name, char dash, Chromosome.SegmentSet.SegmentInfo.READER segmentInfo) info)> renderList = displayed.segmentList.Match(genes => genes.Select(gene => (gene.Name, gene.Ascending ? '>' : '<', gene.SegmentInfo)), others => others.Select(other => (other.Info, '-', other.SegmentInfo))).Select((info, index) => (index + displayed.startIndex, info));
+        IEnumerable<(int index, (string name, char dash, Chromosome.SegmentSet.Location segmentInfo) info)> renderList =
+            displayed.segmentList.Match(
+                genes => genes.Select(gene => (gene.ExtraInfo.Name, gene.ExtraInfo.Ascending ? '>' : '<', gene.Location)),
+                others => others.Select(other => (other.ExtraInfo.Info, '-', other.Location))).Select((info, index) => (index + displayed.startIndex, info));
 
         // We want to treat the focused gene specially - writing the coordinates in the bottom and putting it in the center
         var focused = (from segment in renderList

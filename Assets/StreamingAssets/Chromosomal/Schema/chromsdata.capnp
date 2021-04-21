@@ -27,49 +27,86 @@ struct Chromosome {
 	# Used for storing things like genes, GWAS data, etc.
 
 	struct SegmentSet {
-		name @0 :Text;
-		description @1 :Text;
+		description @0 :Description;
 		segments :union {
-			geneSegments @2 :List(GeneSegment);
-			otherSegments @3 :List(OtherSegment);
+			genes @1 :List(Segment(Gene));
+			others @2 :List(Segment(ChromatinState));
 		}
 
-		struct GeneSegment {
+		struct Segment(ExtraInfo) {
+			location @0 :Location;
+			extraInfo @1 :ExtraInfo;
+		}
+		
+		struct Location {
+			startBin @0 :UInt32;
+			endBin @1 :UInt32;
+		}
+		
+		struct Gene {
 			ascending @0 :Bool;
 			stat @1 :Text;
 			name @2 :Text;
 			id @3 :Text;
-			segmentInfo @4 :SegmentInfo;
 		}
-		struct OtherSegment {
+		struct ChromatinState {
 			info @0 :Text;
-			segmentInfo @1 :SegmentInfo;
-		}
-		struct SegmentInfo {
-			startBin @0 :UInt32;
-			endBin @1 :UInt32;
 		}
 	}
+
 
 	connectionSets @5 :List(ConnectionSet);
 	# Used for storing things like chromatid interaction predictions.
 
 	struct ConnectionSet {
-		name @0 :Text;
-		description @1 :Text;
-		connections @2 :List(Connection);
-	}
-	struct Connection {
-		startBinLower @0 :UInt32;
-		startBinUpper @1 :UInt32;
+		description @0 :Description;
+		connections @1 :List(Connection);
+		
+		struct Connection {
+			startBinLower @0 :UInt32;
+			startBinUpper @1 :UInt32;
 
-		endBinLower @2 :UInt32;
-		endBinUpper @3 :UInt32;
-	} 
+			endBinLower @2 :UInt32;
+			endBinUpper @3 :UInt32;
+		} 
+	}
+
+	struct SiteSet {
+		description @0 :Description;
+		sites :union {
+			proteinBindingSites @1 :List(Site(ProteinBinding));
+			chromatinAccessibility @2 :List(Site(ChromatinAccessibility));
+			geneticVariants @3 :List(Site(GeneticVariants));
+		}
+		
+		struct Site(ExtraInfo) {
+			location @0 :Location;
+			extraInfo @1 :ExtraInfo;
+		}
+
+		struct Location {
+			bin @0 :UInt32;
+		} 
+
+		struct ProteinBinding {
+
+		}
+		struct ChromatinAccessibility {
+
+		}
+		struct GeneticVariants {
+
+		}
+	}
+
 }
 
 struct ChromosomeSet {
+	description @0 :Description;
+	chromosomes @1 :List(Chromosome);
+}
+
+struct Description {
 	name @0 :Text;
 	description @1 :Text;
-	chromosomes @2 :List(Chromosome);
 }

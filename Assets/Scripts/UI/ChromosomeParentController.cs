@@ -221,7 +221,7 @@ public class ChromosomeParentController : MonoBehaviour
 
         tweenToShowPos(worldloc);
         var camera = mainCamera.GetComponent<CameraController>();
-        //chromosomeController.highlightSegment(info);
+
         camera.Update1DViewSegment(segmentSet, segmentSetIndex);
 
     }
