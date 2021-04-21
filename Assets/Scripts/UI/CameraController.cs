@@ -11,8 +11,12 @@ using UnityEngine.Assertions;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using UnityEngine.EventSystems;
+using CapnpGen;
+using Capnp;
 
 using Segment = OneOf.OneOf<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER, CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>;
+using SegmentList = OneOf.OneOf<System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>, System.Collections.Generic.List<CapnpGen.Chromosome.SegmentSet.OtherSegment.READER>>;
+
 
 public class CameraController : MonoBehaviour
 {
@@ -39,7 +43,7 @@ public class CameraController : MonoBehaviour
     private int baseScale = 20000;
     public Slider slider;
     private int currentCenter = 0;
-    public static (int center, List<(string name, int start, int end, bool direction)> displayed) OneDView;
+    public static (int center, (int startIndex, SegmentList segmentList) displayed) OneDView;
     private bool OneDViewFocused = false;
 
     public GameObject selectionIndicator;
@@ -50,11 +54,15 @@ public class CameraController : MonoBehaviour
     List<GameObject> geneLabels;
 
     bool canvases_setup = false;
+
+    public string focusedSegmentSet = "genes";
+    public int focusedSegmentIndex = 0;
+
     void Start()
     {
         createLabels();
 
-        OneDView = (0, new List<(string name, int start, int end, bool direction)>());
+        OneDView = (0, (0, new List<CapnpGen.Chromosome.SegmentSet.GeneSegment.READER>()));
         foreach (var t in texts)
         {
             t.text = "";
@@ -103,9 +111,12 @@ public class CameraController : MonoBehaviour
                     if (results.Any())
                     {
                         var (segmentSetName, segment) = results.First();
-                        // TODO: Uncomment
-                        //chromosome.focusSegment((segmentSetName, segment));
-                        //parentController.focusSegment((segmentSetName, segment));
+                        /*
+                         * TODO: uncomment
+                         * 
+                        chromosome.focusSegment((segmentSetName, segment));
+                        parentController.focusSegment((segmentSetName, segment));
+                        */
                     }
                     else
                     {
@@ -168,9 +179,10 @@ public class CameraController : MonoBehaviour
                 // Don't have a principled way to do this, so I'll just pick the first gene to display
                 if (segments.Any())
                 {
-                    var segmentSet = segments.First().Key;
-                    var segment = segments.First().Value.Match<Segment>(s => s.First(), s => s.First());
-                    chromosome.highlightSegment(segmentSet, ChromosomeController.GetSegmentInfo(segment));
+                    var segmentSet = segments.First();
+                    var segmentIndex = segmentSet.Value.First();
+                    var segment = ChromosomeController.GetSegmentFromCurrentChromosome(segmentSet.Key, segmentIndex);
+                    chromosome.highlightSegment(segmentSet.Key, ChromosomeController.GetSegmentInfo(segment));
                     segment.Switch(gene =>
                     {
                         sideText.text = gene.Name;
@@ -178,8 +190,7 @@ public class CameraController : MonoBehaviour
 
                         if (focus)
                         {
-                            chromosome.focusGene(gene);
-                            parentController.goToGene(gene.SegmentInfo);
+                            focusSegment(focusedSegmentSet, segmentIndex);
                         }
                     }, segment => { });
 
@@ -196,6 +207,25 @@ public class CameraController : MonoBehaviour
 
 
         return null;
+    }
+
+
+    public void focusSegment(string segmentSet, int index)
+    {
+        focusedSegmentIndex = index;
+        focusedSegmentSet = segmentSet;
+        chromosome.highlightSegment(chromosome.focusRenderer,
+            ChromosomeController.chromosomeRenderingInfo.segmentInfos[segmentSet].segments.Match(
+                segments => ChromosomeController.GetSegmentInfo(segments[index]),
+                segments => ChromosomeController.GetSegmentInfo(segments[index])));
+
+        parentController.goToSegment(segmentSet, index);
+    }
+
+    public void unfocusSegment()
+    {
+        focusedSegmentIndex = 0;
+        chromosome.focusRenderer.mesh.Clear();
     }
 
     private void createLabels()
@@ -244,61 +274,81 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    public void Update1DViewGene(string geneName)
+    // TODO: refactor this and Update1DViewBasePairIndex, they have a lot of duplicate, messy code
+    public void Update1DViewSegment(int segmentIndex)
     {
-        /*
-         * TODO: Uncomment
-         * 
-        var info = chromosome.geneDict[geneName];
-        var scale = slider.value * baseScale;
-
-        var adjecentsToCheck = 30;
-
-        var toDisplay = new List<(string name, int start, int end, bool direction)>();
-
-        var numberOfGenes = ChromosomeController.genes.Count;
-        for (int i = Mathf.Max((info.index - adjecentsToCheck / 2), 0); i < Mathf.Min((info.index + adjecentsToCheck / 2), numberOfGenes); i++)
+        Update1DViewSegment(focusedSegmentSet, segmentIndex);
+    }
+    public void Update1DViewSegment(string segmentSet, int segmentIndex)
+    {
+        focusedSegmentSet = segmentSet;
+        ChromosomeController.chromosomeRenderingInfo.segmentInfos[segmentSet].segments.Switch(segmentSet =>
         {
-            toDisplay.Add(ChromosomeController.genes[i]);
-        }
+            var info = segmentSet[segmentIndex];
 
-        OneDView = (info.start / 2 + info.end / 2, toDisplay);
-        */
+            var scale = slider.value * baseScale;
+
+            var adjecentsToCheck = 30;
+
+            var toDisplay = new List<Chromosome.SegmentSet.GeneSegment.READER>();
+
+            var numberOfGenes = segmentSet.Count;
+
+            var startIndex = int.MaxValue;
+
+            for (int i = Mathf.Max((segmentIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((segmentIndex + adjecentsToCheck / 2), numberOfGenes); i++)
+            {
+                if (i < startIndex)
+                {
+                    startIndex = i;
+                }
+                toDisplay.Add(segmentSet[i]);
+            }
+
+            OneDView = ((int)info.SegmentInfo.StartBin / 2 + (int)info.SegmentInfo.EndBin / 2, (startIndex, toDisplay));
+        }
+        , segmentSet => Debug.LogError("ONly genes supported right now!"));
     }
 
     public void Update1DViewBasePairIndex(int bpindex)
     {
-        /*
-         * TODO: Uncomment
-         * 
-        var closestGeneIndex = 0;
-        var closestGeneDistance = long.MaxValue;
-        var numberOfGenes = ChromosomeController.genes.Count;
-
-        for (int i = 0; i < numberOfGenes; i++)
+        ChromosomeController.chromosomeRenderingInfo.segmentInfos[focusedSegmentSet].segments.Switch(segmentSet =>
         {
-            var info = ChromosomeController.genes[i];
-            var distance = (info.start < bpindex && info.end > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.start), Mathf.Abs(bpindex - info.end));
-            if (distance < closestGeneDistance)
+            var closestGeneIndex = 0;
+            var closestGeneDistance = float.MaxValue;
+            var numberOfGenes = segmentSet.Count;
+
+            for (int i = 0; i < numberOfGenes; i++)
             {
-                closestGeneIndex = i;
-                closestGeneDistance = distance;
+                var info = segmentSet[i];
+                var distance = (info.SegmentInfo.StartBin < bpindex && info.SegmentInfo.EndBin > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.SegmentInfo.StartBin), Mathf.Abs(bpindex - info.SegmentInfo.EndBin));
+                if (distance < closestGeneDistance)
+                {
+                    closestGeneIndex = i;
+                    closestGeneDistance = distance;
+                }
             }
+
+            var scale = slider.value * baseScale;
+
+            var adjecentsToCheck = 30;
+
+            var toDisplay = new List<Chromosome.SegmentSet.GeneSegment.READER>();
+
+            var startIndex = int.MaxValue;
+
+            for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
+            {
+                if (i < startIndex)
+                {
+                    startIndex = i;
+                }
+                toDisplay.Add(segmentSet[i]);
+            }
+
+            OneDView = (bpindex, (startIndex, toDisplay));
         }
-
-        var scale = slider.value * baseScale;
-
-        var adjecentsToCheck = 30;
-
-        var toDisplay = new List<(string name, int start, int end, bool direction)>();
-
-        for (int i = Mathf.Max((closestGeneIndex - adjecentsToCheck / 2), 0); i < Mathf.Min((closestGeneIndex + adjecentsToCheck / 2), numberOfGenes); i++)
-        {
-            toDisplay.Add(ChromosomeController.genes[i]);
-        }
-
-        OneDView = (bpindex, toDisplay);
-        */
+        , segmentSet => Debug.LogError("ONly genes supported right now!"));
     }
 
 
@@ -311,10 +361,8 @@ public class CameraController : MonoBehaviour
     {
         return slider.value * baseScale;
     }
-    public void Update1DView(int center, List<(string name, int start, int end, bool direction)> displayed)
+    public void Update1DView(int center, (int startIndex, SegmentList segmentList) displayed)
     {
-        Assert.IsNotNull(displayed);
-
         var scale = getScale();
         OneDViewFocused = true;
 
@@ -333,8 +381,6 @@ public class CameraController : MonoBehaviour
 
         // scaleText.text = (-Mathf.RoundToInt(scale) * legendSize / 2).ToString() + "|" + new String('-', legendSize) + "|" + (Mathf.RoundToInt(scale) * legendSize / 2).ToString();
 
-        //
-
         // OneDView = (center: geneStart / 2 + geneEnd / 2, scale: scale, new List<(string geneName, int geneStart, int geneEnd)> { (geneName, geneStart, geneEnd) });
 
         foreach (var t in texts)
@@ -348,23 +394,23 @@ public class CameraController : MonoBehaviour
 
         var reservedAreas = new List<List<(int start, int end)>> { new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), };
 
+        IEnumerable<(int index, (string name, char dash, Chromosome.SegmentSet.SegmentInfo.READER segmentInfo) info)> renderList = displayed.segmentList.Match(genes => genes.Select(gene => (gene.Name, gene.Ascending ? '>' : '<', gene.SegmentInfo)), others => others.Select(other => (other.Info, '-', other.SegmentInfo))).Select((info, index) => (index + displayed.startIndex, info));
 
         // We want to treat the focused gene specially - writing the coordinates in the bottom and putting it in the center
-        var focused = (from info in displayed
-                       where info.name == chromosome.focusedGene
-                       select info).ToList();
-        if (focused.Count == 1)
+        var focused = (from segment in renderList
+                       where segment.index == focusedSegmentIndex
+                       select segment.info).ToList();
+        if (focused.Any())
         {
-            var (name, start, end, direction) = focused[0];
-            var dirchar = direction ? '>' : '<';
+            var (name, dirchar, info) = focused.First();
 
-            var length = Mathf.RoundToInt((end - start) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
+            var length = Mathf.RoundToInt((info.EndBin - info.StartBin) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.StartBin) * horizontalTextChars);
 
             if (name.Length + 2 > length)
             {
                 var geneBar = "|" + new String(dirchar, length) + "|";
-                var genePosMarkers = start.ToString().PadRight(length) + end;
+                var genePosMarkers = info.StartBin.ToString().PadRight(length) + info.EndBin;
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
                 texts[2].text = updateSubportion(texts[2].text, startPos, geneBar);
@@ -380,7 +426,7 @@ public class CameraController : MonoBehaviour
 
 
                 var geneBar = "|" + new String(dirchar, length1) + name + new String(dirchar, length2) + "|";
-                var genePosMarkers = start.ToString().PadRight(length) + "  " + end;
+                var genePosMarkers = info.StartBin.ToString().PadRight(length) + "  " + info.EndBin;
 
 
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
@@ -395,13 +441,12 @@ public class CameraController : MonoBehaviour
 
 
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
-        foreach (var (name, start, end, direction) in displayed)
+        foreach (var (index, (name, dirchar, info)) in renderList)
         {
-            var length = Mathf.RoundToInt((end - start) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, start) * horizontalTextChars);
-            var dirchar = direction ? '>' : '<';
+            var length = Mathf.RoundToInt((info.EndBin - info.StartBin) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.StartBin) * horizontalTextChars);
 
-            if (name != chromosome.focusedGene && length > 1)
+            if (index != focusedSegmentIndex && length > 1)
             {
                 var geneBar = "";
                 if (name.Length + 2 > length)

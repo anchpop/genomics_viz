@@ -197,8 +197,9 @@ public class ChromosomeParentController : MonoBehaviour
         return tween != null && !tween.IsComplete();
     }
 
-    public void goToGene(Chromosome.SegmentSet.SegmentInfo.READER info)
+    public void goToSegment(string segmentSet, int segmentSetIndex)
     {
+        var info = ChromosomeController.GetSegmentInfo(ChromosomeController.GetSegmentFromCurrentChromosome(segmentSet, segmentSetIndex));
         var startIndex = chromosomeController.basePairIndexToLocationIndex((int)info.StartBin);
         var endIndex = chromosomeController.basePairIndexToLocationIndex((int)info.EndBin);
         if (startIndex == endIndex)
@@ -219,14 +220,10 @@ public class ChromosomeParentController : MonoBehaviour
         var worldloc = transform.TransformPoint(local_pos);
 
         tweenToShowPos(worldloc);
+        var camera = mainCamera.GetComponent<CameraController>();
+        //chromosomeController.highlightSegment(info);
+        camera.Update1DViewSegment(segmentSet, segmentSetIndex);
 
-        /*
-         * TODO: Uncomment
-         * 
-
-        chromosomeController.highlightSegment(info);
-        mainCamera.GetComponent<CameraController>().Update1DViewGene(info.name);
-        */
     }
 
     public void tweenToShowPos(Vector3 worldPos)
@@ -295,5 +292,4 @@ public class ChromosomeParentController : MonoBehaviour
 
         mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }
-
 }

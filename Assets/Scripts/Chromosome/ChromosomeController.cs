@@ -104,14 +104,8 @@ public class ChromosomeController : MonoBehaviour
 
 
     static public int totalBasePairs = 0;
-    static public int basePairsPerRow = 5000;
-
-    public string focusedGene = "";
-
 
     Vector3 randoVector;
-
-
 
     void Start()
     {
@@ -715,35 +709,24 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    public void focusGene(Chromosome.SegmentSet.GeneSegment.READER info)
-    {
-        if (name == "") return;
-        focusedGene = info.Name;
 
-        highlightSegment(focusRenderer, info.SegmentInfo);
-    }
-
-    public void unfocusGene()
-    {
-        focusedGene = "";
-        focusRenderer.mesh.Clear();
-    }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
-    public Dictionary<string, SegmentList> getSegmentsAtBpIndex(SegmentInfo segmentInfos, int bin)
+    public Dictionary<string, IEnumerable<int>> getSegmentsAtBpIndex(SegmentInfo segmentInfos, int bin)
     {
-        var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<SegmentList>(
-            segments => (from segment in segments
-                         where segment.SegmentInfo.StartBin <= bin
-                         where bin <= segment.SegmentInfo.EndBin
-                         select segment).ToList(),
-            segments => (from segment in segments
-                         where segment.SegmentInfo.StartBin <= bin
-                         where bin <= segment.SegmentInfo.EndBin
-                         select segment).ToList())
-            )).Where(x => x.matchedSegments.Match(segments => segments.Any(), segments => segments.Any())).ToDictionary(x => x.setName, x => x.matchedSegments);
+        var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<IEnumerable<int>>(
+            segments => (from info in segments.Select((segment, index) => (segment, index))
+                         where info.segment.SegmentInfo.StartBin <= bin
+                         where bin <= info.segment.SegmentInfo.EndBin
+                         select info.index),
+            segments => (from info in segments.Select((segment, index) => (segment, index))
+                         where info.segment.SegmentInfo.StartBin <= bin
+                         where bin <= info.segment.SegmentInfo.EndBin
+                         select info.index)
+            )));
+        var segmentsDict = matched_segments.Where(x => x.matchedSegments.Any()).ToDictionary(x => x.setName, x => x.matchedSegments);
 
-        return matched_segments;
+        return segmentsDict;
     }
 
     public int basePairIndexToLocationIndex(List<Point> points, int bpIndex)
@@ -808,5 +791,10 @@ public class ChromosomeController : MonoBehaviour
     public static Chromosome.SegmentSet.SegmentInfo.READER GetSegmentInfo(Segment segment)
     {
         return segment.Match(s => s.SegmentInfo, s => s.SegmentInfo);
+    }
+
+    public static Segment GetSegmentFromCurrentChromosome(string segmentSet, int index)
+    {
+        return chromosomeRenderingInfo.segmentInfos[segmentSet].segments.Match<Segment>(genes => genes[index], other => other[index]);
     }
 }
