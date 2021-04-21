@@ -170,19 +170,20 @@ public class CameraController : MonoBehaviour
                 {
                     var segmentSet = segments.First().Key;
                     var segment = segments.First().Value.Match<Segment>(s => s.First(), s => s.First());
-                    chromosome.highlightSegment(segmentSet, segment);
-
-                    /*
-                     * TODO: Uncomment
-                    sideText.text = gene.name;
-                    sideLoc.text = cursorBasePair.ToString("D");
-
-                    if (focus)
+                    chromosome.highlightSegment(segmentSet, ChromosomeController.GetSegmentInfo(segment));
+                    segment.Switch(gene =>
                     {
-                        chromosome.focusGene(gene);
-                        parentController.goToGene(gene);
-                    }
-                    */
+                        sideText.text = gene.Name;
+                        sideLoc.text = cursorBasePair.ToString("D");
+
+                        if (focus)
+                        {
+                            chromosome.focusGene(gene);
+                            parentController.goToGene(gene.SegmentInfo);
+                        }
+                    }, segment => { });
+
+
 
                 }
                 return hit.point;

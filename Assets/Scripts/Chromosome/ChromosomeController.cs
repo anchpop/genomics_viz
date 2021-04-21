@@ -676,9 +676,9 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    public void highlightArea(MeshFilter renderer, (int startBin, int endBin) info)
+    public void highlightSegment(MeshFilter renderer, Chromosome.SegmentSet.SegmentInfo.READER info)
     {
-        var genePoints = getPointsConnectingBpIndices(info.startBin, info.endBin);
+        var genePoints = getPointsConnectingBpIndices((int)info.StartBin, (int)info.EndBin);
 
         Assert.AreNotEqual(genePoints.points.Count, 0);
         Assert.AreNotEqual(genePoints.points.Count, 1);
@@ -704,10 +704,9 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightSegment(string segmentSet, Segment segment)
+    public void highlightSegment(string segmentSet, Chromosome.SegmentSet.SegmentInfo.READER info)
     {
-        var segmentInfo = segment.Match(s => s.SegmentInfo, s => s.SegmentInfo);
-        highlightArea(highlightRenderer, (startBin: checked((int)segmentInfo.StartBin), endBin: checked((int)segmentInfo.EndBin)));
+        highlightSegment(highlightRenderer, info);
     }
 
     public void unhighlightGene()
@@ -716,15 +715,12 @@ public class ChromosomeController : MonoBehaviour
     }
 
 
-    public void focusGene((string name, int start, int end, bool direction) info)
+    public void focusGene(Chromosome.SegmentSet.GeneSegment.READER info)
     {
         if (name == "") return;
-        focusedGene = info.name;
-        /*
-         * TODO: Uncomment
-         * 
-        highlightArea(focusRenderer, info);
-        */
+        focusedGene = info.Name;
+
+        highlightSegment(focusRenderer, info.SegmentInfo);
     }
 
     public void unfocusGene()
@@ -807,5 +803,10 @@ public class ChromosomeController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    }
+
+    public static Chromosome.SegmentSet.SegmentInfo.READER GetSegmentInfo(Segment segment)
+    {
+        return segment.Match(s => s.SegmentInfo, s => s.SegmentInfo);
     }
 }

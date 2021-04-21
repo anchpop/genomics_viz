@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 using Valve.VR;
 using Valve.VR.InteractionSystem;
 using DG.Tweening;
+using CapnpGen;
+using Capnp;
 
 
 
@@ -195,11 +197,10 @@ public class ChromosomeParentController : MonoBehaviour
         return tween != null && !tween.IsComplete();
     }
 
-    public void goToGene((string name, int start, int end, bool direction) info)
+    public void goToGene(Chromosome.SegmentSet.SegmentInfo.READER info)
     {
-        Debug.Log(info.name);
-        var startIndex = chromosomeController.basePairIndexToLocationIndex(info.start);
-        var endIndex = chromosomeController.basePairIndexToLocationIndex(info.end);
+        var startIndex = chromosomeController.basePairIndexToLocationIndex((int)info.StartBin);
+        var endIndex = chromosomeController.basePairIndexToLocationIndex((int)info.EndBin);
         if (startIndex == endIndex)
         {
             endIndex += 1;
@@ -249,7 +250,7 @@ public class ChromosomeParentController : MonoBehaviour
             var new_rel_cam = (Quaternion.Slerp(Quaternion.identity, rot, x)) * current_rel_cam.normalized * Mathf.Lerp(current_dist, dest_dist, x);
 
             transform.position = cam_pos + new_rel_cam;
-            if (inVr)
+            if (!inVr)
             {
                 mainCamera.transform.LookAt(transform.position);
             }
