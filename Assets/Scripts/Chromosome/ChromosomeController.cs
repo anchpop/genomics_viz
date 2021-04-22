@@ -541,6 +541,7 @@ public class ChromosomeController : MonoBehaviour
         foreach (var siteSet in chromosomeRenderingInfo.chromosome.SiteSets)
         {
             var sitesParent = Instantiate(SitesParent, gameObject.transform);
+            sitesParent.name = siteSet.Description.Name;
             if (siteSet.Sites.which == Chromosome.SiteSet.sites.WHICH.ProteinBinding)
             {
                 foreach (var site in siteSet.Sites.ProteinBinding)
