@@ -19,6 +19,7 @@ namespace CapnpGen
             Backbone = reader.Backbone?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.Point>(_));
             SegmentSets = reader.SegmentSets?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet>(_));
             ConnectionSets = reader.ConnectionSets?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet>(_));
+            SiteSets = reader.SiteSets?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SiteSet>(_));
             applyDefaults();
         }
 
@@ -28,6 +29,7 @@ namespace CapnpGen
             writer.Backbone.Init(Backbone, (_s1, _v1) => _v1?.serialize(_s1));
             writer.SegmentSets.Init(SegmentSets, (_s1, _v1) => _v1?.serialize(_s1));
             writer.ConnectionSets.Init(ConnectionSets, (_s1, _v1) => _v1?.serialize(_s1));
+            writer.SiteSets.Init(SiteSets, (_s1, _v1) => _v1?.serialize(_s1));
         }
 
         void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -63,6 +65,12 @@ namespace CapnpGen
             set;
         }
 
+        public IReadOnlyList<CapnpGen.Chromosome.SiteSet> SiteSets
+        {
+            get;
+            set;
+        }
+
         public struct READER
         {
             readonly DeserializerState ctx;
@@ -78,13 +86,14 @@ namespace CapnpGen
             public IReadOnlyList<CapnpGen.Chromosome.Point.READER> Backbone => ctx.ReadList(0).Cast(CapnpGen.Chromosome.Point.READER.create);
             public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.READER> SegmentSets => ctx.ReadList(1).Cast(CapnpGen.Chromosome.SegmentSet.READER.create);
             public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.READER> ConnectionSets => ctx.ReadList(2).Cast(CapnpGen.Chromosome.ConnectionSet.READER.create);
+            public IReadOnlyList<CapnpGen.Chromosome.SiteSet.READER> SiteSets => ctx.ReadList(3).Cast(CapnpGen.Chromosome.SiteSet.READER.create);
         }
 
         public class WRITER : SerializerState
         {
             public WRITER()
             {
-                this.SetStruct(1, 3);
+                this.SetStruct(1, 4);
             }
 
             public index.WRITER Index
@@ -108,6 +117,12 @@ namespace CapnpGen
             {
                 get => BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.WRITER>>(2);
                 set => Link(2, value);
+            }
+
+            public ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.WRITER> SiteSets
+            {
+                get => BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.WRITER>>(3);
+                set => Link(3, value);
             }
         }
 
@@ -478,8 +493,8 @@ namespace CapnpGen
                 public const UInt64 typeId = 0xab9c3a6431928a08UL;
                 public enum WHICH : ushort
                 {
-                    GeneSegments = 0,
-                    OtherSegments = 1,
+                    Genes = 0,
+                    Others = 1,
                     undefined = 65535
                 }
 
@@ -488,11 +503,11 @@ namespace CapnpGen
                     var reader = READER.create(arg_);
                     switch (reader.which)
                     {
-                        case WHICH.GeneSegments:
-                            GeneSegments = reader.GeneSegments?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>(_));
+                        case WHICH.Genes:
+                            Genes = reader.Genes?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>(_));
                             break;
-                        case WHICH.OtherSegments:
-                            OtherSegments = reader.OtherSegments?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>(_));
+                        case WHICH.Others:
+                            Others = reader.Others?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>(_));
                             break;
                     }
 
@@ -511,10 +526,10 @@ namespace CapnpGen
                         _which = value;
                         switch (value)
                         {
-                            case WHICH.GeneSegments:
+                            case WHICH.Genes:
                                 _content = null;
                                 break;
-                            case WHICH.OtherSegments:
+                            case WHICH.Others:
                                 _content = null;
                                 break;
                         }
@@ -526,11 +541,11 @@ namespace CapnpGen
                     writer.which = which;
                     switch (which)
                     {
-                        case WHICH.GeneSegments:
-                            writer.GeneSegments.Init(GeneSegments, (_s1, _v1) => _v1?.serialize(_s1));
+                        case WHICH.Genes:
+                            writer.Genes.Init(Genes, (_s1, _v1) => _v1?.serialize(_s1));
                             break;
-                        case WHICH.OtherSegments:
-                            writer.OtherSegments.Init(OtherSegments, (_s1, _v1) => _v1?.serialize(_s1));
+                        case WHICH.Others:
+                            writer.Others.Init(Others, (_s1, _v1) => _v1?.serialize(_s1));
                             break;
                     }
                 }
@@ -544,22 +559,22 @@ namespace CapnpGen
                 {
                 }
 
-                public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>> GeneSegments
+                public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>> Genes
                 {
-                    get => _which == WHICH.GeneSegments ? (IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>)_content : null;
+                    get => _which == WHICH.Genes ? (IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>>)_content : null;
                     set
                     {
-                        _which = WHICH.GeneSegments;
+                        _which = WHICH.Genes;
                         _content = value;
                     }
                 }
 
-                public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>> OtherSegments
+                public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>> Others
                 {
-                    get => _which == WHICH.OtherSegments ? (IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>)_content : null;
+                    get => _which == WHICH.Others ? (IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>>)_content : null;
                     set
                     {
-                        _which = WHICH.OtherSegments;
+                        _which = WHICH.Others;
                         _content = value;
                     }
                 }
@@ -576,8 +591,8 @@ namespace CapnpGen
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
                     public WHICH which => (WHICH)ctx.ReadDataUShort(0U, (ushort)0);
-                    public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.READER> GeneSegments => which == WHICH.GeneSegments ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.READER.create) : default;
-                    public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.READER> OtherSegments => which == WHICH.OtherSegments ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.READER> Genes => which == WHICH.Genes ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.READER> Others => which == WHICH.Others ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.READER.create) : default;
                 }
 
                 public class WRITER : SerializerState
@@ -592,15 +607,15 @@ namespace CapnpGen
                         set => this.WriteData(0U, (ushort)value, (ushort)0);
                     }
 
-                    public ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.WRITER> GeneSegments
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.WRITER> Genes
                     {
-                        get => which == WHICH.GeneSegments ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.WRITER>>(1) : default;
+                        get => which == WHICH.Genes ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.Gene>.WRITER>>(1) : default;
                         set => Link(1, value);
                     }
 
-                    public ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.WRITER> OtherSegments
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.WRITER> Others
                     {
-                        get => which == WHICH.OtherSegments ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.WRITER>>(1) : default;
+                        get => which == WHICH.Others ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SegmentSet.Segment<CapnpGen.Chromosome.SegmentSet.ChromatinState>.WRITER>>(1) : default;
                         set => Link(1, value);
                     }
                 }

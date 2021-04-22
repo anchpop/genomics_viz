@@ -300,9 +300,9 @@ public class ChromosomeController : MonoBehaviour
             foreach (var segmentSet in chromosome.SegmentSets)
             {
 
-                if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.GeneSegments)
+                if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.Genes)
                 {
-                    var segments = segmentSet.Segments.GeneSegments.ToList();
+                    var segments = segmentSet.Segments.Genes.ToList();
                     segments.Sort(delegate (Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> x, Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> y)
                     {
                         return (x.Location.StartBin).CompareTo(y.Location.StartBin);

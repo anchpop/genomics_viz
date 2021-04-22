@@ -71,6 +71,7 @@ struct Chromosome {
 		} 
 	}
 
+	siteSets @6 :List(SiteSet);
 	struct SiteSet {
 		description @0 :Description;
 		sites :union {
