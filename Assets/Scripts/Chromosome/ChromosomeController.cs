@@ -54,6 +54,7 @@ public struct ChromosomeRenderingInfo
     public Chromosome chromosome;
     public List<Point> points;
     public SegmentInfo segmentInfos;
+    public int highestBin;
 }
 
 public class ChromosomeController : MonoBehaviour
@@ -116,9 +117,6 @@ public class ChromosomeController : MonoBehaviour
 
     public int numsides = 3;
 
-
-    static public int totalBasePairs = 0;
-
     Vector3 randoVector;
 
     void Start()
@@ -177,7 +175,7 @@ public class ChromosomeController : MonoBehaviour
             var deserializer = DeserializerState.CreateRoot(frame);
             var set = CapnpSerializable.Create<ChromosomeSet>(deserializer);
             Debug.Log("Read " + set.Chromosomes.Count + " chromosomes");
-            return set;//ChromosomeSet(deserializer);
+            return set;// new ChromosomeSet.READER(deserializer);
         }
 
         Dictionary<string, Chromosome> getChromosomes(ChromosomeSet set)
@@ -349,6 +347,7 @@ public class ChromosomeController : MonoBehaviour
 
         Profiler.BeginSample("getPoints");
         info.points = getPoints();
+        info.highestBin = info.points.Last().bin;
         Profiler.EndSample();
 
         Profiler.BeginSample("getGenes");
@@ -413,8 +412,8 @@ public class ChromosomeController : MonoBehaviour
         var endBackboneIndex = basePairIndexToLocationIndex(endBasePairIndex);
         Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
 
-        var startPoint = basePairIndexToPoint(startBasePairIndex);
-        var endPoint = basePairIndexToPoint(endBasePairIndex);
+        var startPoint = binToPoint(startBasePairIndex);
+        var endPoint = binToPoint(endBasePairIndex);
         if (startBackboneIndex == endBackboneIndex)
         {
             return (new List<Vector3> { startPoint, endPoint }, startBackboneIndex);
@@ -506,6 +505,9 @@ public class ChromosomeController : MonoBehaviour
         {
             try
             {
+                /*
+                 * TODO: uncomment
+                 * 
                 Assert.IsTrue(start.start >= 0);
                 Assert.IsTrue(start.end >= 0);
                 Assert.IsTrue(end.start >= 0);
@@ -514,6 +516,7 @@ public class ChromosomeController : MonoBehaviour
                 Assert.IsTrue(start.end <= totalBasePairs);
                 Assert.IsTrue(end.start <= totalBasePairs);
                 Assert.IsTrue(end.end <= totalBasePairs);
+                */
                 var midpointStart = (start.start + start.end) / 2;
                 var midpointEnd = (end.start + end.end) / 2;
 
@@ -523,7 +526,7 @@ public class ChromosomeController : MonoBehaviour
                 var line = bridge.GetComponent<LineRenderer>();
                 line.startWidth *= overallScale * lineWidth * 3;
                 line.endWidth *= overallScale * lineWidth * 3;
-                line.SetPositions(new Vector3[] { basePairIndexToPoint(midpointStart), basePairIndexToPoint(midpointEnd) });
+                line.SetPositions(new Vector3[] { binToPoint(midpointStart), binToPoint(midpointEnd) });
             }
             catch
             {
@@ -788,7 +791,7 @@ public class ChromosomeController : MonoBehaviour
             return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
         }
     }
-    public Vector3 basePairIndexToPoint(int bpIndex)
+    public Vector3 binToPoint(int bpIndex)
     {
         return basePairIndexToPoint(chromosomeRenderingInfo.points, bpIndex);
     }

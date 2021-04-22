@@ -273,18 +273,18 @@ public class ChromosomeParentController : MonoBehaviour
 
     public void clicked_left()
     {
-        goToBasePairIndex(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+        goToBin(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.chromosomeRenderingInfo.highestBin));
     }
 
     public void clicked_right()
     {
-        goToBasePairIndex(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.totalBasePairs));
+        goToBin(Mathf.Clamp(CameraController.OneDView.center - 5000, 0, ChromosomeController.chromosomeRenderingInfo.highestBin));
     }
 
 
-    public void goToBasePairIndex(int bpindex)
+    public void goToBin(int bpindex)
     {
-        var info = chromosomeController.basePairIndexToPoint(bpindex);
+        var info = chromosomeController.binToPoint(bpindex);
 
         mainCamera.GetComponent<CameraController>().selectionIndicator.transform.localPosition = info;
 

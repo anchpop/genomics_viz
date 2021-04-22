@@ -101,7 +101,7 @@ public class CameraController : MonoBehaviour
             int basePairSearch = 0;
             if (int.TryParse(search, out basePairSearch))
             {
-                parentController.goToBasePairIndex(basePairSearch);
+                parentController.goToBin(basePairSearch);
             }
             else
             {
@@ -112,7 +112,7 @@ public class CameraController : MonoBehaviour
                     int basePairSearch1 = 0;
                     if (int.TryParse(parts[0], out basePairSearch0) && int.TryParse(parts[1], out basePairSearch1))
                     {
-                        parentController.goToBasePairIndex(basePairSearch0 / 2 + basePairSearch1 / 2);
+                        parentController.goToBin(basePairSearch0 / 2 + basePairSearch1 / 2);
                     }
                 }
                 else
@@ -281,7 +281,7 @@ public class CameraController : MonoBehaviour
         {
             pos = (pos - .5f) * horizontalTextChars;
             var basePair = Mathf.RoundToInt(pos * getScale() + OneDView.center);
-            parentController.goToBasePairIndex(basePair);
+            parentController.goToBin(basePair);
         }
     }
 
@@ -316,12 +316,13 @@ public class CameraController : MonoBehaviour
                 toDisplay.Add(segmentSet[i]);
             }
 
-            OneDView = ((int)info.Location.StartBin / 2 + (int)info.Location.EndBin / 2, (startIndex, toDisplay));
+            var bin = (int)info.Location.StartBin / 2 + (int)info.Location.EndBin / 2;
+            OneDView = (bin, (startIndex, toDisplay));
         }
         , segmentSet => Debug.LogError("ONly genes supported right now!"));
     }
 
-    public void Update1DViewBasePairIndex(int bpindex)
+    public void Update1DViewBasePairIndex(int bin)
     {
         ChromosomeController.chromosomeRenderingInfo.segmentInfos[focusedSegmentSet].segments.Switch(segmentSet =>
         {
@@ -332,7 +333,7 @@ public class CameraController : MonoBehaviour
             for (int i = 0; i < numberOfGenes; i++)
             {
                 var info = segmentSet[i];
-                var distance = (info.Location.StartBin < bpindex && info.Location.EndBin > bpindex) ? 0 : Mathf.Min(Mathf.Abs(bpindex - info.Location.StartBin), Mathf.Abs(bpindex - info.Location.EndBin));
+                var distance = (info.Location.StartBin < bin && info.Location.EndBin > bin) ? 0 : Mathf.Min(Mathf.Abs(bin - info.Location.StartBin), Mathf.Abs(bin - info.Location.EndBin));
                 if (distance < closestGeneDistance)
                 {
                     closestGeneIndex = i;
@@ -357,7 +358,7 @@ public class CameraController : MonoBehaviour
                 toDisplay.Add(segmentSet[i]);
             }
 
-            OneDView = (bpindex, (startIndex, toDisplay));
+            OneDView = (bin, (startIndex, toDisplay));
         }
         , segmentSet => Debug.LogError("ONly genes supported right now!"));
     }
