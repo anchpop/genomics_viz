@@ -91,9 +91,7 @@ public class ChromosomeController : MonoBehaviour
     public GameObject coloredCylinderPrefab_LOD2;
     public GameObject cylinderPrefab_LOD3;
     public GameObject coloredCylinderPrefab_LOD3;
-    public GameObject Sphere_CTCF;
-    public GameObject Sphere_GATA;
-    public GameObject Sphere_IDR;
+    public GameObject SiteSphere;
     public GameObject bridgePrefab;
 
     public GameObject bridgeParent;
@@ -111,6 +109,8 @@ public class ChromosomeController : MonoBehaviour
     public GameObject segmentRenderers;
     public List<MeshFilter> backboneMeshFilters;
     public Dictionary<int, List<MeshFilter>> segmentMeshFilters;
+
+    public GameObject SitesParent;
 
     public MeshFilter highlightRenderer;
     public MeshFilter focusRenderer;
@@ -135,15 +135,6 @@ public class ChromosomeController : MonoBehaviour
         );
 
 
-        Profiler.BeginSample("getGata");
-        gata = getGATA();
-        Profiler.EndSample();
-        Profiler.BeginSample("getCTCF");
-        ctcf = getCTCF();
-        Profiler.EndSample();
-        Profiler.BeginSample("getIRF");
-        irf = getIRF();
-        Profiler.EndSample();
         Profiler.BeginSample("getChromatinInteractionPrediction");
         chromatinInteractionPrediction = getChromatinInteractionPrediction();
         Profiler.EndSample();
@@ -160,7 +151,9 @@ public class ChromosomeController : MonoBehaviour
         createChromatidInterationPredictionLines();
         Profiler.EndSample();
 
-
+        Profiler.BeginSample("createChromatidInterationPredictionLines");
+        createSitePoints(chromosomeRenderingInfo);
+        Profiler.EndSample();
     }
 
     ChromosomeSetRenderingInfo getChromosomeSetRenderingInfo()
@@ -331,7 +324,7 @@ public class ChromosomeController : MonoBehaviour
                     float[][] segment_points = segments.Select(segment =>
                     {
                         var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.StartBin : segment.Location.EndBin));
-                        var originPosition = basePairIndexToPoint(points, originBin);
+                        var originPosition = binToPoint(points, originBin);
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
                     int[] nodes = segments.Select((x, i) => i).ToArray();
@@ -415,8 +408,8 @@ public class ChromosomeController : MonoBehaviour
 
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
     {
-        var startBackboneIndex = basePairIndexToLocationIndex(startBasePairIndex);
-        var endBackboneIndex = basePairIndexToLocationIndex(endBasePairIndex);
+        var startBackboneIndex = binToLocationIndex(startBasePairIndex);
+        var endBackboneIndex = binToLocationIndex(endBasePairIndex);
         Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
 
         var startPoint = binToPoint(startBasePairIndex);
@@ -542,6 +535,27 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
+
+    void createSitePoints(ChromosomeRenderingInfo chromosomeRenderingInfo)
+    {
+        foreach (var siteSet in chromosomeRenderingInfo.chromosome.SiteSets)
+        {
+            var sitesParent = Instantiate(SitesParent, gameObject.transform);
+            if (siteSet.Sites.which == Chromosome.SiteSet.sites.WHICH.ProteinBinding)
+            {
+                foreach (var site in siteSet.Sites.ProteinBinding)
+                {
+                    var siteMarker = Instantiate(SiteSphere, sitesParent.transform);
+                    siteMarker.transform.localPosition = binToPoint((int)((site.Location.BinLower + site.Location.BinUpper) / 2));
+                }
+            }
+            else
+            {
+                Debug.LogError("Only Protein binding sites supported at this time!");
+            }
+        }
+    }
+
     (List<Vector3> verticies, List<int> indices, List<List<Vector3>> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, bool extrudeEnd = true)
     {
 
@@ -615,12 +629,9 @@ public class ChromosomeController : MonoBehaviour
                         (1        + sideIndex) % numsides,
                         (0        + sideIndex) % numsides + numsides,
 
-                        (1            + sideIndex) % numsides,
-                        (1            + sideIndex) % numsides + numsides,
-                        (0            + sideIndex) % numsides + numsides,}
-                    /*Enumerable.Range(0, numsides).SelectMany((j) => 
-
-                    )*/
+                        (1        + sideIndex) % numsides,
+                        (1        + sideIndex) % numsides + numsides,
+                        (0        + sideIndex) % numsides + numsides,}
 
                     .Select((j) => j - numsides)
                     .Select((j) => j + preexistingVerticies)
@@ -755,7 +766,7 @@ public class ChromosomeController : MonoBehaviour
         return segmentsDict;
     }
 
-    public int basePairIndexToLocationIndex(List<Point> points, int bpIndex)
+    public int binToLocationIndex(List<Point> points, int bpIndex)
     {
         if (bpIndex <= points.First().bin) return 0;
         if (bpIndex >= points.Last().bin) return points.Count - 1;
@@ -772,12 +783,12 @@ public class ChromosomeController : MonoBehaviour
         return index;
     }
 
-    public int basePairIndexToLocationIndex(int bpIndex)
+    public int binToLocationIndex(int bpIndex)
     {
-        return basePairIndexToLocationIndex(chromosomeRenderingInfo.points, bpIndex);
+        return binToLocationIndex(chromosomeRenderingInfo.points, bpIndex);
     }
 
-    public Vector3 basePairIndexToPoint(List<Point> points, int bpIndex)
+    public Vector3 binToPoint(List<Point> points, int bpIndex)
     {
         if (bpIndex <= points[0].bin)
         {
@@ -789,7 +800,7 @@ public class ChromosomeController : MonoBehaviour
         }
         else
         {
-            var locationIndex = basePairIndexToLocationIndex(points, bpIndex);
+            var locationIndex = binToLocationIndex(points, bpIndex);
 
             var a = points[locationIndex];
             var b = points[locationIndex + 1];
@@ -800,7 +811,7 @@ public class ChromosomeController : MonoBehaviour
     }
     public Vector3 binToPoint(int bpIndex)
     {
-        return basePairIndexToPoint(chromosomeRenderingInfo.points, bpIndex);
+        return binToPoint(chromosomeRenderingInfo.points, bpIndex);
     }
 
 

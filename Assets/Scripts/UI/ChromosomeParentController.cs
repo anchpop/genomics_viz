@@ -200,8 +200,8 @@ public class ChromosomeParentController : MonoBehaviour
     public void goToSegment(string segmentSet, int segmentSetIndex)
     {
         var info = ChromosomeController.GetSegmentInfo(ChromosomeController.GetSegmentFromCurrentChromosome(segmentSet, segmentSetIndex));
-        var startIndex = chromosomeController.basePairIndexToLocationIndex((int)info.StartBin);
-        var endIndex = chromosomeController.basePairIndexToLocationIndex((int)info.EndBin);
+        var startIndex = chromosomeController.binToLocationIndex((int)info.StartBin);
+        var endIndex = chromosomeController.binToLocationIndex((int)info.EndBin);
         if (startIndex == endIndex)
         {
             endIndex += 1;

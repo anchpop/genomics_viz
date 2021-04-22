@@ -45,7 +45,7 @@ def compile_text_to_binary():
 
     def get_genes():
         with open(base_path / Path("Data/gene_annotation_V19.txt"), "r") as genes_file:
-            genes_file.readline() # skip the first line - only specifies the 
+            genes_file.readline() # skip the first line
             def parse_line(line):
                 [_, chromosome, start_bin, end_bin, direction, stat, name, id] = line.split("\t")
                 chromosome = chromosome[3:]
