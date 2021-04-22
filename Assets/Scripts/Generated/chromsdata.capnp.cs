@@ -1196,7 +1196,7 @@ namespace CapnpGen
                 public const UInt64 typeId = 0xfd0d3e78a737b056UL;
                 public enum WHICH : ushort
                 {
-                    ProteinBindingSites = 0,
+                    ProteinBinding = 0,
                     ChromatinAccessibility = 1,
                     GeneticVariants = 2,
                     undefined = 65535
@@ -1207,8 +1207,8 @@ namespace CapnpGen
                     var reader = READER.create(arg_);
                     switch (reader.which)
                     {
-                        case WHICH.ProteinBindingSites:
-                            ProteinBindingSites = reader.ProteinBindingSites?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>>(_));
+                        case WHICH.ProteinBinding:
+                            ProteinBinding = reader.ProteinBinding?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>>(_));
                             break;
                         case WHICH.ChromatinAccessibility:
                             ChromatinAccessibility = reader.ChromatinAccessibility?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ChromatinAccessibility>>(_));
@@ -1233,7 +1233,7 @@ namespace CapnpGen
                         _which = value;
                         switch (value)
                         {
-                            case WHICH.ProteinBindingSites:
+                            case WHICH.ProteinBinding:
                                 _content = null;
                                 break;
                             case WHICH.ChromatinAccessibility:
@@ -1251,8 +1251,8 @@ namespace CapnpGen
                     writer.which = which;
                     switch (which)
                     {
-                        case WHICH.ProteinBindingSites:
-                            writer.ProteinBindingSites.Init(ProteinBindingSites, (_s1, _v1) => _v1?.serialize(_s1));
+                        case WHICH.ProteinBinding:
+                            writer.ProteinBinding.Init(ProteinBinding, (_s1, _v1) => _v1?.serialize(_s1));
                             break;
                         case WHICH.ChromatinAccessibility:
                             writer.ChromatinAccessibility.Init(ChromatinAccessibility, (_s1, _v1) => _v1?.serialize(_s1));
@@ -1272,12 +1272,12 @@ namespace CapnpGen
                 {
                 }
 
-                public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>> ProteinBindingSites
+                public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>> ProteinBinding
                 {
-                    get => _which == WHICH.ProteinBindingSites ? (IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>>)_content : null;
+                    get => _which == WHICH.ProteinBinding ? (IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>>)_content : null;
                     set
                     {
-                        _which = WHICH.ProteinBindingSites;
+                        _which = WHICH.ProteinBinding;
                         _content = value;
                     }
                 }
@@ -1314,7 +1314,7 @@ namespace CapnpGen
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
                     public WHICH which => (WHICH)ctx.ReadDataUShort(0U, (ushort)0);
-                    public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.READER> ProteinBindingSites => which == WHICH.ProteinBindingSites ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.READER> ProteinBinding => which == WHICH.ProteinBinding ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.READER.create) : default;
                     public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ChromatinAccessibility>.READER> ChromatinAccessibility => which == WHICH.ChromatinAccessibility ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ChromatinAccessibility>.READER.create) : default;
                     public IReadOnlyList<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.GeneticVariants>.READER> GeneticVariants => which == WHICH.GeneticVariants ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.GeneticVariants>.READER.create) : default;
                 }
@@ -1331,9 +1331,9 @@ namespace CapnpGen
                         set => this.WriteData(0U, (ushort)value, (ushort)0);
                     }
 
-                    public ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.WRITER> ProteinBindingSites
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.WRITER> ProteinBinding
                     {
-                        get => which == WHICH.ProteinBindingSites ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.WRITER>>(1) : default;
+                        get => which == WHICH.ProteinBinding ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.SiteSet.Site<CapnpGen.Chromosome.SiteSet.ProteinBinding>.WRITER>>(1) : default;
                         set => Link(1, value);
                     }
 
@@ -1433,13 +1433,15 @@ namespace CapnpGen
                 void ICapnpSerializable.Deserialize(DeserializerState arg_)
                 {
                     var reader = READER.create(arg_);
-                    Bin = reader.Bin;
+                    BinLower = reader.BinLower;
+                    BinUpper = reader.BinUpper;
                     applyDefaults();
                 }
 
                 public void serialize(WRITER writer)
                 {
-                    writer.Bin = Bin;
+                    writer.BinLower = BinLower;
+                    writer.BinUpper = BinUpper;
                 }
 
                 void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -1451,7 +1453,13 @@ namespace CapnpGen
                 {
                 }
 
-                public uint Bin
+                public uint BinLower
+                {
+                    get;
+                    set;
+                }
+
+                public uint BinUpper
                 {
                     get;
                     set;
@@ -1468,7 +1476,8 @@ namespace CapnpGen
                     public static READER create(DeserializerState ctx) => new READER(ctx);
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public uint Bin => ctx.ReadDataUInt(0UL, 0U);
+                    public uint BinLower => ctx.ReadDataUInt(0UL, 0U);
+                    public uint BinUpper => ctx.ReadDataUInt(32UL, 0U);
                 }
 
                 public class WRITER : SerializerState
@@ -1478,10 +1487,16 @@ namespace CapnpGen
                         this.SetStruct(1, 0);
                     }
 
-                    public uint Bin
+                    public uint BinLower
                     {
                         get => this.ReadDataUInt(0UL, 0U);
                         set => this.WriteData(0UL, value, 0U);
+                    }
+
+                    public uint BinUpper
+                    {
+                        get => this.ReadDataUInt(32UL, 0U);
+                        set => this.WriteData(32UL, value, 0U);
                     }
                 }
             }

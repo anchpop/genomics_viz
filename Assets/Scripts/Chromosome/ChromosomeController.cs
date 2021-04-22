@@ -170,10 +170,17 @@ public class ChromosomeController : MonoBehaviour
             var output_dir_path = Path.Combine(Settings.dataUrl, "Output");
             var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
 
+
+            Profiler.BeginSample("Reading info file");
             using var fs = File.OpenRead(info_file_path);
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Deserializing info file");
             var frame = Framing.ReadSegments(fs);
             var deserializer = DeserializerState.CreateRoot(frame);
             var set = CapnpSerializable.Create<ChromosomeSet>(deserializer);
+            Profiler.EndSample();
+
             Debug.Log("Read " + set.Chromosomes.Count + " chromosomes");
             return set;// new ChromosomeSet.READER(deserializer);
         }

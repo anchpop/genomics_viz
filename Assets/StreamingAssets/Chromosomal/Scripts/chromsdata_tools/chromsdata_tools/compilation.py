@@ -9,6 +9,9 @@ capnp.remove_import_hook()
 chromosome_schema_capnp = capnp.load(str(schema_path))
 SegmentSet = chromosome_schema_capnp.Chromosome.SegmentSet
 
+def fst(x): return x[0]
+def snd(x): return x[1]
+
 def compile_text_to_binary():
 
     def get_coordinates():
@@ -68,10 +71,10 @@ def compile_text_to_binary():
                 return chromosome, {'location': location, 'extraInfo': gene} # need to use a struct for generic types
                 
             return {
-                k: list(map(lambda segment: segment[1], v)) 
+                k: list(map(snd, v)) 
                 for k, v 
                 in groupby(
-                    lambda segment: segment[0], 
+                    fst, 
                     map(
                         to_message, 
                         map(
@@ -85,6 +88,46 @@ def compile_text_to_binary():
                     }
 
 
+    def get_sets():
+        def read_bed_file(path):
+            def parse_line(line):
+                info = line.split('\t')
+                chromosome = info[0]
+                start = int(info[1])
+                end = int(info[2])
+
+                protein_binding = chromosome_schema_capnp.Chromosome.SiteSet.ProteinBinding.new_message()
+                location = chromosome_schema_capnp.Chromosome.SiteSet.Location.new_message()
+                location.binLower = start
+                location.binUpper = end
+
+                return chromosome, {'location': location, 'extraInfo': protein_binding}
+
+            with open(path, 'r') as bed:
+                return {
+                    k: list(map(snd, v)) 
+                    for k, v 
+                    in groupby(
+                        fst, map(parse_line, bed)
+                    ).items()
+                }
+        def get_set(bed): 
+            path = base_path / Path("Data/Sites") / Path(bed + ".txt")
+            data = read_bed_file(path)
+            return data
+        
+        def make_set(chromosome, bed_name, data): 
+            site_set = chromosome_schema_capnp.Chromosome.SiteSet.new_message()
+            site_set.description.name = bed_name
+            site_set.sites.proteinBinding = data[chromosome]
+
+            return site_set 
+
+        beds = {bed: get_set(bed) for bed in ['CTCF', 'GATA1', 'IDR_final_optimal']}
+        chromosomes = set(chromosome for _, data in beds.items() for chromosome, _ in data.items())
+        return {chromosome: [make_set(chromosome, bed_name, data) for bed_name, data in beds.items()] for chromosome in chromosomes}
+
+
     index = 1
     coordinates = get_coordinates()
     bins = get_bins()
@@ -94,11 +137,16 @@ def compile_text_to_binary():
 
     assert len(coordinates) == len(bins)
 
+    
+        
+       
+
     chromosome = chromosome_schema_capnp.Chromosome.new_message()
     chromosome.index.numbered = index
     chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
     chromosome.segmentSets = [segment_set]
     chromosome.connectionSets = []
+    chromosome.siteSets = get_sets()['chr1']
 
 
     chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()

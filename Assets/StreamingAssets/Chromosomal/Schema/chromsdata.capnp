@@ -75,7 +75,7 @@ struct Chromosome {
 	struct SiteSet {
 		description @0 :Description;
 		sites :union {
-			proteinBindingSites @1 :List(Site(ProteinBinding));
+			proteinBinding @1 :List(Site(ProteinBinding));
 			chromatinAccessibility @2 :List(Site(ChromatinAccessibility));
 			geneticVariants @3 :List(Site(GeneticVariants));
 		}
@@ -86,7 +86,8 @@ struct Chromosome {
 		}
 
 		struct Location {
-			bin @0 :UInt32;
+			binLower @0 :UInt32;
+			binUpper @1 :UInt32;
 		} 
 
 		struct ProteinBinding {
