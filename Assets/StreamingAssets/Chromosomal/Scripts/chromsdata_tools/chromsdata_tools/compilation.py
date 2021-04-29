@@ -139,7 +139,7 @@ def compile_text_to_binary():
 
                 start_range.lower = row['start_lower_bin']
                 start_range.upper = row['start_upper_bin']
-                end_range.upper = row['end_lower_bin']
+                end_range.lower = row['end_lower_bin']
                 end_range.upper = row['end_upper_bin']
 
                 location = chromosome_schema_capnp.Chromosome.ConnectionSet.Location.new_message()
