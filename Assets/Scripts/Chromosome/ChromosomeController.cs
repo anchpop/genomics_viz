@@ -107,8 +107,10 @@ public class ChromosomeController : MonoBehaviour
     // So, we need to use multiple meshes, which means multiple mesh renderers
     public GameObject backboneRenderers;
     public GameObject segmentRenderers;
+    public GameObject connectionRenderers;
     public List<MeshFilter> backboneMeshFilters;
     public Dictionary<int, List<MeshFilter>> segmentMeshFilters;
+    public Dictionary<int, List<MeshFilter>> connectionMeshFilters;
 
     public GameObject SitesParent;
 
@@ -125,15 +127,6 @@ public class ChromosomeController : MonoBehaviour
 
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
 
-        backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
-        segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.Select((name, index) => (name, index)).ToDictionary(k => k.index, k =>
-            {
-                var renderers = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
-                renderers.name = k.name;
-                return renderers.GetComponentsInChildren<MeshFilter>().ToList();
-            }
-        );
-
 
         Profiler.BeginSample("getChromatinInteractionPrediction");
         chromatinInteractionPrediction = getChromatinInteractionPrediction();
@@ -148,11 +141,11 @@ public class ChromosomeController : MonoBehaviour
         createSegmentsMeshes(chromosomeRenderingInfo);
         Profiler.EndSample();
         Profiler.BeginSample("createChromatidInterationPredictionLines");
-        createChromatidInterationPredictionLines();
+        createChromatidInterationPredictionLines(chromosomeRenderingInfo);
         Profiler.EndSample();
 
         Profiler.BeginSample("createChromatidInterationPredictionLines");
-        createSitePoints(chromosomeRenderingInfo);
+        //createSitePoints(chromosomeRenderingInfo);
         Profiler.EndSample();
     }
 
@@ -305,7 +298,7 @@ public class ChromosomeController : MonoBehaviour
                     var segments = segmentSet.Segments.Genes.ToList();
                     segments.Sort(delegate (Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> x, Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> y)
                     {
-                        return (x.Location.StartBin).CompareTo(y.Location.StartBin);
+                        return (x.Location.Lower).CompareTo(y.Location.Lower);
                     });
 
 
@@ -323,7 +316,7 @@ public class ChromosomeController : MonoBehaviour
 
                     float[][] segment_points = segments.Select(segment =>
                     {
-                        var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.StartBin : segment.Location.EndBin));
+                        var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.Lower : segment.Location.Upper));
                         var originPosition = binToPoint(points, originBin);
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
@@ -359,6 +352,8 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackboneMesh()
     {
+        backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
+
         backbonePointNormals = new List<List<Vector3>>();
 
         var verticiesl = new List<List<Vector3>>();
@@ -429,22 +424,29 @@ public class ChromosomeController : MonoBehaviour
 
     void createSegmentsMeshes(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
+        segmentMeshFilters = chromosomeRenderingInfo.segmentInfos.Keys.Select((name, index) => (name, index)).ToDictionary(k => k.index, k =>
+            {
+                var renderers = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
+                renderers.name = k.name;
+                return renderers.GetComponentsInChildren<MeshFilter>().ToList();
+            }
+        );
         foreach (var (segmentSetName, segmentSetInfo, segmentSetIndex) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value, index)))
         {
-            List<(int startBin, int endBin)> combineSegments(List<Chromosome.SegmentSet.Location> segments)
+            List<(int startBin, int endBin)> combineSegments(List<Chromosome.BinRange> segments)
             {
                 var combined = new List<(int startBin, int endBin)>();
-                var current_section = (startBin: (int)segments[0].StartBin, endBin: (int)segments[0].EndBin);
+                var current_section = (startBin: (int)segments[0].Lower, endBin: (int)segments[0].Upper);
                 foreach (var segment in segments.GetRange(1, segments.Count - 1))
                 {
-                    if (current_section.endBin < segment.StartBin)
+                    if (current_section.endBin < segment.Lower)
                     {
                         combined.Add(current_section);
-                        current_section = (startBin: (int)segment.StartBin, endBin: (int)segment.EndBin);
+                        current_section = (startBin: (int)segment.Lower, endBin: (int)segment.Upper);
                     }
                     else
                     {
-                        current_section = (current_section.startBin, Mathf.Max((int)segment.EndBin, current_section.endBin));
+                        current_section = (current_section.startBin, Mathf.Max((int)segment.Upper, current_section.endBin));
                     }
                 }
                 combined.Add(current_section);
@@ -499,8 +501,15 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-    void createChromatidInterationPredictionLines()
+    void createChromatidInterationPredictionLines(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
+        connectionMeshFilters = chromosomeRenderingInfo.chromosome.ConnectionSets.Select((connectionSet, index) => (connectionSet, index)).ToDictionary(k => k.index, k =>
+        {
+            var renderers = Instantiate(connectionRenderers, connectionRenderers.transform.parent.transform);
+            renderers.name = k.connectionSet.Description.Name;
+            return renderers.GetComponentsInChildren<MeshFilter>().ToList();
+        }
+        );
         foreach (var (start, end) in chromatinInteractionPrediction)
         {
             try
@@ -547,7 +556,7 @@ public class ChromosomeController : MonoBehaviour
                 foreach (var site in siteSet.Sites.ProteinBinding)
                 {
                     var siteMarker = Instantiate(SiteSphere, sitesParent.transform);
-                    siteMarker.transform.localPosition = binToPoint((int)((site.Location.BinLower + site.Location.BinUpper) / 2));
+                    siteMarker.transform.localPosition = binToPoint((int)((site.Location.Lower + site.Location.Upper) / 2));
                 }
             }
             else
@@ -708,9 +717,9 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    public void highlightSegment(MeshFilter renderer, Chromosome.SegmentSet.Location info)
+    public void highlightSegment(MeshFilter renderer, Chromosome.BinRange info)
     {
-        var genePoints = getPointsConnectingBpIndices((int)info.StartBin, (int)info.EndBin);
+        var genePoints = getPointsConnectingBpIndices((int)info.Lower, (int)info.Upper);
 
         Assert.AreNotEqual(genePoints.points.Count, 0);
         Assert.AreNotEqual(genePoints.points.Count, 1);
@@ -736,7 +745,7 @@ public class ChromosomeController : MonoBehaviour
         */
     }
 
-    public void highlightSegment(string segmentSet, Chromosome.SegmentSet.Location info)
+    public void highlightSegment(string segmentSet, Chromosome.BinRange info)
     {
         highlightSegment(highlightRenderer, info);
     }
@@ -754,12 +763,12 @@ public class ChromosomeController : MonoBehaviour
     {
         var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<IEnumerable<int>>(
             segments => (from info in segments.Select((segment, index) => (segment, index))
-                         where info.segment.Location.StartBin <= bin
-                         where bin <= info.segment.Location.EndBin
+                         where info.segment.Location.Lower <= bin
+                         where bin <= info.segment.Location.Upper
                          select info.index),
             segments => (from info in segments.Select((segment, index) => (segment, index))
-                         where info.segment.Location.StartBin <= bin
-                         where bin <= info.segment.Location.EndBin
+                         where info.segment.Location.Lower <= bin
+                         where bin <= info.segment.Location.Upper
                          select info.index)
             )));
         var segmentsDict = matched_segments.Where(x => x.matchedSegments.Any()).ToDictionary(x => x.setName, x => x.matchedSegments);
@@ -826,7 +835,7 @@ public class ChromosomeController : MonoBehaviour
     {
     }
 
-    public static Chromosome.SegmentSet.Location GetSegmentInfo(Segment segment)
+    public static Chromosome.BinRange GetSegmentInfo(Segment segment)
     {
         return segment.Match(s => s.Location, s => s.Location);
     }

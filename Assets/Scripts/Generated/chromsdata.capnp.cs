@@ -628,7 +628,7 @@ namespace CapnpGen
                 void ICapnpSerializable.Deserialize(DeserializerState arg_)
                 {
                     var reader = READER.create(arg_);
-                    Location = CapnpSerializable.Create<CapnpGen.Chromosome.SegmentSet.Location>(reader.Location);
+                    Location = CapnpSerializable.Create<CapnpGen.Chromosome.BinRange>(reader.Location);
                     ExtraInfo = CapnpSerializable.Create<TExtraInfo>(reader.ExtraInfo);
                     applyDefaults();
                 }
@@ -648,7 +648,7 @@ namespace CapnpGen
                 {
                 }
 
-                public CapnpGen.Chromosome.SegmentSet.Location Location
+                public CapnpGen.Chromosome.BinRange Location
                 {
                     get;
                     set;
@@ -671,7 +671,7 @@ namespace CapnpGen
                     public static READER create(DeserializerState ctx) => new READER(ctx);
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public CapnpGen.Chromosome.SegmentSet.Location.READER Location => ctx.ReadStruct(0, CapnpGen.Chromosome.SegmentSet.Location.READER.create);
+                    public CapnpGen.Chromosome.BinRange.READER Location => ctx.ReadStruct(0, CapnpGen.Chromosome.BinRange.READER.create);
                     public DeserializerState ExtraInfo => ctx.StructReadPointer(1);
                 }
 
@@ -682,9 +682,9 @@ namespace CapnpGen
                         this.SetStruct(0, 2);
                     }
 
-                    public CapnpGen.Chromosome.SegmentSet.Location.WRITER Location
+                    public CapnpGen.Chromosome.BinRange.WRITER Location
                     {
-                        get => BuildPointer<CapnpGen.Chromosome.SegmentSet.Location.WRITER>(0);
+                        get => BuildPointer<CapnpGen.Chromosome.BinRange.WRITER>(0);
                         set => Link(0, value);
                     }
 
@@ -692,81 +692,6 @@ namespace CapnpGen
                     {
                         get => BuildPointer<DynamicSerializerState>(1);
                         set => Link(1, value);
-                    }
-                }
-            }
-
-            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xfb23a1504b7ceb60UL)]
-            public class Location : ICapnpSerializable
-            {
-                public const UInt64 typeId = 0xfb23a1504b7ceb60UL;
-                void ICapnpSerializable.Deserialize(DeserializerState arg_)
-                {
-                    var reader = READER.create(arg_);
-                    StartBin = reader.StartBin;
-                    EndBin = reader.EndBin;
-                    applyDefaults();
-                }
-
-                public void serialize(WRITER writer)
-                {
-                    writer.StartBin = StartBin;
-                    writer.EndBin = EndBin;
-                }
-
-                void ICapnpSerializable.Serialize(SerializerState arg_)
-                {
-                    serialize(arg_.Rewrap<WRITER>());
-                }
-
-                public void applyDefaults()
-                {
-                }
-
-                public uint StartBin
-                {
-                    get;
-                    set;
-                }
-
-                public uint EndBin
-                {
-                    get;
-                    set;
-                }
-
-                public struct READER
-                {
-                    readonly DeserializerState ctx;
-                    public READER(DeserializerState ctx)
-                    {
-                        this.ctx = ctx;
-                    }
-
-                    public static READER create(DeserializerState ctx) => new READER(ctx);
-                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
-                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public uint StartBin => ctx.ReadDataUInt(0UL, 0U);
-                    public uint EndBin => ctx.ReadDataUInt(32UL, 0U);
-                }
-
-                public class WRITER : SerializerState
-                {
-                    public WRITER()
-                    {
-                        this.SetStruct(1, 0);
-                    }
-
-                    public uint StartBin
-                    {
-                        get => this.ReadDataUInt(0UL, 0U);
-                        set => this.WriteData(0UL, value, 0U);
-                    }
-
-                    public uint EndBin
-                    {
-                        get => this.ReadDataUInt(32UL, 0U);
-                        set => this.WriteData(32UL, value, 0U);
                     }
                 }
             }
@@ -945,14 +870,14 @@ namespace CapnpGen
             {
                 var reader = READER.create(arg_);
                 Description = CapnpSerializable.Create<CapnpGen.Description>(reader.Description);
-                Connections = reader.Connections?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection>(_));
+                Connections = CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.connections>(reader.Connections);
                 applyDefaults();
             }
 
             public void serialize(WRITER writer)
             {
                 Description?.serialize(writer.Description);
-                writer.Connections.Init(Connections, (_s1, _v1) => _v1?.serialize(_s1));
+                Connections?.serialize(writer.Connections);
             }
 
             void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -970,7 +895,7 @@ namespace CapnpGen
                 set;
             }
 
-            public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection> Connections
+            public CapnpGen.Chromosome.ConnectionSet.connections Connections
             {
                 get;
                 set;
@@ -988,14 +913,14 @@ namespace CapnpGen
                 public static implicit operator DeserializerState(READER reader) => reader.ctx;
                 public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
                 public CapnpGen.Description.READER Description => ctx.ReadStruct(0, CapnpGen.Description.READER.create);
-                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection.READER> Connections => ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection.READER.create);
+                public connections.READER Connections => new connections.READER(ctx);
             }
 
             public class WRITER : SerializerState
             {
                 public WRITER()
                 {
-                    this.SetStruct(0, 2);
+                    this.SetStruct(1, 2);
                 }
 
                 public CapnpGen.Description.WRITER Description
@@ -1004,33 +929,103 @@ namespace CapnpGen
                     set => Link(0, value);
                 }
 
-                public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection.WRITER> Connections
+                public connections.WRITER Connections
                 {
-                    get => BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection.WRITER>>(1);
-                    set => Link(1, value);
+                    get => Rewrap<connections.WRITER>();
                 }
             }
 
-            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xc1ade6784ae88567UL)]
-            public class Connection : ICapnpSerializable
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xa193d53375e36ee1UL)]
+            public class connections : ICapnpSerializable
             {
-                public const UInt64 typeId = 0xc1ade6784ae88567UL;
+                public const UInt64 typeId = 0xa193d53375e36ee1UL;
+                public enum WHICH : ushort
+                {
+                    ChromatinInteractionPredictions = 0,
+                    SignificantHiCInteractions = 1,
+                    ChIAPetInteractions = 2,
+                    CaptureCInteractions = 3,
+                    EQtlLink = 4,
+                    undefined = 65535
+                }
+
                 void ICapnpSerializable.Deserialize(DeserializerState arg_)
                 {
                     var reader = READER.create(arg_);
-                    StartBinLower = reader.StartBinLower;
-                    StartBinUpper = reader.StartBinUpper;
-                    EndBinLower = reader.EndBinLower;
-                    EndBinUpper = reader.EndBinUpper;
+                    switch (reader.which)
+                    {
+                        case WHICH.ChromatinInteractionPredictions:
+                            ChromatinInteractionPredictions = reader.ChromatinInteractionPredictions?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>>(_));
+                            break;
+                        case WHICH.SignificantHiCInteractions:
+                            SignificantHiCInteractions = reader.SignificantHiCInteractions?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>>(_));
+                            break;
+                        case WHICH.ChIAPetInteractions:
+                            ChIAPetInteractions = reader.ChIAPetInteractions?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>>(_));
+                            break;
+                        case WHICH.CaptureCInteractions:
+                            CaptureCInteractions = reader.CaptureCInteractions?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>>(_));
+                            break;
+                        case WHICH.EQtlLink:
+                            EQtlLink = reader.EQtlLink?.ToReadOnlyList(_ => CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>>(_));
+                            break;
+                    }
+
                     applyDefaults();
+                }
+
+                private WHICH _which = WHICH.undefined;
+                private object _content;
+                public WHICH which
+                {
+                    get => _which;
+                    set
+                    {
+                        if (value == _which)
+                            return;
+                        _which = value;
+                        switch (value)
+                        {
+                            case WHICH.ChromatinInteractionPredictions:
+                                _content = null;
+                                break;
+                            case WHICH.SignificantHiCInteractions:
+                                _content = null;
+                                break;
+                            case WHICH.ChIAPetInteractions:
+                                _content = null;
+                                break;
+                            case WHICH.CaptureCInteractions:
+                                _content = null;
+                                break;
+                            case WHICH.EQtlLink:
+                                _content = null;
+                                break;
+                        }
+                    }
                 }
 
                 public void serialize(WRITER writer)
                 {
-                    writer.StartBinLower = StartBinLower;
-                    writer.StartBinUpper = StartBinUpper;
-                    writer.EndBinLower = EndBinLower;
-                    writer.EndBinUpper = EndBinUpper;
+                    writer.which = which;
+                    switch (which)
+                    {
+                        case WHICH.ChromatinInteractionPredictions:
+                            writer.ChromatinInteractionPredictions.Init(ChromatinInteractionPredictions, (_s1, _v1) => _v1?.serialize(_s1));
+                            break;
+                        case WHICH.SignificantHiCInteractions:
+                            writer.SignificantHiCInteractions.Init(SignificantHiCInteractions, (_s1, _v1) => _v1?.serialize(_s1));
+                            break;
+                        case WHICH.ChIAPetInteractions:
+                            writer.ChIAPetInteractions.Init(ChIAPetInteractions, (_s1, _v1) => _v1?.serialize(_s1));
+                            break;
+                        case WHICH.CaptureCInteractions:
+                            writer.CaptureCInteractions.Init(CaptureCInteractions, (_s1, _v1) => _v1?.serialize(_s1));
+                            break;
+                        case WHICH.EQtlLink:
+                            writer.EQtlLink.Init(EQtlLink, (_s1, _v1) => _v1?.serialize(_s1));
+                            break;
+                    }
                 }
 
                 void ICapnpSerializable.Serialize(SerializerState arg_)
@@ -1042,25 +1037,153 @@ namespace CapnpGen
                 {
                 }
 
-                public uint StartBinLower
+                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>> ChromatinInteractionPredictions
+                {
+                    get => _which == WHICH.ChromatinInteractionPredictions ? (IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>>)_content : null;
+                    set
+                    {
+                        _which = WHICH.ChromatinInteractionPredictions;
+                        _content = value;
+                    }
+                }
+
+                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>> SignificantHiCInteractions
+                {
+                    get => _which == WHICH.SignificantHiCInteractions ? (IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>>)_content : null;
+                    set
+                    {
+                        _which = WHICH.SignificantHiCInteractions;
+                        _content = value;
+                    }
+                }
+
+                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>> ChIAPetInteractions
+                {
+                    get => _which == WHICH.ChIAPetInteractions ? (IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>>)_content : null;
+                    set
+                    {
+                        _which = WHICH.ChIAPetInteractions;
+                        _content = value;
+                    }
+                }
+
+                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>> CaptureCInteractions
+                {
+                    get => _which == WHICH.CaptureCInteractions ? (IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>>)_content : null;
+                    set
+                    {
+                        _which = WHICH.CaptureCInteractions;
+                        _content = value;
+                    }
+                }
+
+                public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>> EQtlLink
+                {
+                    get => _which == WHICH.EQtlLink ? (IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>>)_content : null;
+                    set
+                    {
+                        _which = WHICH.EQtlLink;
+                        _content = value;
+                    }
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                    public WHICH which => (WHICH)ctx.ReadDataUShort(0U, (ushort)0);
+                    public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>.READER> ChromatinInteractionPredictions => which == WHICH.ChromatinInteractionPredictions ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>.READER> SignificantHiCInteractions => which == WHICH.SignificantHiCInteractions ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>.READER> ChIAPetInteractions => which == WHICH.ChIAPetInteractions ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>.READER> CaptureCInteractions => which == WHICH.CaptureCInteractions ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>.READER.create) : default;
+                    public IReadOnlyList<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>.READER> EQtlLink => which == WHICH.EQtlLink ? ctx.ReadList(1).Cast(CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>.READER.create) : default;
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                    }
+
+                    public WHICH which
+                    {
+                        get => (WHICH)this.ReadDataUShort(0U, (ushort)0);
+                        set => this.WriteData(0U, (ushort)value, (ushort)0);
+                    }
+
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>.WRITER> ChromatinInteractionPredictions
+                    {
+                        get => which == WHICH.ChromatinInteractionPredictions ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>.WRITER>>(1) : default;
+                        set => Link(1, value);
+                    }
+
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>.WRITER> SignificantHiCInteractions
+                    {
+                        get => which == WHICH.SignificantHiCInteractions ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>.WRITER>>(1) : default;
+                        set => Link(1, value);
+                    }
+
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>.WRITER> ChIAPetInteractions
+                    {
+                        get => which == WHICH.ChIAPetInteractions ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChIAPetInteractions>.WRITER>>(1) : default;
+                        set => Link(1, value);
+                    }
+
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>.WRITER> CaptureCInteractions
+                    {
+                        get => which == WHICH.CaptureCInteractions ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.CaptureCInteractions>.WRITER>>(1) : default;
+                        set => Link(1, value);
+                    }
+
+                    public ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>.WRITER> EQtlLink
+                    {
+                        get => which == WHICH.EQtlLink ? BuildPointer<ListOfStructsSerializer<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.EQtlLink>.WRITER>>(1) : default;
+                        set => Link(1, value);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xb689b3a89610a72dUL)]
+            public class Location : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0xb689b3a89610a72dUL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    Start = CapnpSerializable.Create<CapnpGen.Chromosome.BinRange>(reader.Start);
+                    End = CapnpSerializable.Create<CapnpGen.Chromosome.BinRange>(reader.End);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                    Start?.serialize(writer.Start);
+                    End?.serialize(writer.End);
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public CapnpGen.Chromosome.BinRange Start
                 {
                     get;
                     set;
                 }
 
-                public uint StartBinUpper
-                {
-                    get;
-                    set;
-                }
-
-                public uint EndBinLower
-                {
-                    get;
-                    set;
-                }
-
-                public uint EndBinUpper
+                public CapnpGen.Chromosome.BinRange End
                 {
                     get;
                     set;
@@ -1077,41 +1200,327 @@ namespace CapnpGen
                     public static READER create(DeserializerState ctx) => new READER(ctx);
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public uint StartBinLower => ctx.ReadDataUInt(0UL, 0U);
-                    public uint StartBinUpper => ctx.ReadDataUInt(32UL, 0U);
-                    public uint EndBinLower => ctx.ReadDataUInt(64UL, 0U);
-                    public uint EndBinUpper => ctx.ReadDataUInt(96UL, 0U);
+                    public CapnpGen.Chromosome.BinRange.READER Start => ctx.ReadStruct(0, CapnpGen.Chromosome.BinRange.READER.create);
+                    public CapnpGen.Chromosome.BinRange.READER End => ctx.ReadStruct(1, CapnpGen.Chromosome.BinRange.READER.create);
                 }
 
                 public class WRITER : SerializerState
                 {
                     public WRITER()
                     {
-                        this.SetStruct(2, 0);
+                        this.SetStruct(0, 2);
                     }
 
-                    public uint StartBinLower
+                    public CapnpGen.Chromosome.BinRange.WRITER Start
                     {
-                        get => this.ReadDataUInt(0UL, 0U);
-                        set => this.WriteData(0UL, value, 0U);
+                        get => BuildPointer<CapnpGen.Chromosome.BinRange.WRITER>(0);
+                        set => Link(0, value);
                     }
 
-                    public uint StartBinUpper
+                    public CapnpGen.Chromosome.BinRange.WRITER End
                     {
-                        get => this.ReadDataUInt(32UL, 0U);
-                        set => this.WriteData(32UL, value, 0U);
+                        get => BuildPointer<CapnpGen.Chromosome.BinRange.WRITER>(1);
+                        set => Link(1, value);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xc1ade6784ae88567UL)]
+            public class Connection<TExtraInfo> : ICapnpSerializable where TExtraInfo : class
+            {
+                public const UInt64 typeId = 0xc1ade6784ae88567UL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    Location = CapnpSerializable.Create<CapnpGen.Chromosome.ConnectionSet.Location>(reader.Location);
+                    ExtraInfo = CapnpSerializable.Create<TExtraInfo>(reader.ExtraInfo);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                    Location?.serialize(writer.Location);
+                    writer.ExtraInfo.SetObject(ExtraInfo);
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public CapnpGen.Chromosome.ConnectionSet.Location Location
+                {
+                    get;
+                    set;
+                }
+
+                public TExtraInfo ExtraInfo
+                {
+                    get;
+                    set;
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
                     }
 
-                    public uint EndBinLower
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                    public CapnpGen.Chromosome.ConnectionSet.Location.READER Location => ctx.ReadStruct(0, CapnpGen.Chromosome.ConnectionSet.Location.READER.create);
+                    public DeserializerState ExtraInfo => ctx.StructReadPointer(1);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
                     {
-                        get => this.ReadDataUInt(64UL, 0U);
-                        set => this.WriteData(64UL, value, 0U);
+                        this.SetStruct(0, 2);
                     }
 
-                    public uint EndBinUpper
+                    public CapnpGen.Chromosome.ConnectionSet.Location.WRITER Location
                     {
-                        get => this.ReadDataUInt(96UL, 0U);
-                        set => this.WriteData(96UL, value, 0U);
+                        get => BuildPointer<CapnpGen.Chromosome.ConnectionSet.Location.WRITER>(0);
+                        set => Link(0, value);
+                    }
+
+                    public DynamicSerializerState ExtraInfo
+                    {
+                        get => BuildPointer<DynamicSerializerState>(1);
+                        set => Link(1, value);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0x8c7dd3ec0a8c037dUL)]
+            public class ChromatinInteractionPredictions : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0x8c7dd3ec0a8c037dUL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                        this.SetStruct(0, 0);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0x8a3d693ae03aa4b7UL)]
+            public class SignificantHiCInteractions : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0x8a3d693ae03aa4b7UL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                        this.SetStruct(0, 0);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xba064b63c7e54053UL)]
+            public class ChIAPetInteractions : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0xba064b63c7e54053UL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                        this.SetStruct(0, 0);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xd78ea5051bb4609dUL)]
+            public class CaptureCInteractions : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0xd78ea5051bb4609dUL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                        this.SetStruct(0, 0);
+                    }
+                }
+            }
+
+            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xba628493b2076538UL)]
+            public class EQtlLink : ICapnpSerializable
+            {
+                public const UInt64 typeId = 0xba628493b2076538UL;
+                void ICapnpSerializable.Deserialize(DeserializerState arg_)
+                {
+                    var reader = READER.create(arg_);
+                    applyDefaults();
+                }
+
+                public void serialize(WRITER writer)
+                {
+                }
+
+                void ICapnpSerializable.Serialize(SerializerState arg_)
+                {
+                    serialize(arg_.Rewrap<WRITER>());
+                }
+
+                public void applyDefaults()
+                {
+                }
+
+                public struct READER
+                {
+                    readonly DeserializerState ctx;
+                    public READER(DeserializerState ctx)
+                    {
+                        this.ctx = ctx;
+                    }
+
+                    public static READER create(DeserializerState ctx) => new READER(ctx);
+                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                }
+
+                public class WRITER : SerializerState
+                {
+                    public WRITER()
+                    {
+                        this.SetStruct(0, 0);
                     }
                 }
             }
@@ -1358,7 +1767,7 @@ namespace CapnpGen
                 void ICapnpSerializable.Deserialize(DeserializerState arg_)
                 {
                     var reader = READER.create(arg_);
-                    Location = CapnpSerializable.Create<CapnpGen.Chromosome.SiteSet.Location>(reader.Location);
+                    Location = CapnpSerializable.Create<CapnpGen.Chromosome.BinRange>(reader.Location);
                     ExtraInfo = CapnpSerializable.Create<TExtraInfo>(reader.ExtraInfo);
                     applyDefaults();
                 }
@@ -1378,7 +1787,7 @@ namespace CapnpGen
                 {
                 }
 
-                public CapnpGen.Chromosome.SiteSet.Location Location
+                public CapnpGen.Chromosome.BinRange Location
                 {
                     get;
                     set;
@@ -1401,7 +1810,7 @@ namespace CapnpGen
                     public static READER create(DeserializerState ctx) => new READER(ctx);
                     public static implicit operator DeserializerState(READER reader) => reader.ctx;
                     public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public CapnpGen.Chromosome.SiteSet.Location.READER Location => ctx.ReadStruct(0, CapnpGen.Chromosome.SiteSet.Location.READER.create);
+                    public CapnpGen.Chromosome.BinRange.READER Location => ctx.ReadStruct(0, CapnpGen.Chromosome.BinRange.READER.create);
                     public DeserializerState ExtraInfo => ctx.StructReadPointer(1);
                 }
 
@@ -1412,9 +1821,9 @@ namespace CapnpGen
                         this.SetStruct(0, 2);
                     }
 
-                    public CapnpGen.Chromosome.SiteSet.Location.WRITER Location
+                    public CapnpGen.Chromosome.BinRange.WRITER Location
                     {
-                        get => BuildPointer<CapnpGen.Chromosome.SiteSet.Location.WRITER>(0);
+                        get => BuildPointer<CapnpGen.Chromosome.BinRange.WRITER>(0);
                         set => Link(0, value);
                     }
 
@@ -1422,81 +1831,6 @@ namespace CapnpGen
                     {
                         get => BuildPointer<DynamicSerializerState>(1);
                         set => Link(1, value);
-                    }
-                }
-            }
-
-            [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0xfde6fb7b158dc800UL)]
-            public class Location : ICapnpSerializable
-            {
-                public const UInt64 typeId = 0xfde6fb7b158dc800UL;
-                void ICapnpSerializable.Deserialize(DeserializerState arg_)
-                {
-                    var reader = READER.create(arg_);
-                    BinLower = reader.BinLower;
-                    BinUpper = reader.BinUpper;
-                    applyDefaults();
-                }
-
-                public void serialize(WRITER writer)
-                {
-                    writer.BinLower = BinLower;
-                    writer.BinUpper = BinUpper;
-                }
-
-                void ICapnpSerializable.Serialize(SerializerState arg_)
-                {
-                    serialize(arg_.Rewrap<WRITER>());
-                }
-
-                public void applyDefaults()
-                {
-                }
-
-                public uint BinLower
-                {
-                    get;
-                    set;
-                }
-
-                public uint BinUpper
-                {
-                    get;
-                    set;
-                }
-
-                public struct READER
-                {
-                    readonly DeserializerState ctx;
-                    public READER(DeserializerState ctx)
-                    {
-                        this.ctx = ctx;
-                    }
-
-                    public static READER create(DeserializerState ctx) => new READER(ctx);
-                    public static implicit operator DeserializerState(READER reader) => reader.ctx;
-                    public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
-                    public uint BinLower => ctx.ReadDataUInt(0UL, 0U);
-                    public uint BinUpper => ctx.ReadDataUInt(32UL, 0U);
-                }
-
-                public class WRITER : SerializerState
-                {
-                    public WRITER()
-                    {
-                        this.SetStruct(1, 0);
-                    }
-
-                    public uint BinLower
-                    {
-                        get => this.ReadDataUInt(0UL, 0U);
-                        set => this.WriteData(0UL, value, 0U);
-                    }
-
-                    public uint BinUpper
-                    {
-                        get => this.ReadDataUInt(32UL, 0U);
-                        set => this.WriteData(32UL, value, 0U);
                     }
                 }
             }
@@ -1633,6 +1967,81 @@ namespace CapnpGen
                     {
                         this.SetStruct(0, 0);
                     }
+                }
+            }
+        }
+
+        [System.CodeDom.Compiler.GeneratedCode("capnpc-csharp", "1.3.0.0"), TypeId(0x88b5e7ad8566a9f0UL)]
+        public class BinRange : ICapnpSerializable
+        {
+            public const UInt64 typeId = 0x88b5e7ad8566a9f0UL;
+            void ICapnpSerializable.Deserialize(DeserializerState arg_)
+            {
+                var reader = READER.create(arg_);
+                Lower = reader.Lower;
+                Upper = reader.Upper;
+                applyDefaults();
+            }
+
+            public void serialize(WRITER writer)
+            {
+                writer.Lower = Lower;
+                writer.Upper = Upper;
+            }
+
+            void ICapnpSerializable.Serialize(SerializerState arg_)
+            {
+                serialize(arg_.Rewrap<WRITER>());
+            }
+
+            public void applyDefaults()
+            {
+            }
+
+            public uint Lower
+            {
+                get;
+                set;
+            }
+
+            public uint Upper
+            {
+                get;
+                set;
+            }
+
+            public struct READER
+            {
+                readonly DeserializerState ctx;
+                public READER(DeserializerState ctx)
+                {
+                    this.ctx = ctx;
+                }
+
+                public static READER create(DeserializerState ctx) => new READER(ctx);
+                public static implicit operator DeserializerState(READER reader) => reader.ctx;
+                public static implicit operator READER(DeserializerState ctx) => new READER(ctx);
+                public uint Lower => ctx.ReadDataUInt(0UL, 0U);
+                public uint Upper => ctx.ReadDataUInt(32UL, 0U);
+            }
+
+            public class WRITER : SerializerState
+            {
+                public WRITER()
+                {
+                    this.SetStruct(1, 0);
+                }
+
+                public uint Lower
+                {
+                    get => this.ReadDataUInt(0UL, 0U);
+                    set => this.WriteData(0UL, value, 0U);
+                }
+
+                public uint Upper
+                {
+                    get => this.ReadDataUInt(32UL, 0U);
+                    set => this.WriteData(32UL, value, 0U);
                 }
             }
         }

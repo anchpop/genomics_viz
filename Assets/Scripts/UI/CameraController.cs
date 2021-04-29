@@ -316,7 +316,7 @@ public class CameraController : MonoBehaviour
                 toDisplay.Add(segmentSet[i]);
             }
 
-            var bin = (int)info.Location.StartBin / 2 + (int)info.Location.EndBin / 2;
+            var bin = (int)info.Location.Lower / 2 + (int)info.Location.Upper / 2;
             OneDView = (bin, (startIndex, toDisplay));
         }
         , segmentSet => Debug.LogError("ONly genes supported right now!"));
@@ -333,7 +333,7 @@ public class CameraController : MonoBehaviour
             for (int i = 0; i < numberOfGenes; i++)
             {
                 var info = segmentSet[i];
-                var distance = (info.Location.StartBin < bin && info.Location.EndBin > bin) ? 0 : Mathf.Min(Mathf.Abs(bin - info.Location.StartBin), Mathf.Abs(bin - info.Location.EndBin));
+                var distance = (info.Location.Lower < bin && info.Location.Upper > bin) ? 0 : Mathf.Min(Mathf.Abs(bin - info.Location.Lower), Mathf.Abs(bin - info.Location.Upper));
                 if (distance < closestGeneDistance)
                 {
                     closestGeneIndex = i;
@@ -406,7 +406,7 @@ public class CameraController : MonoBehaviour
 
         var reservedAreas = new List<List<(int start, int end)>> { new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), new List<(int start, int end)>(), };
 
-        IEnumerable<(int index, (string name, char dash, Chromosome.SegmentSet.Location segmentInfo) info)> renderList =
+        IEnumerable<(int index, (string name, char dash, Chromosome.BinRange segmentInfo) info)> renderList =
             displayed.segmentList.Match(
                 genes => genes.Select(gene => (gene.ExtraInfo.Name, gene.ExtraInfo.Ascending ? '>' : '<', gene.Location)),
                 others => others.Select(other => (other.ExtraInfo.Info, '-', other.Location))).Select((info, index) => (index + displayed.startIndex, info));
@@ -419,13 +419,13 @@ public class CameraController : MonoBehaviour
         {
             var (name, dirchar, info) = focused.First();
 
-            var length = Mathf.RoundToInt((info.EndBin - info.StartBin) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.StartBin) * horizontalTextChars);
+            var length = Mathf.RoundToInt((info.Upper - info.Lower) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.Lower) * horizontalTextChars);
 
             if (name.Length + 2 > length)
             {
                 var geneBar = "|" + new String(dirchar, length) + "|";
-                var genePosMarkers = info.StartBin.ToString().PadRight(length) + info.EndBin;
+                var genePosMarkers = info.Lower.ToString().PadRight(length) + info.Upper;
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
 
                 texts[2].text = updateSubportion(texts[2].text, startPos, geneBar);
@@ -441,7 +441,7 @@ public class CameraController : MonoBehaviour
 
 
                 var geneBar = "|" + new String(dirchar, length1) + name + new String(dirchar, length2) + "|";
-                var genePosMarkers = info.StartBin.ToString().PadRight(length) + "  " + info.EndBin;
+                var genePosMarkers = info.Lower.ToString().PadRight(length) + "  " + info.Upper;
 
 
                 var genePosMarkersStartPos = startPos - (genePosMarkers.Length - geneBar.Length) / 2;
@@ -458,8 +458,8 @@ public class CameraController : MonoBehaviour
         // now we handle the rest of the genes, and decide where to write them by checking the reservedareas 
         foreach (var (index, (name, dirchar, info)) in renderList)
         {
-            var length = Mathf.RoundToInt((info.EndBin - info.StartBin) / scale);
-            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.StartBin) * horizontalTextChars);
+            var length = Mathf.RoundToInt((info.Upper - info.Lower) / scale);
+            var startPos = Mathf.RoundToInt(InvLerp(left, right, info.Lower) * horizontalTextChars);
 
             if (index != focusedSegmentIndex && length > 1)
             {

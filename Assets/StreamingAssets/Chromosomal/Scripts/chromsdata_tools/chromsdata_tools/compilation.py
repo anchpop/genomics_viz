@@ -1,6 +1,7 @@
 from pathlib import Path
 import capnp
 from toolz import groupby
+import pandas as pd
 
 base_path = Path('../../')
 
@@ -56,19 +57,17 @@ def compile_text_to_binary():
                 return chromosome, start_bin, end_bin, ascending, stat.strip(), name.strip(), id.strip()
             def to_message(info):
                 chromosome, start_bin, end_bin, ascending, stat, name, id = info 
-                location = SegmentSet.Location.new_message()
+                location = chromosome_schema_capnp.Chromosome.BinRange.new_message()
                 gene = SegmentSet.Gene.new_message()
 
                 gene.ascending = ascending
                 gene.stat = stat
                 gene.name = name
                 gene.id = id
-                location.startBin = start_bin
-                location.endBin = end_bin
+                location.lower = start_bin
+                location.upper = end_bin
 
-                #segment = SegmentSet.Segment.new_message(location=location, extraInfo=gene)
-
-                return chromosome, {'location': location, 'extraInfo': gene} # need to use a struct for generic types
+                return chromosome, {'location': location, 'extraInfo': gene} # need to use a dictionary for generic types
                 
             return {
                 k: list(map(snd, v)) 
@@ -88,18 +87,18 @@ def compile_text_to_binary():
                     }
 
 
-    def get_sets():
+    def get_site_sets():
         def read_bed_file(path):
             def parse_line(line):
                 info = line.split('\t')
                 chromosome = info[0]
-                start = int(info[1])
-                end = int(info[2])
+                lower = int(info[1])
+                upper = int(info[2])
 
                 protein_binding = chromosome_schema_capnp.Chromosome.SiteSet.ProteinBinding.new_message()
-                location = chromosome_schema_capnp.Chromosome.SiteSet.Location.new_message()
-                location.binLower = start
-                location.binUpper = end
+                location = chromosome_schema_capnp.Chromosome.BinRange.new_message()
+                location.lower = lower
+                location.upper = upper
 
                 return chromosome, {'location': location, 'extraInfo': protein_binding}
 
@@ -127,6 +126,42 @@ def compile_text_to_binary():
         chromosomes = set(chromosome for _, data in beds.items() for chromosome, _ in data.items())
         return {chromosome: [make_set(chromosome, bed_name, data) for bed_name, data in beds.items()] for chromosome in chromosomes}
 
+    
+    def get_connection_sets():
+        chromatin_interaction_predictions_name = 'gm12878_imputed_dnase_rnaseq'
+        chromatin_interaction_predictions_filename = f'{chromatin_interaction_predictions_name}.txt'
+        def process_chromatin_interaction_predictions(data): 
+            connection_set = chromosome_schema_capnp.Chromosome.ConnectionSet.new_message()
+
+            def process_row(row): 
+                start_range = chromosome_schema_capnp.Chromosome.BinRange.new_message()
+                end_range = chromosome_schema_capnp.Chromosome.BinRange.new_message()
+
+                start_range.lower = row['start_lower_bin']
+                start_range.upper = row['start_upper_bin']
+                end_range.upper = row['end_lower_bin']
+                end_range.upper = row['end_upper_bin']
+
+                location = chromosome_schema_capnp.Chromosome.ConnectionSet.Location.new_message()
+                location.start = start_range
+                location.end = end_range
+
+                extra_info = chromosome_schema_capnp.Chromosome.ConnectionSet.ChromatinInteractionPredictions.new_message()
+
+                return {'location': location, 'extraInfo': extra_info}
+
+            rows = [process_row(row) for (index, row) in data.iterrows()]
+            connection_set.connections.chromatinInteractionPredictions = rows
+            connection_set.description.name = chromatin_interaction_predictions_name
+            return connection_set
+
+        path = base_path / Path("Data/Connections") / chromatin_interaction_predictions_filename
+        chromatin_interaction_predictions = pd.read_csv(path, sep="\t")
+        chromatin_interaction_predictions.columns = ["chromosome", "start_lower_bin", "start_upper_bin", "idk", "idk2", "end_lower_bin", "end_upper_bin", "idk3", "idk4", "idk5"]
+
+        chromosome_predictions = chromatin_interaction_predictions.groupby(['chromosome'])
+        
+        return {chromosome: [process_chromatin_interaction_predictions(data)] for (chromosome, data) in chromosome_predictions}
 
     index = 1
     coordinates = get_coordinates()
@@ -146,8 +181,9 @@ def compile_text_to_binary():
     chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
     chromosome.segmentSets = [segment_set]
     chromosome.connectionSets = []
-    chromosome.siteSets = get_sets()['chr1']
-
+    chromosome.siteSets = get_site_sets()[f'chr{index}']
+    chromosome.connectionSets = get_connection_sets()[f'chr{index}']
+    
 
     chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()
     chromosome_set.description.name = "Human chromosomes"

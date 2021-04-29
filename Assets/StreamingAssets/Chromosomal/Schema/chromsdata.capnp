@@ -34,13 +34,8 @@ struct Chromosome {
 		}
 
 		struct Segment(ExtraInfo) {
-			location @0 :Location;
+			location @0 :BinRange;
 			extraInfo @1 :ExtraInfo;
-		}
-		
-		struct Location {
-			startBin @0 :UInt32;
-			endBin @1 :UInt32;
 		}
 		
 		struct Gene {
@@ -60,15 +55,35 @@ struct Chromosome {
 
 	struct ConnectionSet {
 		description @0 :Description;
-		connections @1 :List(Connection);
+		connections :union {
+			chromatinInteractionPredictions @1 :List(Connection(ChromatinInteractionPredictions));
+			significantHiCInteractions @2 :List(Connection(SignificantHiCInteractions));
+			chIAPetInteractions @3 :List(Connection(ChIAPetInteractions));
+			captureCInteractions @4 :List(Connection(CaptureCInteractions));
+			eQtlLink @5 :List(Connection(EQtlLink));
+		}
 		
-		struct Connection {
-			startBinLower @0 :UInt32;
-			startBinUpper @1 :UInt32;
-
-			endBinLower @2 :UInt32;
-			endBinUpper @3 :UInt32;
+		struct Location {
+			start @0 :BinRange;
+			end @1 :BinRange;
 		} 
+
+		struct Connection(ExtraInfo)  {
+			location @0 :Location;
+			extraInfo @1 :ExtraInfo;
+		} 
+
+		
+		struct ChromatinInteractionPredictions {
+		}
+		struct SignificantHiCInteractions {
+		}
+		struct ChIAPetInteractions {
+		}
+		struct CaptureCInteractions {
+		}
+		struct EQtlLink {
+		}
 	}
 
 	siteSets @6 :List(SiteSet);
@@ -81,26 +96,23 @@ struct Chromosome {
 		}
 		
 		struct Site(ExtraInfo) {
-			location @0 :Location;
+			location @0 :BinRange;
 			extraInfo @1 :ExtraInfo;
 		}
 
-		struct Location {
-			binLower @0 :UInt32;
-			binUpper @1 :UInt32;
-		} 
-
 		struct ProteinBinding {
-
 		}
 		struct ChromatinAccessibility {
-
 		}
 		struct GeneticVariants {
-
 		}
 	}
 
+	
+	struct BinRange {
+		lower @0 :UInt32;
+		upper @1 :UInt32;
+	}
 }
 
 struct ChromosomeSet {
@@ -112,3 +124,4 @@ struct Description {
 	name @0 :Text;
 	description @1 :Text;
 }
+
