@@ -563,6 +563,7 @@ public class ChromosomeController : MonoBehaviour
                     // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
                     // It would add a lot of tris, but it would move work from the CPU to the GPU. 
                     var bridge = Instantiate(bridgePrefab, renderers.transform);
+                    bridge.name = "bridge " + i;
                     i++;
                     var line = bridge.GetComponent<LineRenderer>();
                     line.startWidth *= overallScale * lineWidth * 3;
