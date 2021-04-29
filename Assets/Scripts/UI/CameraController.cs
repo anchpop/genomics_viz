@@ -196,7 +196,7 @@ public class CameraController : MonoBehaviour
                     var segmentSet = segments.First();
                     var segmentIndex = segmentSet.Value.First();
                     var segment = ChromosomeController.GetSegmentFromCurrentChromosome(segmentSet.Key, segmentIndex);
-                    chromosome.highlightSegment(segmentSet.Key, ChromosomeController.GetSegmentInfo(segment));
+                    chromosome.highlightSegment(segmentSet.Key, ChromosomeController.GetSegmentLocation(segment));
                     segment.Switch(gene =>
                     {
                         sideText.text = gene.ExtraInfo.Name;
@@ -227,8 +227,8 @@ public class CameraController : MonoBehaviour
         focusedSegmentSet = segmentSet;
         chromosome.highlightSegment(chromosome.focusRenderer,
             ChromosomeController.chromosomeRenderingInfo.segmentInfos[segmentSet].segments.Match(
-                segments => ChromosomeController.GetSegmentInfo(segments[index]),
-                segments => ChromosomeController.GetSegmentInfo(segments[index])));
+                segments => ChromosomeController.GetSegmentLocation(segments[index]),
+                segments => ChromosomeController.GetSegmentLocation(segments[index])));
 
         parentController.goToSegment(segmentSet, index);
     }

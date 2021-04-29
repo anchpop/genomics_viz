@@ -33,6 +33,23 @@ using SegmentInfo = System.Collections.Generic.Dictionary<
     KTrie.StringTrie<int> nameDict)
 >;
 
+using Connection = OneOf.OneOf<
+    CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>,
+    CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>>;
+using ConnectionList =
+    OneOf.OneOf<
+        System.Collections.Generic.List<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>>,
+        System.Collections.Generic.List<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>>
+    >;
+using ConnectionInfo = System.Collections.Generic.List<(
+    CapnpGen.Description description,
+    OneOf.OneOf<
+        System.Collections.Generic.List<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.ChromatinInteractionPredictions>>,
+        System.Collections.Generic.List<CapnpGen.Chromosome.ConnectionSet.Connection<CapnpGen.Chromosome.ConnectionSet.SignificantHiCInteractions>>
+    > info
+)>;
+
+
 
 public struct Point
 {
@@ -54,6 +71,7 @@ public struct ChromosomeRenderingInfo
     public Chromosome chromosome;
     public List<Point> points;
     public SegmentInfo segmentInfos;
+    public ConnectionInfo connectionInfos;
     public int highestBin;
 }
 
@@ -67,19 +85,9 @@ public class ChromosomeController : MonoBehaviour
     public TextAsset coordinateMapping;
     public TextAsset geneAnnotations;
 
-    public TextAsset GATA;
-    public TextAsset CTCF;
-    public TextAsset IRF1;
-    public TextAsset ChromatinInteractionPrediction;
-
     public static ChromosomeSetRenderingInfo chromosomeSetRenderingInfo;
     public static ChromosomeRenderingInfo chromosomeRenderingInfo;
     string currentlyRenderingSetIndex = "1";
-
-    public List<(int start, int end)> gata;
-    public List<(int start, int end)> ctcf;
-    public List<(int start, int end)> irf;
-    public List<((int start, int end) start, (int start, int end) end)> chromatinInteractionPrediction;
 
     private List<List<Vector3>> backbonePointNormals;
 
@@ -127,10 +135,6 @@ public class ChromosomeController : MonoBehaviour
 
         chromosomeRenderingInfo = createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex);
 
-
-        Profiler.BeginSample("getChromatinInteractionPrediction");
-        chromatinInteractionPrediction = getChromatinInteractionPrediction();
-        Profiler.EndSample();
 
         randoVector = Random.insideUnitSphere;
 
@@ -334,6 +338,28 @@ public class ChromosomeController : MonoBehaviour
             return segmentInfo;
         }
 
+        ConnectionInfo getConnectionInfo(List<Point> points)
+        {
+            ConnectionInfo connectionInfo = chromosome.ConnectionSets.Select(connectionSet =>
+          {
+              if (connectionSet.Connections.which == Chromosome.ConnectionSet.connections.WHICH.ChromatinInteractionPredictions)
+              {
+                  var connections = connectionSet.Connections.ChromatinInteractionPredictions;
+                  ConnectionList connection = connectionSet.Connections.ChromatinInteractionPredictions.ToList();
+                  return (description: connectionSet.Description, info: connection);
+              }
+              else
+              {
+                  Debug.LogError("Currently, we only support chromosomeInteractionPredictions segments!");
+                  return (description: connectionSet.Description, info: new ConnectionList());
+              }
+
+          }).ToList();
+
+            return connectionInfo;
+        }
+
+
         var info = new ChromosomeRenderingInfo { };
 
         info.chromosome = chromosome;
@@ -345,6 +371,10 @@ public class ChromosomeController : MonoBehaviour
 
         Profiler.BeginSample("getGenes");
         info.segmentInfos = getSegmentInfo(info.points);
+        Profiler.EndSample();
+
+        Profiler.BeginSample("getConnections");
+        info.connectionInfos = getConnectionInfo(info.points);
         Profiler.EndSample();
 
         return info;
@@ -431,6 +461,7 @@ public class ChromosomeController : MonoBehaviour
                 return renderers.GetComponentsInChildren<MeshFilter>().ToList();
             }
         );
+
         foreach (var (segmentSetName, segmentSetInfo, segmentSetIndex) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value, index)))
         {
             List<(int startBin, int endBin)> combineSegments(List<Chromosome.BinRange> segments)
@@ -503,45 +534,51 @@ public class ChromosomeController : MonoBehaviour
 
     void createChromatidInterationPredictionLines(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        connectionMeshFilters = chromosomeRenderingInfo.chromosome.ConnectionSets.Select((connectionSet, index) => (connectionSet, index)).ToDictionary(k => k.index, k =>
+        int i = 0;
+        foreach (var (description, connectionSet) in chromosomeRenderingInfo.connectionInfos)
         {
+            Debug.Log("Rendering " + connectionSet.Match(s => s.Count(), s => s.Count()) + " connections.");
             var renderers = Instantiate(connectionRenderers, connectionRenderers.transform.parent.transform);
-            renderers.name = k.connectionSet.Description.Name;
-            return renderers.GetComponentsInChildren<MeshFilter>().ToList();
-        }
-        );
-        foreach (var (start, end) in chromatinInteractionPrediction)
-        {
-            try
-            {
-                /*
-                 * TODO: uncomment
-                 * 
-                Assert.IsTrue(start.start >= 0);
-                Assert.IsTrue(start.end >= 0);
-                Assert.IsTrue(end.start >= 0);
-                Assert.IsTrue(end.end >= 0);
-                Assert.IsTrue(start.start <= totalBasePairs);
-                Assert.IsTrue(start.end <= totalBasePairs);
-                Assert.IsTrue(end.start <= totalBasePairs);
-                Assert.IsTrue(end.end <= totalBasePairs);
-                */
-                var midpointStart = (start.start + start.end) / 2;
-                var midpointEnd = (end.start + end.end) / 2;
+            renderers.name = description.Name;
 
-                // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
-                // It would add a lot of tris, but it would move work from the CPU to the GPU. 
-                var bridge = Instantiate(bridgePrefab, bridgeParent.transform);
-                var line = bridge.GetComponent<LineRenderer>();
-                line.startWidth *= overallScale * lineWidth * 3;
-                line.endWidth *= overallScale * lineWidth * 3;
-                line.SetPositions(new Vector3[] { binToPoint(midpointStart), binToPoint(midpointEnd) });
-            }
-            catch
+            foreach (var connection in GetConnectionLocationList(connectionSet))
             {
-                //Debug.Log((start, end) + " is outside the range of [0, " + totalBasePairs + "]");
+                try
+                {
+                    /*
+                     * TODO: uncomment
+                     * 
+                    Assert.IsTrue(start.start >= 0);
+                    Assert.IsTrue(start.end >= 0);
+                    Assert.IsTrue(end.start >= 0);
+                    Assert.IsTrue(end.end >= 0);
+                    Assert.IsTrue(start.start <= totalBasePairs);
+                    Assert.IsTrue(start.end <= totalBasePairs);
+                    Assert.IsTrue(end.start <= totalBasePairs);
+                    Assert.IsTrue(end.end <= totalBasePairs);
+                    */
+                    var midpointStart = (int)(connection.Start.Lower + connection.Start.Upper) / 2;
+                    var midpointEnd = (int)(connection.End.Lower + connection.End.Upper) / 2;
+
+                    // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
+                    // It would add a lot of tris, but it would move work from the CPU to the GPU. 
+                    var bridge = Instantiate(bridgePrefab, renderers.transform);
+                    i++;
+                    var line = bridge.GetComponent<LineRenderer>();
+                    line.startWidth *= overallScale * lineWidth * 3;
+                    line.endWidth *= overallScale * lineWidth * 3;
+                    line.SetPositions(new Vector3[] { binToPoint(midpointStart), binToPoint(midpointEnd) });
+                }
+                catch
+                {
+                    //Debug.Log((start, end) + " is outside the range of [0, " + totalBasePairs + "]");
+                }
             }
+
+            Debug.Log("Renderer has " + renderers.transform.childCount + " children.");
+
         }
+        Debug.Log("Ended up creating " + i + " connections.");
     }
 
 
@@ -660,59 +697,6 @@ public class ChromosomeController : MonoBehaviour
 
 
 
-    }
-
-    List<(int start, int end)> readFileBed(TextAsset file)
-    {
-        var data = new List<(int start, int end)>();
-        foreach (var line in file.text.Split('\n'))
-        {
-            var info = line.Split('\t');
-            if (info[0] == "chr1")
-            {
-                var start = int.Parse(info[1]);
-                var end = int.Parse(info[2]);
-                data.Add((start, end));
-            }
-
-        }
-        return data;
-    }
-
-    List<(int start, int end)> getGATA()
-    {
-        return readFileBed(GATA);
-    }
-
-    List<(int start, int end)> getCTCF()
-    {
-        return readFileBed(CTCF);
-    }
-
-
-    List<(int start, int end)> getIRF()
-    {
-        return readFileBed(IRF1);
-    }
-
-    List<((int start, int end) start, (int start, int end) end)> getChromatinInteractionPrediction()
-    {
-        List<((int start, int end) start, (int start, int end) end)> data = new List<((int start, int end) start, (int start, int end) end)>();
-
-        foreach (var line in ChromatinInteractionPrediction.text.Split('\n'))
-        {
-            var info = line.Split('\t');
-            if (info[0] == "chr1" && info[4] == "chr1")
-            {
-                var startStart = int.Parse(info[1]);
-                var endStart = int.Parse(info[2]);
-                var startEnd = int.Parse(info[5]);
-                var endEnd = int.Parse(info[6]);
-                data.Add(((start: startStart, end: endStart), (start: startEnd, end: endEnd)));
-            }
-
-        }
-        return data;
     }
 
 
@@ -835,10 +819,20 @@ public class ChromosomeController : MonoBehaviour
     {
     }
 
-    public static Chromosome.BinRange GetSegmentInfo(Segment segment)
+    public static Chromosome.BinRange GetSegmentLocation(Segment segment)
     {
         return segment.Match(s => s.Location, s => s.Location);
     }
+    public static Chromosome.ConnectionSet.Location GetConnectionInfo(Connection connection)
+    {
+        return connection.Match(s => s.Location, s => s.Location);
+    }
+
+    public static List<Chromosome.ConnectionSet.Location> GetConnectionLocationList(ConnectionList connectionList)
+    {
+        return connectionList.Match(s => s.Select(connection => connection.Location), s => s.Select(connection => connection.Location)).ToList();
+    }
+
 
     public static Segment GetSegmentFromCurrentChromosome(string segmentSet, int index)
     {
