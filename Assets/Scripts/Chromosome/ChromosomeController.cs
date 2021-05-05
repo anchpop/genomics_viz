@@ -826,7 +826,7 @@ public class ChromosomeController : MonoBehaviour
         return binToLocationIndex(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
 
-    public Point binToPoint(List<Point> points, int bpIndex)
+    public static Point binToPoint(List<Point> points, int bpIndex)
     {
         if (bpIndex <= points[0].bin)
         {

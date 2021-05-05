@@ -50,18 +50,17 @@ public class MeshGenerator
     // ===============
     // Mesh Generators
     // ===============
-    /*
     public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, Chromosome.BinRange binRange, float lineWidth)
     {
-        var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower) + 1;
+        var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower);
         var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Upper);
-        var pointsRange
-        //var meshUncombined = Enumerable.Range(startIndex, count).Select(i => MeshGenerator.generatePipeSegment(backbonePoints, i, lineWidth));
-        //var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined.ToList());
-
-        //return meshCombined;
+        var pointsRange = backbonePoints.GetRange(startIndex + 1, endIndex - startIndex + 1).Prepend(ChromosomeController.binToPoint(backbonePoints, (int)binRange.Lower));
+        if ((int)binRange.Upper != pointsRange.Last().bin)
+        {
+            pointsRange = pointsRange.Append(ChromosomeController.binToPoint(backbonePoints, (int)binRange.Upper));
+        }
+        return generateMeshConnectingPoints(pointsRange.ToList(), lineWidth);
     }
-    */
 
     public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPointRange(List<Point> backbonePoints, int startIndex, int count, float lineWidth)
     {
