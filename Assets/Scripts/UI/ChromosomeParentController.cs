@@ -286,9 +286,9 @@ public class ChromosomeParentController : MonoBehaviour
     {
         var info = chromosomeController.binToPoint(bpindex);
 
-        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.localPosition = info;
+        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.localPosition = info.position;
 
-        tweenToShowPos(transform.TransformPoint(info * zoomAwayScale));
+        tweenToShowPos(transform.TransformPoint(info.position * zoomAwayScale));
 
         mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
     }

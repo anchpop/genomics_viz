@@ -11,27 +11,36 @@ using static MoreLinq.Extensions.AtLeastExtension;
 using static MoreLinq.Extensions.ScanByExtension;
 using static MoreLinq.Extensions.EndsWithExtension;
 using static MoreLinq.Extensions.AssertExtension;
+using CapnpGen;
 
 public class MeshGenerator
 {
-    public static (List<Vector3> verts, List<int> indices) CombineVertsAndIndices(List<(List<Vector3> verts, List<int> indices)> toCombine)
+    public static (List<Vector3> verts, List<int> indices) CombineVertsAndIndices(List<(List<Vector3> verts, List<int> indices)> toCombine, bool attemptMerge = true)
     {
         var verts = new List<Vector3>();
         var indices = new List<int>();
 
         return toCombine.Aggregate((verts, indices), (acc, current) =>
         {
-            // first, see if the first verts of the current mesh to combine overlap with the last verts of the accumulated mesh.
-            var prefixes = Enumerable.Range(0, current.verts.Count - 1)
-                         .Select(p => current.verts.GetRange(0, p)).Reverse();
-            var overlappingPrefixes = prefixes.Where(prefix => acc.verts.EndsWith(prefix));
-            var firstOverlap = overlappingPrefixes.First();
+            if (attemptMerge)
+            {
+                // first, see if the first verts of the current mesh to combine overlap with the last verts of the accumulated mesh.
+                var prefixes = Enumerable.Range(0, Mathf.Min(current.verts.Count, acc.verts.Count))
+                                 .Select(p => current.verts.GetRange(0, p)).Reverse();
+                var overlappingPrefixes = prefixes.Where(prefix => acc.verts.EndsWith(prefix));
+                var firstOverlap = overlappingPrefixes.Append(new List<Vector3>()).First();
 
-            var vertsToAdd = current.verts.GetRange(firstOverlap.Count, current.verts.Count - firstOverlap.Count).ToList();
-            var indicesToAdd = current.indices.Select(index => index - firstOverlap.Count + acc.verts.Count).ToList();
+                var vertsToAdd = current.verts.GetRange(firstOverlap.Count, current.verts.Count - firstOverlap.Count).ToList();
+                var indicesToAdd = current.indices.Select(index => index - firstOverlap.Count + acc.verts.Count).ToList();
 
-            acc.verts.AddRange(vertsToAdd);
-            acc.indices.AddRange(indicesToAdd);
+                acc.verts.AddRange(vertsToAdd);
+                acc.indices.AddRange(indicesToAdd);
+            }
+            else
+            {
+                acc.indices.AddRange(current.indices.Select(index => index + acc.verts.Count));
+                acc.verts.AddRange(current.verts);
+            }
             return acc;
         });
     }
@@ -41,12 +50,36 @@ public class MeshGenerator
     // ===============
     // Mesh Generators
     // ===============
-
-    public static (List<Vector3> verts, List<int> indices) generatePipeSegment(List<Point> points, int pointStartIndex, float lineWidth)
+    /*
+    public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, Chromosome.BinRange binRange, float lineWidth)
     {
-        var from = points[pointStartIndex];
-        var to = points[pointStartIndex + 1];
+        var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower) + 1;
+        var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Upper);
+        var pointsRange
+        //var meshUncombined = Enumerable.Range(startIndex, count).Select(i => MeshGenerator.generatePipeSegment(backbonePoints, i, lineWidth));
+        //var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined.ToList());
 
+        //return meshCombined;
+    }
+    */
+
+    public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPointRange(List<Point> backbonePoints, int startIndex, int count, float lineWidth)
+    {
+        return generateMeshConnectingPoints(backbonePoints.GetRange(startIndex, count).ToList(), lineWidth);
+    }
+
+    public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPoints(List<Point> pointsToConnect, float lineWidth)
+    {
+        Assert.IsTrue(pointsToConnect.Count >= 2);
+        var meshUncombined = Enumerable.Range(0, pointsToConnect.Count).Pairwise((fromIndex, toIndex) => MeshGenerator.generatePipeSegment(pointsToConnect[fromIndex], pointsToConnect[toIndex], lineWidth)).ToList();
+        Assert.AreEqual(meshUncombined.Count, pointsToConnect.Count - 1);
+        var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined);
+
+        return meshCombined;
+    }
+
+    public static (List<Vector3> verts, List<int> indices) generatePipeSegment(Point from, Point to, float lineWidth)
+    {
         var numsides = from.pipeNormals.Count();
 
         var verts = new List<Vector3>();
@@ -63,7 +96,7 @@ public class MeshGenerator
                         (1        + sideIndex) % numsides + numsides,
                         (0        + sideIndex) % numsides + numsides,}
 
-                    //.Select((j) => j - numsides)
+                //.Select((j) => j - numsides)
                 ).ToList();
 
         return (verts, indices);
@@ -215,6 +248,19 @@ public class MeshGenerator
         Assert.IsTrue(output.Count == points.Count);
 
         return output;
+    }
+
+    public static Mesh applyToMesh((List<Vector3> verts, List<int> indices) meshData, MeshFilter meshFilter)
+    {
+        Mesh mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+        meshFilter.mesh = mesh;
+        mesh.Clear();
+        mesh.vertices = meshData.verts.ToArray();
+        mesh.triangles = meshData.indices.ToArray();
+        mesh.RecalculateNormals();
+        return mesh;
     }
 
 

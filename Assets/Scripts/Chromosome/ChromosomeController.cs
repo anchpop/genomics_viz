@@ -76,6 +76,14 @@ public struct Point
     public List<Vector3> pipeNormals;
     public override string ToString() =>
         $"Point(position: {position}, bin: {bin}";
+    public static Point Lerp(Point a, Point b, float t)
+    {
+        var point = new Point();
+        point.position = Vector3.Lerp(a.position, b.position, t);
+        point.bin = (int)Mathf.Lerp(a.bin, b.bin, t);
+        point.pipeNormals = a.pipeNormals.Zip(b.pipeNormals, (pn1, pn2) => Vector3.Lerp(pn1, pn2, t)).ToList();
+        return point;
+    }
 }
 
 public struct ChromosomeSetRenderingInfo
@@ -359,7 +367,7 @@ public class ChromosomeController : MonoBehaviour
                     float[][] segment_points = segments.Select(segment =>
                     {
                         var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.Lower : segment.Location.Upper));
-                        var originPosition = binToPoint(points, originBin);
+                        var originPosition = binToPoint(points, originBin).position;
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
                     int[] nodes = segments.Select((x, i) => i).ToArray();
@@ -394,7 +402,7 @@ public class ChromosomeController : MonoBehaviour
                     float[][] sitePoints = sites.Select(segment =>
                     {
                         var centerBin = binRangeMidpoint(segment.Location);
-                        var worldPosition = binToPoint(points, centerBin);
+                        var worldPosition = binToPoint(points, centerBin).position;
                         return new float[] { worldPosition.x, worldPosition.y, worldPosition.z };
                     }).ToArray();
                     int[] nodes = sites.Select((x, i) => i).ToArray();
@@ -464,68 +472,10 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        var verticiesl = new List<List<Vector3>>();
-        var indicesl = new List<List<int>>();
-        var pointsAdded = 0;
-
-        var lastpoints = new List<Vector3>();
-
-        //var pointss = chromosomeRenderingInfo.points.Split(backboneMeshFilters.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
-
-        Mesh mesh = new Mesh();
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        var meshFilter = backboneRenderer.GetComponent<MeshFilter>();
-        meshFilter.mesh = mesh;
-        var meshUncombined = Enumerable.Range(0, chromosomeRenderingInfo.backbonePoints.Count - 1).Select(i => MeshGenerator.generatePipeSegment(chromosomeRenderingInfo.backbonePoints, i, lineWidth));
-        var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined.ToList());
-
-        mesh.Clear();
-        mesh.vertices = meshCombined.verts.ToArray();
-        mesh.triangles = meshCombined.indices.ToArray();
-        mesh.RecalculateNormals();
-
+        var mesh = MeshGenerator.applyToMesh(MeshGenerator.generateMeshConnectingPoints(chromosomeRenderingInfo.backbonePoints, lineWidth), backboneRenderer.GetComponent<MeshFilter>());
 
         var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
-
-        /*
-        foreach (var (pointsRangeI, meshIndex) in pointss)
-        {
-            var lastMesh = meshIndex == backboneMeshFilters.Count - 1;
-            // Create mesh
-            var pointsRange = !lastMesh ?
-                pointsRangeI.Append(pointss[meshIndex + 1].points[0]).Append(pointss[meshIndex + 1].points[1])
-                : pointsRangeI.AsEnumerable();
-
-            Mesh mesh = new Mesh();
-            backboneMeshFilters[meshIndex].mesh = mesh;
-
-            var (verticies, indices, normies, lastpointsp) = lastpoints.Count == 0 ?
-                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lineWidth, false) :
-                createMeshConnectingPointsInRange(pointsRange.Select((p) => p.position).ToList(), lastpoints, false);
-            lastpoints = lastpointsp;
-
-            Assert.AreEqual(pointsRange.Count() - 1, normies.Count);
-            backbonePointNormals.AddRange(normies.GetRange(0, !lastMesh ? normies.Count - 1 : normies.Count));
-
-            mesh.Clear();
-            mesh.vertices = verticies.ToArray();
-            mesh.triangles = indices.ToArray();
-            mesh.RecalculateNormals();
-
-            // Add collider
-            var meshCollider = backboneMeshFilters[meshIndex].gameObject.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = mesh;
-
-
-            // Set up renderer info
-            var chromosomeSubrenderer = backboneMeshFilters[meshIndex].gameObject.GetComponent<ChromosomePart>();
-            chromosomeSubrenderer.addPoints(pointsRange, pointsAdded);
-            pointsAdded += lastMesh ? pointsRange.Count() : pointsRange.Count() - 2;
-        }
-        */
-
-        //Assert.AreEqual(chromosomeRenderingInfo.points.Count - 1, backbonePointNormals.Count);
     }
 
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
@@ -534,8 +484,8 @@ public class ChromosomeController : MonoBehaviour
         var endBackboneIndex = binToLocationIndex(endBasePairIndex);
         Assert.IsTrue(startBackboneIndex <= endBackboneIndex, "start index should be before end index - this is my fault");
 
-        var startPoint = binToPoint(startBasePairIndex);
-        var endPoint = binToPoint(endBasePairIndex);
+        var startPoint = binToPoint(startBasePairIndex).position;
+        var endPoint = binToPoint(endBasePairIndex).position;
         if (startBackboneIndex == endBackboneIndex)
         {
             return (new List<Vector3> { startPoint, endPoint }, startBackboneIndex);
@@ -681,7 +631,7 @@ public class ChromosomeController : MonoBehaviour
                     var line = bridge.GetComponent<LineRenderer>();
                     line.startWidth *= overallScale * lineWidth * 3;
                     line.endWidth *= overallScale * lineWidth * 3;
-                    line.SetPositions(new Vector3[] { binToPoint(midpointStart), binToPoint(midpointEnd) });
+                    line.SetPositions(new Vector3[] { binToPoint(midpointStart).position, binToPoint(midpointEnd).position });
                 }
                 catch
                 {
@@ -848,18 +798,24 @@ public class ChromosomeController : MonoBehaviour
         return segmentsDict;
     }
 
-    public int binToLocationIndex(List<Point> points, int bpIndex)
+    /// <summary>
+    /// Given a sorted list of points, finds the highest point with a bin less than or equal to the specified one.
+    /// </summary>
+    /// <param name="backbonePoints"></param>
+    /// <param name="bin"></param>
+    /// <returns></returns>
+    public static int binToLocationIndex(List<Point> backbonePoints, int bin)
     {
-        if (bpIndex <= points.First().bin) return 0;
-        if (bpIndex >= points.Last().bin) return points.Count - 1;
+        if (bin <= backbonePoints.First().bin) return 0;
+        if (bin >= backbonePoints.Last().bin) return backbonePoints.Count - 1;
 
-        var index = points.Select((p) => p.bin).ToList().BinarySearch(bpIndex);
+        var index = backbonePoints.Select((p) => p.bin).ToList().BinarySearch(bin);
         if (index < 0)
         {
             index = ~index; // index of the first element that is larger than the search value
             index -= 1;
         }
-        index = index >= points.Count ? points.Count - 1 : index;
+        index = index >= backbonePoints.Count ? backbonePoints.Count - 1 : index;
         index = index < 0 ? 0 : index;
 
         return index;
@@ -870,15 +826,15 @@ public class ChromosomeController : MonoBehaviour
         return binToLocationIndex(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
 
-    public Vector3 binToPoint(List<Point> points, int bpIndex)
+    public Point binToPoint(List<Point> points, int bpIndex)
     {
         if (bpIndex <= points[0].bin)
         {
-            return points[0].position;
+            return points[0];
         }
         else if (bpIndex >= points.Last().bin)
         {
-            return points.Last().position;
+            return points.Last();
         }
         else
         {
@@ -888,10 +844,10 @@ public class ChromosomeController : MonoBehaviour
             var b = points[locationIndex + 1];
             Assert.IsTrue(a.bin <= bpIndex);
             Assert.IsTrue(bpIndex <= b.bin);
-            return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
+            return Point.Lerp(a, b, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
         }
     }
-    public Vector3 binToPoint(int bpIndex)
+    public Point binToPoint(int bpIndex)
     {
         return binToPoint(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
