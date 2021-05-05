@@ -1700,6 +1700,7 @@ GameObject:
   - component: {fileID: 815941624}
   - component: {fileID: 815941623}
   - component: {fileID: 815941625}
+  - component: {fileID: 815941626}
   m_Layer: 0
   m_Name: Renderer
   m_TagString: Untagged
@@ -1785,6 +1786,19 @@ MonoBehaviour:
   chromosome: {fileID: 1428644177}
   startPointsIndex: 0
   endPointsIndex: 0
+  backbonePointsTree: {}
+--- !u!114 &815941626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 815941621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44dee35482f08b74aa6538bc5e57fbbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &833773484
 GameObject:
   m_ObjectHideFlags: 0

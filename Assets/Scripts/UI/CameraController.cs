@@ -177,12 +177,11 @@ public class CameraController : MonoBehaviour
         if (Physics.Raycast(ray, out hit))
         {
             selectionIndicator.transform.position = hit.point;
-            var subrenderer = hit.collider.gameObject.GetComponent<ChromosomePart>();
-            if (subrenderer)
+            if (hit.collider.gameObject.GetComponent<BackboneMarker>())
             {
-                var pointIndices = subrenderer.getPointIndexOfWorldPosition(hit.point);
-                var p1 = ChromosomeController.chromosomeRenderingInfo.points[pointIndices.closest];
-                var p2 = ChromosomeController.chromosomeRenderingInfo.points[pointIndices.nextClosest];
+                var pointIndices = chromosome.localPositionToBackbonePointIndex(hit.point);
+                var p1 = ChromosomeController.chromosomeRenderingInfo.backbonePoints[pointIndices.closest];
+                var p2 = ChromosomeController.chromosomeRenderingInfo.backbonePoints[pointIndices.nextClosest];
 
                 var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
                 var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);

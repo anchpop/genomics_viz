@@ -87,7 +87,8 @@ public struct ChromosomeSetRenderingInfo
 public struct ChromosomeRenderingInfo
 {
     public Chromosome chromosome;
-    public List<Point> points;
+    public List<Point> backbonePoints;
+    public KDTree<float, int> backbonePointsTree;
     public SegmentInfo segmentInfos;
     public ConnectionInfo connectionInfos;
     public SiteInfo siteInfos;
@@ -107,8 +108,6 @@ public class ChromosomeController : MonoBehaviour
     public static ChromosomeSetRenderingInfo chromosomeSetRenderingInfo;
     public static ChromosomeRenderingInfo chromosomeRenderingInfo;
     string currentlyRenderingSetIndex = "1";
-
-    private List<List<Vector3>> backbonePointNormals;
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -321,6 +320,14 @@ public class ChromosomeController : MonoBehaviour
             return points.ToList();
         }
 
+        KDTree<float, int> backbonePointsTree(List<Point> points)
+        {
+            float[][] positions = points.Select(point => new float[] { point.position.x, point.position.y, point.position.z }).ToArray();
+            int[] nodes = points.Select((x, i) => i).ToArray();
+            var backbonePointsTree = new KDTree<float, int>(3, positions, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+            return backbonePointsTree;
+        }
+
         SegmentInfo getSegmentInfo(List<Point> points)
         {
             var segmentInfo = new SegmentInfo();
@@ -432,20 +439,24 @@ public class ChromosomeController : MonoBehaviour
         info.chromosome = chromosome;
 
         Profiler.BeginSample("getPoints");
-        info.points = getPoints();
-        info.highestBin = info.points.Last().bin;
+        info.backbonePoints = getPoints();
+        info.highestBin = info.backbonePoints.Last().bin;
+        Profiler.EndSample();
+
+        Profiler.BeginSample("getPointsTree");
+        info.backbonePointsTree = backbonePointsTree(info.backbonePoints);
         Profiler.EndSample();
 
         Profiler.BeginSample("getGenes");
-        info.segmentInfos = getSegmentInfo(info.points);
+        info.segmentInfos = getSegmentInfo(info.backbonePoints);
         Profiler.EndSample();
 
         Profiler.BeginSample("getSiteInfo");
-        info.siteInfos = getSiteInfo(info.points);
+        info.siteInfos = getSiteInfo(info.backbonePoints);
         Profiler.EndSample();
 
         Profiler.BeginSample("getConnections");
-        info.connectionInfos = getConnectionInfo(info.points);
+        info.connectionInfos = getConnectionInfo(info.backbonePoints);
         Profiler.EndSample();
 
         return info;
@@ -453,8 +464,6 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        backbonePointNormals = new List<List<Vector3>>();
-
         var verticiesl = new List<List<Vector3>>();
         var indicesl = new List<List<int>>();
         var pointsAdded = 0;
@@ -467,7 +476,7 @@ public class ChromosomeController : MonoBehaviour
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         var meshFilter = backboneRenderer.GetComponent<MeshFilter>();
         meshFilter.mesh = mesh;
-        var meshUncombined = Enumerable.Range(0, chromosomeRenderingInfo.points.Count - 1).Select(i => MeshGenerator.generatePipeSegment(chromosomeRenderingInfo.points, i, lineWidth));
+        var meshUncombined = Enumerable.Range(0, chromosomeRenderingInfo.backbonePoints.Count - 1).Select(i => MeshGenerator.generatePipeSegment(chromosomeRenderingInfo.backbonePoints, i, lineWidth));
         var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined.ToList());
 
         mesh.Clear();
@@ -475,6 +484,9 @@ public class ChromosomeController : MonoBehaviour
         mesh.triangles = meshCombined.indices.ToArray();
         mesh.RecalculateNormals();
 
+
+        var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = mesh;
 
         /*
         foreach (var (pointsRangeI, meshIndex) in pointss)
@@ -531,7 +543,7 @@ public class ChromosomeController : MonoBehaviour
         else
         {
             var l = new List<Vector3> { startPoint };
-            l.AddRange(chromosomeRenderingInfo.points.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
+            l.AddRange(chromosomeRenderingInfo.backbonePoints.GetRange(startBackboneIndex + 1, endBackboneIndex - (startBackboneIndex)).Select((v) => v.position));
             l.Add(endPoint);
             return (l, startBackboneIndex);
         }
@@ -577,6 +589,7 @@ public class ChromosomeController : MonoBehaviour
     }
     void createMeshForBinRanges(List<Chromosome.BinRange> binRanges, List<MeshFilter> meshFilters)
     {
+        /*
         List<(int startBin, int endBin)> combineOverlappingBinRanges(List<Chromosome.BinRange> binRanges)
         {
             var combined = new List<(int startBin, int endBin)>();
@@ -636,6 +649,7 @@ public class ChromosomeController : MonoBehaviour
             mesh.triangles = indices.ToArray();
             mesh.RecalculateNormals();
         }
+        */
     }
 
     void createChromatidInterationPredictionLines(ChromosomeRenderingInfo chromosomeRenderingInfo)
@@ -772,6 +786,8 @@ public class ChromosomeController : MonoBehaviour
 
     public void highlightSegment(MeshFilter renderer, Chromosome.BinRange info)
     {
+        /*
+         * todo: uncomment
         var genePoints = getPointsConnectingBpIndices((int)info.Lower, (int)info.Upper);
 
         Assert.AreNotEqual(genePoints.points.Count, 0);
@@ -780,7 +796,7 @@ public class ChromosomeController : MonoBehaviour
         Mesh mesh = new Mesh();
         renderer.mesh = mesh;
 
-        var startNormals = backbonePointNormals[genePoints.startBackboneIndex];
+        var startNormals = chromosomeRenderingInfo.backbonePoints[genePoints.startBackboneIndex].pipeNormals;
         var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints.points[0]).ToList();
         var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints.points, startingPoints, true);
 
@@ -788,7 +804,7 @@ public class ChromosomeController : MonoBehaviour
         mesh.vertices = verticies.ToArray();
         mesh.triangles = indices.ToArray();
         mesh.RecalculateNormals();
-
+        */
         /*
         if (name == "") return;
         foreach (var geneRenderer in geneDict[name].renderer)
@@ -851,7 +867,7 @@ public class ChromosomeController : MonoBehaviour
 
     public int binToLocationIndex(int bpIndex)
     {
-        return binToLocationIndex(chromosomeRenderingInfo.points, bpIndex);
+        return binToLocationIndex(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
 
     public Vector3 binToPoint(List<Point> points, int bpIndex)
@@ -877,9 +893,16 @@ public class ChromosomeController : MonoBehaviour
     }
     public Vector3 binToPoint(int bpIndex)
     {
-        return binToPoint(chromosomeRenderingInfo.points, bpIndex);
+        return binToPoint(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
 
+    public (int closest, int nextClosest) localPositionToBackbonePointIndex(Vector3 point)
+    {
+        var p = chromosomeRenderingInfo.backbonePointsTree.NearestNeighbors(new[] { point.x, point.y, point.z }, 2);
+        //var p = backbonePointsTree.GetNearestNeighbours(new[] { point.x, point.y, point.z }, 2);
+
+        return (p[0].Item2, p[0].Item2 + (int)Mathf.Sign(p[1].Item2 - p[0].Item2));
+    }
 
     float triangleArea(Vector3 a, Vector3 b, Vector3 c)
     {
