@@ -132,15 +132,12 @@ public class ChromosomeController : MonoBehaviour
 
     // Unity places a limit on the number of verts on a mesh that's quite a bit lower than the amount we need
     // So, we need to use multiple meshes, which means multiple mesh renderers
-    public GameObject backboneRenderers;
-    public GameObject segmentRenderers;
-    public GameObject siteRenderers;
-    public GameObject connectionRenderers;
-    public List<MeshFilter> backboneMeshFilters;
-    public Dictionary<int, List<MeshFilter>> segmentMeshFilters;
-    public Dictionary<int, List<MeshFilter>> connectionMeshFilters;
+    public GameObject rendererTemplate;
+    public GameObject backboneRenderer;
+    public GameObject segmentParent;
+    public GameObject siteParent;
+    public GameObject connectionParent;
 
-    public GameObject SitesParent;
 
     public MeshFilter highlightRenderer;
     public MeshFilter focusRenderer;
@@ -456,8 +453,6 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        backboneMeshFilters = backboneRenderers.GetComponentsInChildren<MeshFilter>().ToList();
-
         backbonePointNormals = new List<List<Vector3>>();
 
         var verticiesl = new List<List<Vector3>>();
@@ -466,11 +461,13 @@ public class ChromosomeController : MonoBehaviour
 
         var lastpoints = new List<Vector3>();
 
-        var pointss = chromosomeRenderingInfo.points.Split(backboneMeshFilters.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
+        //var pointss = chromosomeRenderingInfo.points.Split(backboneMeshFilters.Count).Select((x, i) => (points: x.ToList(), meshIndex: i)).ToList();
 
         Mesh mesh = new Mesh();
-        backboneMeshFilters[0].mesh = mesh;
-        var meshUncombined = Enumerable.Range(0, 5).Select(i => MeshGenerator.generatePipeSegment(chromosomeRenderingInfo.points, i, lineWidth));
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        var meshFilter = backboneRenderer.GetComponent<MeshFilter>();
+        meshFilter.mesh = mesh;
+        var meshUncombined = Enumerable.Range(0, chromosomeRenderingInfo.points.Count - 1).Select(i => MeshGenerator.generatePipeSegment(chromosomeRenderingInfo.points, i, lineWidth));
         var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined.ToList());
 
         mesh.Clear();
@@ -544,9 +541,10 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var (segmentSetName, segmentSetInfo) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value.segments)))
         {
-            var meshFilters = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
-            meshFilters.name = segmentSetName;
-            createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), meshFilters.GetComponentsInChildren<MeshFilter>().ToList());
+            var renderer = Instantiate(rendererTemplate, segmentParent.transform.parent.transform);
+            renderer.name = segmentSetName;
+            // todo: uncomment
+            //createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), renderer.GetComponent<MeshFilter>());
         }
     }
 
@@ -558,6 +556,8 @@ public class ChromosomeController : MonoBehaviour
             //var meshFilters = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
             //meshFilters.name = siteSet.;
 
+            // todo: uncomment
+            /*
             var sitesParent = Instantiate(SitesParent, gameObject.transform);
             sitesParent.name = siteSet.Description.Name;
             if (siteSet.Sites.which == Chromosome.SiteSet.sites.WHICH.ProteinBinding)
@@ -572,6 +572,7 @@ public class ChromosomeController : MonoBehaviour
             {
                 Debug.LogError("Only Protein binding sites supported at this time!");
             }
+            */
         }
     }
     void createMeshForBinRanges(List<Chromosome.BinRange> binRanges, List<MeshFilter> meshFilters)
@@ -641,8 +642,8 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var (description, connectionSet) in chromosomeRenderingInfo.connectionInfos)
         {
-            var renderers = Instantiate(connectionRenderers, connectionRenderers.transform.parent.transform);
-            renderers.name = description.Name;
+            var renderer = Instantiate(rendererTemplate, connectionParent.transform.parent.transform);
+            renderer.name = description.Name;
 
             foreach (var connection in GetConnectionLocationList(connectionSet))
             {
@@ -662,7 +663,7 @@ public class ChromosomeController : MonoBehaviour
 
                     // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
                     // It would add a lot of tris, but it would move work from the CPU to the GPU. 
-                    var bridge = Instantiate(bridgePrefab, renderers.transform);
+                    var bridge = Instantiate(bridgePrefab, renderer.transform);
                     var line = bridge.GetComponent<LineRenderer>();
                     line.startWidth *= overallScale * lineWidth * 3;
                     line.endWidth *= overallScale * lineWidth * 3;
@@ -675,7 +676,6 @@ public class ChromosomeController : MonoBehaviour
             }
         }
     }
-
 
     (List<Vector3> verticies, List<int> indices, List<List<Vector3>> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, float lineWidth, bool extrudeEnd = true)
     {
@@ -770,8 +770,6 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
-
-
     public void highlightSegment(MeshFilter renderer, Chromosome.BinRange info)
     {
         var genePoints = getPointsConnectingBpIndices((int)info.Lower, (int)info.Upper);
@@ -810,8 +808,11 @@ public class ChromosomeController : MonoBehaviour
         highlightRenderer.mesh.Clear();
     }
 
-
-
+    public void getFreshSegmentMesh(string segmentSetName)
+    {
+        Mesh a = null;
+        a.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+    }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
     public Dictionary<string, IEnumerable<int>> getSegmentsAtBpIndex(SegmentInfo segmentInfos, int bin)
