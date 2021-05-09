@@ -166,10 +166,10 @@ public class ChromosomeController : MonoBehaviour
         Profiler.BeginSample("createBackboneMesh");
         createBackbone(chromosomeRenderingInfo);
         Profiler.EndSample();
-        /*
         Profiler.BeginSample("createGenesMesh");
         createSegments(chromosomeRenderingInfo);
         Profiler.EndSample();
+        /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
         //createChromatidInterationPredictionLines(chromosomeRenderingInfo);
         Profiler.EndSample();
@@ -472,7 +472,9 @@ public class ChromosomeController : MonoBehaviour
 
     void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
-        var mesh = MeshGenerator.applyToMesh(MeshGenerator.generateMeshConnectingPoints(chromosomeRenderingInfo.backbonePoints, lineWidth), backboneRenderer.GetComponent<MeshFilter>());
+        var mesh = MeshGenerator.applyToMesh(
+            MeshGenerator.generateMeshConnectingPoints(chromosomeRenderingInfo.backbonePoints, lineWidth),
+            backboneRenderer.GetComponent<MeshFilter>());
 
         var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
@@ -503,8 +505,17 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var (segmentSetName, segmentSetInfo) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value.segments)))
         {
-            var renderer = Instantiate(rendererTemplate, segmentParent.transform.parent.transform);
+            var segments = GetSegmentLocationList(segmentSetInfo);
+            var ranges = MeshGenerator.combineBinRanges(segments);
+            var renderer = Instantiate(rendererTemplate, segmentParent.transform);
             renderer.name = segmentSetName;
+            MeshGenerator.applyToMesh(
+                 MeshGenerator.CombineVertsAndIndices(
+                      ranges
+                        .Select(binRange =>
+                            MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, binRange, lineWidth * 1.1f)),
+                      false),
+                 renderer.GetComponent<MeshFilter>());
             // todo: uncomment
             //createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), renderer.GetComponent<MeshFilter>());
         }
@@ -828,6 +839,7 @@ public class ChromosomeController : MonoBehaviour
 
     public static Point binToPoint(List<Point> points, int bpIndex)
     {
+
         if (bpIndex <= points[0].bin)
         {
             return points[0];
@@ -839,7 +851,6 @@ public class ChromosomeController : MonoBehaviour
         else
         {
             var locationIndex = binToLocationIndex(points, bpIndex);
-
             var a = points[locationIndex];
             var b = points[locationIndex + 1];
             Assert.IsTrue(a.bin <= bpIndex);

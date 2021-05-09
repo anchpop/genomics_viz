@@ -249,6 +249,8 @@ public class CameraController : MonoBehaviour
     }
     private void ShowLabels()
     {
+        /*
+         * todo: uncomment
         var localSpacePos = chromosome.transform.InverseTransformPoint(transform.position + .1f * transform.forward);
         var genesToShow = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(info => info.Value.worldPositions.NearestNeighbors(
             new float[] { localSpacePos.x, localSpacePos.y, localSpacePos.z },
@@ -264,7 +266,7 @@ public class CameraController : MonoBehaviour
             label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
         }
-
+        */
     }
 
     public void Tween1DView()

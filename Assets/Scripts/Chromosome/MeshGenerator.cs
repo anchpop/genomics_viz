@@ -15,7 +15,7 @@ using CapnpGen;
 
 public class MeshGenerator
 {
-    public static (List<Vector3> verts, List<int> indices) CombineVertsAndIndices(List<(List<Vector3> verts, List<int> indices)> toCombine, bool attemptMerge = true)
+    public static (List<Vector3> verts, List<int> indices) CombineVertsAndIndices(IEnumerable<(List<Vector3> verts, List<int> indices)> toCombine, bool attemptMerge = true)
     {
         var verts = new List<Vector3>();
         var indices = new List<int>();
@@ -52,14 +52,25 @@ public class MeshGenerator
     // ===============
     public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, Chromosome.BinRange binRange, float lineWidth)
     {
-        var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower);
-        var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Upper);
-        var pointsRange = backbonePoints.GetRange(startIndex + 1, endIndex - startIndex + 1).Prepend(ChromosomeController.binToPoint(backbonePoints, (int)binRange.Lower));
-        if ((int)binRange.Upper != pointsRange.Last().bin)
+        IEnumerable<Point> points()
         {
-            pointsRange = pointsRange.Append(ChromosomeController.binToPoint(backbonePoints, (int)binRange.Upper));
+            var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower);
+            var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Upper);
+
+            var startPoint = ChromosomeController.binToPoint(backbonePoints, (int)binRange.Lower);
+            var endPoint = ChromosomeController.binToPoint(backbonePoints, (int)binRange.Upper);
+
+            if (startIndex == endIndex)
+            {
+                return new List<Point> { startPoint, endPoint };
+            }
+            else
+            {
+                return backbonePoints.GetRange(startIndex + 1, endIndex - (startIndex)).Prepend(startPoint).Append(endPoint);
+            }
         }
-        return generateMeshConnectingPoints(pointsRange.ToList(), lineWidth);
+
+        return generateMeshConnectingPoints(points().ToList(), lineWidth);
     }
 
     public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPointRange(List<Point> backbonePoints, int startIndex, int count, float lineWidth)
@@ -260,6 +271,29 @@ public class MeshGenerator
         mesh.triangles = meshData.indices.ToArray();
         mesh.RecalculateNormals();
         return mesh;
+    }
+
+
+    public static List<Chromosome.BinRange> combineBinRanges(List<Chromosome.BinRange> binRanges)
+    {
+        var combined = new List<Chromosome.BinRange>();
+        var current_section = binRanges[0];
+        foreach (var segment in binRanges.GetRange(1, binRanges.Count - 1))
+        {
+            if (current_section.Upper < segment.Lower)
+            {
+                combined.Add(current_section);
+                current_section = segment;
+            }
+            else
+            {
+                current_section = new Chromosome.BinRange();
+                current_section.Lower = current_section.Lower;
+                current_section.Upper = System.Math.Max(segment.Upper, current_section.Upper);
+            }
+        }
+        combined.Add(current_section);
+        return combined;
     }
 
 
