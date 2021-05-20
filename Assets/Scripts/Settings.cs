@@ -16,6 +16,10 @@ public class Settings : MonoBehaviour
     string settingsUrl;
     string themeUrl;
 
+    public static Color BackboneColor;
+    public static Color SegmentColor;
+    public static Color SegmentFocusedColor;
+
     void Start()
     {
         Debug.Log("Getting settings");
@@ -32,22 +36,9 @@ public class Settings : MonoBehaviour
         var geneColorS = (string)(ui["gene_color"]);
         var geneFocusedColorS = (string)(ui["gene_focused_color"]);
 
-        Color backboneColor;
-        Color geneColor;
-        Color geneFocusedColor;
-
-        if (ColorUtility.TryParseHtmlString(backboneColorS, out backboneColor))
-        {
-            backboneMat.SetColor("_Color", backboneColor);
-        }
-        if (ColorUtility.TryParseHtmlString(geneColorS, out geneColor))
-        {
-            geneMat.SetColor("_Color", geneColor);
-        }
-        if (ColorUtility.TryParseHtmlString(geneFocusedColorS, out geneFocusedColor))
-        {
-            geneMatFocused.SetColor("_Color", geneFocusedColor);
-        }
+        ColorUtility.TryParseHtmlString(backboneColorS, out BackboneColor);
+        ColorUtility.TryParseHtmlString(geneColorS, out SegmentColor);
+        ColorUtility.TryParseHtmlString(geneFocusedColorS, out SegmentFocusedColor);
     }
 
     void Update()

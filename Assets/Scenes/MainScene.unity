@@ -1783,10 +1783,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2248077f02d5b40a68dabf0316eb3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chromosome: {fileID: 1428644177}
-  startPointsIndex: 0
-  endPointsIndex: 0
-  backbonePointsTree: {}
 --- !u!114 &815941626
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2921,6 +2917,7 @@ MonoBehaviour:
   segmentParent: {fileID: 2109776164}
   siteParent: {fileID: 2125857183}
   connectionParent: {fileID: 1163242302}
+  BaseMaterial: {fileID: 2100000, guid: c50bcd745b4fb4b43a56c0cb8d4dc1b0, type: 2}
   highlightRenderer: {fileID: 1072041575}
   focusRenderer: {fileID: 1771343153}
   numsides: 3

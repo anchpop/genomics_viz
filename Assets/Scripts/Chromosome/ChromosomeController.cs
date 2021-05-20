@@ -96,6 +96,7 @@ public struct ChromosomeRenderingInfo
 {
     public Chromosome chromosome;
     public List<Point> backbonePoints;
+    public int[] binIndexJumpArray;
     public KDTree<float, int> backbonePointsTree;
     public SegmentInfo segmentInfos;
     public ConnectionInfo connectionInfos;
@@ -144,6 +145,8 @@ public class ChromosomeController : MonoBehaviour
     public GameObject segmentParent;
     public GameObject siteParent;
     public GameObject connectionParent;
+
+    public Material BaseMaterial;
 
 
     public MeshFilter highlightRenderer;
@@ -330,8 +333,8 @@ public class ChromosomeController : MonoBehaviour
 
         KDTree<float, int> backbonePointsTree(List<Point> points)
         {
-            float[][] positions = points.Select(point => new float[] { point.position.x, point.position.y, point.position.z }).ToArray();
-            int[] nodes = points.Select((x, i) => i).ToArray();
+            float[][] positions = points.Take(500).Select(point => new float[] { point.position.x, point.position.y, point.position.z }).ToArray();
+            int[] nodes = points.Take(500).Select((x, i) => i).ToArray();
             var backbonePointsTree = new KDTree<float, int>(3, positions, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
             return backbonePointsTree;
         }
@@ -342,18 +345,21 @@ public class ChromosomeController : MonoBehaviour
 
             foreach (var segmentSet in chromosome.SegmentSets)
             {
-
                 if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.Genes)
                 {
-                    var segments = segmentSet.Segments.Genes.ToList();
+                    var segments = segmentSet.Segments.Genes.Take(500).ToList();
+
+                    Profiler.BeginSample("Sorting for segment set " + segmentSet.Description.Name);
                     segments.Sort(delegate (Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> x, Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> y)
                     {
                         return (x.Location.Lower).CompareTo(y.Location.Lower);
                     });
+                    Profiler.EndSample();
 
 
                     var nameDict = new KTrie.StringTrie<int>();
 
+                    Profiler.BeginSample("Adding segment set to namedict for " + segmentSet.Description.Name);
                     foreach (var (segment, index) in segments.Select((segment, index) => (segment, index)))
                     {
                         // TODO: ask hao why this is sometimes true
@@ -363,15 +369,35 @@ public class ChromosomeController : MonoBehaviour
                             nameDict.Add(segment.ExtraInfo.Name, index);
                         }
                     }
+                    Profiler.EndSample();
 
+                    Profiler.BeginSample("converting segment points to float[][][] for " + segmentSet.Description.Name);
+                    Profiler.BeginSample("part1 for " + segmentSet.Description.Name);
+                    var part1 = segments.Select(segment => checked((int)(segment.ExtraInfo.Ascending ? segment.Location.Lower : segment.Location.Upper))).ToList();
+                    Profiler.EndSample();
+                    Profiler.BeginSample("part2 for " + segmentSet.Description.Name);
+                    var part2 = part1.Select(originBin => binToPosition(points, originBin)).ToList();
+                    Profiler.EndSample();
+                    Profiler.BeginSample("segment_points for " + segmentSet.Description.Name);
+                    var segment_points = part2.Select(originPosition => new float[] { originPosition.x, originPosition.y, originPosition.z }).ToArray();
+                    Profiler.EndSample();
+                    Profiler.EndSample();
+                    /*
+                    Profiler.BeginSample("converting segment points to float[][][] for " + segmentSet.Description.Name);
                     float[][] segment_points = segments.Select(segment =>
                     {
                         var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.Lower : segment.Location.Upper));
                         var originPosition = binToPoint(points, originBin).position;
                         return new float[] { originPosition.x, originPosition.y, originPosition.z };
                     }).ToArray();
+                    Profiler.EndSample();*/
+                    Profiler.BeginSample("getting segment indices for " + segmentSet.Description.Name);
                     int[] nodes = segments.Select((x, i) => i).ToArray();
+                    Profiler.EndSample();
+                    Profiler.BeginSample("creating segment kdtree for " + segmentSet.Description.Name);
                     var worldPositions = new KDTree<float, int>(3, segment_points, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+                    Profiler.EndSample();
+
 
                     segmentInfo[segmentSet.Description.Name] = (segments, worldPositions, nameDict);
                 }
@@ -460,7 +486,7 @@ public class ChromosomeController : MonoBehaviour
         Profiler.EndSample();
 
         Profiler.BeginSample("getSiteInfo");
-        info.siteInfos = getSiteInfo(info.backbonePoints);
+        //info.siteInfos = getSiteInfo(info.backbonePoints);
         Profiler.EndSample();
 
         Profiler.BeginSample("getConnections");
@@ -478,6 +504,9 @@ public class ChromosomeController : MonoBehaviour
 
         var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
+
+        backboneRenderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
+        backboneRenderer.GetComponent<Renderer>().material.color = Settings.BackboneColor;
     }
 
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
@@ -518,7 +547,11 @@ public class ChromosomeController : MonoBehaviour
                  renderer.GetComponent<MeshFilter>());
             // todo: uncomment
             //createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), renderer.GetComponent<MeshFilter>());
+            renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
+            renderer.GetComponent<Renderer>().material.color = Settings.SegmentColor;
         }
+
+
     }
 
     void createSitePoints(ChromosomeRenderingInfo chromosomeRenderingInfo)
@@ -837,26 +870,26 @@ public class ChromosomeController : MonoBehaviour
         return binToLocationIndex(chromosomeRenderingInfo.backbonePoints, bpIndex);
     }
 
+    public static Vector3 binToPosition(List<Point> points, int bpIndex)
+    {
+        var locationIndex = binToLocationIndex(points, bpIndex);
+        return Vector3.forward;
+        var a = points[locationIndex];
+        var b = points[locationIndex + 1];
+        Assert.IsTrue(a.bin <= bpIndex);
+        Assert.IsTrue(bpIndex <= b.bin);
+        return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
+    }
+
     public static Point binToPoint(List<Point> points, int bpIndex)
     {
 
-        if (bpIndex <= points[0].bin)
-        {
-            return points[0];
-        }
-        else if (bpIndex >= points.Last().bin)
-        {
-            return points.Last();
-        }
-        else
-        {
-            var locationIndex = binToLocationIndex(points, bpIndex);
-            var a = points[locationIndex];
-            var b = points[locationIndex + 1];
-            Assert.IsTrue(a.bin <= bpIndex);
-            Assert.IsTrue(bpIndex <= b.bin);
-            return Point.Lerp(a, b, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
-        }
+        var locationIndex = binToLocationIndex(points, bpIndex);
+        var a = points[locationIndex];
+        var b = points[locationIndex + 1];
+        Assert.IsTrue(a.bin <= bpIndex);
+        Assert.IsTrue(bpIndex <= b.bin);
+        return Point.Lerp(a, b, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
     }
     public Point binToPoint(int bpIndex)
     {
