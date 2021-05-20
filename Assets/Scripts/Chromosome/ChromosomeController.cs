@@ -425,14 +425,21 @@ public class ChromosomeController : MonoBehaviour
                         return (x.Location.Lower).CompareTo(y.Location.Lower);
                     });
 
+                    Profiler.BeginSample("getting world coordinates for siteset " + siteSet.Description.Name);
                     float[][] sitePoints = sites.Select(segment =>
                     {
                         var centerBin = binRangeMidpoint(segment.Location);
                         var worldPosition = binToPoint(points, centerBin).position;
                         return new float[] { worldPosition.x, worldPosition.y, worldPosition.z };
                     }).ToArray();
+                    Profiler.EndSample();
+
                     int[] nodes = sites.Select((x, i) => i).ToArray();
+
+
+                    Profiler.BeginSample("building kdtree for siteset " + siteSet.Description.Name);
                     var worldPositions = new KDTree<float, int>(3, sitePoints, nodes, (f1, f2) => (new Vector3(f1[0], f1[1], f1[2]) - new Vector3(f2[0], f2[1], f2[2])).magnitude);
+                    Profiler.EndSample();
 
                     siteInfo[siteSet.Description.Name] = (sites, worldPositions);
                 }
