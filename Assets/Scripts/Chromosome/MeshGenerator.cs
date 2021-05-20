@@ -50,15 +50,15 @@ public class MeshGenerator
     // ===============
     // Mesh Generators
     // ===============
-    public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, Chromosome.BinRange binRange, float lineWidth)
+    public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, (int[] jumps, int binsPerJumpPoint) jumpPoints, Chromosome.BinRange binRange, float lineWidth)
     {
         IEnumerable<Point> points()
         {
-            var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Lower);
-            var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, (int)binRange.Upper);
+            var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, jumpPoints, (int)binRange.Lower);
+            var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, jumpPoints, (int)binRange.Upper);
 
-            var startPoint = ChromosomeController.binToPoint(backbonePoints, (int)binRange.Lower);
-            var endPoint = ChromosomeController.binToPoint(backbonePoints, (int)binRange.Upper);
+            var startPoint = ChromosomeController.binToPoint(backbonePoints, jumpPoints, (int)binRange.Lower);
+            var endPoint = ChromosomeController.binToPoint(backbonePoints, jumpPoints, (int)binRange.Upper);
 
             if (startIndex == endIndex)
             {
