@@ -174,7 +174,7 @@ public class ChromosomeController : MonoBehaviour
             "createBackboneMesh".profile(() => createBackbone(chromosomeRenderingInfo));
 
         });
-        //"createSegments".profile(() => createSegments(chromosomeRenderingInfo));
+        "createSegments".profile(() => createSegments(chromosomeRenderingInfo));
 
         /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
@@ -398,7 +398,7 @@ public class ChromosomeController : MonoBehaviour
                 {
                     if (segmentSet.Segments.which == Chromosome.SegmentSet.segments.WHICH.Genes)
                     {
-                        var segments = segmentSet.Segments.Genes.Take(1000).ToList();
+                        var segments = segmentSet.Segments.Genes.ToList();
 
                         ("Sorting for segment set " + segmentSet.Description.Name).profile(() =>
                             segments.Sort(delegate (Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> x, Chromosome.SegmentSet.Segment<Chromosome.SegmentSet.Gene> y)
@@ -596,7 +596,7 @@ public class ChromosomeController : MonoBehaviour
                  MeshGenerator.CombineVertsAndIndices(
                       ranges
                         .Select(binRange =>
-                            MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)),
+                            MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)).Take(1000).ToList(),
                       false),
                  renderer.GetComponent<MeshFilter>());
             // todo: uncomment

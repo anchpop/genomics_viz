@@ -26,7 +26,7 @@ public class MeshGenerator
             {
                 // first, see if the first verts of the current mesh to combine overlap with the last verts of the accumulated mesh.
                 var prefixes = Enumerable.Range(0, Mathf.Min(current.verts.Count, acc.verts.Count))
-                                 .Select(p => current.verts.GetRange(0, p)).Reverse();
+                                    .Select(p => current.verts.GetRange(0, p)).Reverse();
                 var overlappingPrefixes = prefixes.Where(prefix => acc.verts.EndsWith(prefix));
                 var firstOverlap = overlappingPrefixes.Append(new List<Vector3>()).First();
 
@@ -43,6 +43,7 @@ public class MeshGenerator
             }
             return acc;
         });
+        
     }
 
 
@@ -52,7 +53,7 @@ public class MeshGenerator
     // ===============
     public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, (int[] jumps, int binsPerJumpPoint) jumpPoints, Chromosome.BinRange binRange, float lineWidth)
     {
-        IEnumerable<Point> points()
+        List<Point> points()
         {
             var startIndex = ChromosomeController.binToLocationIndex(backbonePoints, jumpPoints, (int)binRange.Lower);
             var endIndex = ChromosomeController.binToLocationIndex(backbonePoints, jumpPoints, (int)binRange.Upper);
@@ -66,16 +67,11 @@ public class MeshGenerator
             }
             else
             {
-                return backbonePoints.GetRange(startIndex + 1, endIndex - (startIndex)).Prepend(startPoint).Append(endPoint);
+                return backbonePoints.GetRange(startIndex + 1, endIndex - (startIndex)).Prepend(startPoint).Append(endPoint).ToList();
             }
         }
 
-        return generateMeshConnectingPoints(points().ToList(), lineWidth);
-    }
-
-    public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPointRange(List<Point> backbonePoints, int startIndex, int count, float lineWidth)
-    {
-        return generateMeshConnectingPoints(backbonePoints.GetRange(startIndex, count).ToList(), lineWidth);
+        return generateMeshConnectingPoints(points(), lineWidth);
     }
 
     public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPoints(List<Point> pointsToConnect, float lineWidth)
