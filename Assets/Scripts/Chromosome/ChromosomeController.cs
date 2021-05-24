@@ -160,21 +160,17 @@ public class ChromosomeController : MonoBehaviour
     {
         randoVector = Random.insideUnitSphere;
 
-        "start".profile(() =>
-        {
+        chromosomeSetRenderingInfo = "getChromosomeSetRenderingInfo".profileF(() =>
+            getChromosomeSetRenderingInfo());
 
-            chromosomeSetRenderingInfo = "getChromosomeSetRenderingInfo".profileF(() =>
-                getChromosomeSetRenderingInfo());
+        chromosomeRenderingInfo = "createRenderingInfo".profileF(() =>
+            createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex));
 
-            chromosomeRenderingInfo = "createRenderingInfo".profileF(() =>
-                createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex));
-
+        "createBackbone".profile(() => createBackbone(chromosomeRenderingInfo));
 
 
-            "createBackboneMesh".profile(() => createBackbone(chromosomeRenderingInfo));
-
-        });
         "createSegments".profile(() => createSegments(chromosomeRenderingInfo));
+
 
         /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
@@ -195,18 +191,16 @@ public class ChromosomeController : MonoBehaviour
             var info_file_path = Path.Combine(output_dir_path, "info.chromsdata");
 
 
-            using var fs = "Reading info file".profileF(() => File.OpenRead(info_file_path));
+            using var fs = File.OpenRead(info_file_path);
 
-            return "Deserializing info file".profileF(() =>
-            {
-                var frame = Framing.ReadSegments(fs);
-                var deserializer = DeserializerState.CreateRoot(frame);
-                var set = CapnpSerializable.Create<ChromosomeSet>(deserializer);
 
-                Debug.Log("Read " + set.Chromosomes.Count + " chromosomes");
-                return set;
-            });
 
+            var frame = Framing.ReadSegments(fs);
+            var deserializer = DeserializerState.CreateRoot(frame);
+            var set = CapnpSerializable.Create<ChromosomeSet>(deserializer);
+
+            Debug.Log("Read " + set.Chromosomes.Count + " chromosomes");
+            return set;
         }
 
         Dictionary<string, Chromosome> getChromosomes(ChromosomeSet set)
@@ -588,24 +582,27 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var (segmentSetName, segmentSetInfo) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value.segments)))
         {
+            Profiler.BeginSample("GetSegmentLocationList");
             var segments = GetSegmentLocationList(segmentSetInfo);
+            Profiler.EndSample();
+            Profiler.BeginSample("combineBinRanges");
             var ranges = MeshGenerator.combineBinRanges(segments);
+            Profiler.EndSample();
+            Profiler.BeginSample("submeshes");
+            var meshes = ranges.Select(binRange =>
+                MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)).ToList();
+            Profiler.EndSample();
+            Profiler.BeginSample("combined");
+            var combined = MeshGenerator.CombineVertsAndIndices(meshes, false);
+            Profiler.EndSample();
             var renderer = Instantiate(rendererTemplate, segmentParent.transform);
             renderer.name = segmentSetName;
-            MeshGenerator.applyToMesh(
-                 MeshGenerator.CombineVertsAndIndices(
-                      ranges
-                        .Select(binRange =>
-                            MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)).Take(1000).ToList(),
-                      false),
-                 renderer.GetComponent<MeshFilter>());
+            MeshGenerator.applyToMesh(combined, renderer.GetComponent<MeshFilter>());
             // todo: uncomment
             //createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), renderer.GetComponent<MeshFilter>());
             renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
             renderer.GetComponent<Renderer>().material.color = Settings.SegmentColor;
         }
-
-
     }
 
     void createSitePoints(ChromosomeRenderingInfo chromosomeRenderingInfo)

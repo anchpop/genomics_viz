@@ -1,4 +1,5 @@
 using System.Collections;
+
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -12,6 +13,7 @@ using static MoreLinq.Extensions.ScanByExtension;
 using static MoreLinq.Extensions.EndsWithExtension;
 using static MoreLinq.Extensions.AssertExtension;
 using CapnpGen;
+using UnityEngine.Profiling;
 
 public class MeshGenerator
 {
@@ -43,7 +45,7 @@ public class MeshGenerator
             }
             return acc;
         });
-        
+
     }
 
 
@@ -71,15 +73,29 @@ public class MeshGenerator
             }
         }
 
-        return generateMeshConnectingPoints(points(), lineWidth);
+        Profiler.BeginSample("getting points");
+        var p = points();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("generating mesh");
+        var mesh = generateMeshConnectingPoints(p, lineWidth);
+        Profiler.EndSample();
+        return mesh;
     }
 
     public static (List<Vector3> verts, List<int> indices) generateMeshConnectingPoints(List<Point> pointsToConnect, float lineWidth)
     {
+        Profiler.BeginSample("getting uncombined");
         Assert.IsTrue(pointsToConnect.Count >= 2);
-        var meshUncombined = Enumerable.Range(0, pointsToConnect.Count).Pairwise((fromIndex, toIndex) => MeshGenerator.generatePipeSegment(pointsToConnect[fromIndex], pointsToConnect[toIndex], lineWidth)).ToList();
+        var meshUncombined = Enumerable.Range(0, pointsToConnect.Count)
+            .Pairwise((fromIndex, toIndex) =>
+                MeshGenerator.generatePipeSegment(pointsToConnect[fromIndex], pointsToConnect[toIndex], lineWidth)).ToList();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("combining");
         Assert.AreEqual(meshUncombined.Count, pointsToConnect.Count - 1);
         var meshCombined = MeshGenerator.CombineVertsAndIndices(meshUncombined);
+        Profiler.EndSample();
 
         return meshCombined;
     }
@@ -283,9 +299,10 @@ public class MeshGenerator
             }
             else
             {
-                current_section = new Chromosome.BinRange();
-                current_section.Lower = current_section.Lower;
-                current_section.Upper = System.Math.Max(segment.Upper, current_section.Upper);
+                var new_section = new Chromosome.BinRange();
+                new_section.Lower = current_section.Lower;
+                new_section.Upper = System.Math.Max(segment.Upper, current_section.Upper);
+                current_section = new_section;
             }
         }
         combined.Add(current_section);
