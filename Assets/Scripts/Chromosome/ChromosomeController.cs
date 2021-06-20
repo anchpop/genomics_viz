@@ -96,7 +96,7 @@ public struct ChromosomeRenderingInfo
 {
     public Chromosome chromosome;
     public List<Point> backbonePoints;
-    public (int[] jumps, int binsPerJumpPoint) binIndexJumpPoints; // TODO: populate, and use in binToLocationIndex
+    public (int[] jumps, int binsPerJumpPoint) binIndexJumpPoints;
     public KDTree<float, int> backbonePointsTree;
     public SegmentInfo segmentInfos;
     public ConnectionInfo connectionInfos;
@@ -598,8 +598,6 @@ public class ChromosomeController : MonoBehaviour
             var renderer = Instantiate(rendererTemplate, segmentParent.transform);
             renderer.name = segmentSetName;
             MeshGenerator.applyToMesh(combined, renderer.GetComponent<MeshFilter>());
-            // todo: uncomment
-            //createMeshForBinRanges(GetSegmentLocationList(segmentSetInfo), renderer.GetComponent<MeshFilter>());
             renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
             renderer.GetComponent<Renderer>().material.color = Settings.SegmentColor;
         }
@@ -745,7 +743,9 @@ public class ChromosomeController : MonoBehaviour
             return verts;
         }
 
-        return createMeshConnectingPointsInRange(points, cylinderExtrusion(points[0], points[1] - points[0]), extrudeEnd);
+        var normals = cylinderExtrusion(points[0], points[1] - points[0]);
+
+        return createMeshConnectingPointsInRange(points, normals, extrudeEnd);
     }
 
     (List<Vector3> verticies, List<int> indices, List<List<Vector3>> normalsAtPoint, List<Vector3> lastPoints) createMeshConnectingPointsInRange(List<Vector3> points, List<Vector3> startingPoints, bool extrudeEnd)
@@ -831,8 +831,6 @@ public class ChromosomeController : MonoBehaviour
 
     public void highlightSegment(MeshFilter renderer, Chromosome.BinRange info)
     {
-        /*
-         * todo: uncomment
         var genePoints = getPointsConnectingBpIndices((int)info.Lower, (int)info.Upper);
 
         Assert.AreNotEqual(genePoints.points.Count, 0);
@@ -842,14 +840,14 @@ public class ChromosomeController : MonoBehaviour
         renderer.mesh = mesh;
 
         var startNormals = chromosomeRenderingInfo.backbonePoints[genePoints.startBackboneIndex].pipeNormals;
-        var startingPoints = startNormals.Select((v) => v * 1.2f + genePoints.points[0]).ToList();
+        var startingPoints = startNormals.Select((v) => v * lineWidth * 1.2f + genePoints.points[0]).ToList();
         var (verticies, indices, _, _) = createMeshConnectingPointsInRange(genePoints.points, startingPoints, true);
 
         mesh.Clear();
         mesh.vertices = verticies.ToArray();
         mesh.triangles = indices.ToArray();
         mesh.RecalculateNormals();
-        */
+
         /*
         if (name == "") return;
         foreach (var geneRenderer in geneDict[name].renderer)

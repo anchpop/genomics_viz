@@ -205,6 +205,7 @@ public class CameraController : MonoBehaviour
                         {
                             focusSegment(focusedSegmentSet, segmentIndex);
                         }
+                        
                     }, segment => { Debug.LogError("Only support genes right now!"); });
                 }
                 return hit.point;
