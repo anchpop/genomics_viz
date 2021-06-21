@@ -874,7 +874,7 @@ public class ChromosomeController : MonoBehaviour
     }
 
     // TODO: This could be sped up with a binary search, or with the kd tree tech
-    public Dictionary<string, IEnumerable<int>> getSegmentsAtBpIndex(SegmentInfo segmentInfos, int bin)
+    public Dictionary<string, IEnumerable<int>> getSegmentsAtBin(SegmentInfo segmentInfos, int bin)
     {
         var matched_segments = segmentInfos.Select(segmentInfo => (setName: segmentInfo.Key, matchedSegments: segmentInfo.Value.segments.Match<IEnumerable<int>>(
             segments => (from info in segments.Select((segment, index) => (segment, index))
@@ -891,6 +891,10 @@ public class ChromosomeController : MonoBehaviour
         return segmentsDict;
     }
 
+
+
+
+
     /// <summary>
     /// Given a sorted list of points, finds the highest point with a bin less than or equal to the specified one.
     /// </summary>
@@ -901,6 +905,7 @@ public class ChromosomeController : MonoBehaviour
     {
         if (bin <= backbonePoints.First().bin) return 0;
         if (bin >= backbonePoints.Last().bin) return backbonePoints.Count - 1;
+
 
         /// This function does something kind of interesting. Specifically, it does this transformation:
         /// 0,   1,   2,   3,   4,   5,   6,    ...
@@ -954,7 +959,11 @@ public class ChromosomeController : MonoBehaviour
         var b = points[Mathf.Min(locationIndex + 1, points.Count - 1)];
         return Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.bin, b.bin, bpIndex));
     }
-
+    public Vector3 binToPosition(int bpIndex)
+    {
+        return binToPosition(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, bpIndex);
+    }
+    // function closely related to ...
     public static Point binToPoint(List<Point> points, (int[] jumps, int binsPerJumpPoint) jumpPoints, int bpIndex)
     {
         var locationIndex = binToLocationIndex(points, jumpPoints, bpIndex);
@@ -980,10 +989,6 @@ public class ChromosomeController : MonoBehaviour
         return Mathf.Abs(a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-    }
 
     public static Chromosome.BinRange GetSegmentLocation(Segment segment)
     {

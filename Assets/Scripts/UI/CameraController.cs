@@ -176,18 +176,20 @@ public class CameraController : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit))
         {
-            selectionIndicator.transform.position = hit.point;
             if (hit.collider.gameObject.GetComponent<BackboneMarker>())
             {
-                var pointIndices = chromosome.localPositionToBackbonePointIndex(hit.point);
+                var hitLoc = chromosome.transform.InverseTransformPoint(hit.point);
+                var pointIndices = chromosome.localPositionToBackbonePointIndex(hitLoc);
                 var p1 = ChromosomeController.chromosomeRenderingInfo.backbonePoints[pointIndices.closest];
                 var p2 = ChromosomeController.chromosomeRenderingInfo.backbonePoints[pointIndices.nextClosest];
 
-                var cursorPoint = hit.point.GetClosestPointOnInfiniteLine(p1.position, p2.position);
+                var cursorPoint = hitLoc.GetClosestPointOnInfiniteLine(p1.position, p2.position);
                 var cursorDistance = Vector3Utils.InverseLerp(p1.position, p2.position, cursorPoint);
                 var cursorBasePair = (int)Mathf.Lerp(p1.bin, p2.bin, cursorDistance);
 
-                var segments = chromosome.getSegmentsAtBpIndex(ChromosomeController.chromosomeRenderingInfo.segmentInfos, cursorBasePair);
+                selectionIndicator.transform.localPosition = chromosome.binToPosition(cursorBasePair);
+
+                var segments = chromosome.getSegmentsAtBin(ChromosomeController.chromosomeRenderingInfo.segmentInfos, cursorBasePair);
 
                 // Don't have a principled way to do this, so I'll just pick the first gene to display
                 if (segments.Any())
@@ -201,11 +203,13 @@ public class CameraController : MonoBehaviour
                         sideText.text = gene.ExtraInfo.Name;
                         sideLoc.text = cursorBasePair.ToString("D");
 
+                        Debug.Log(gene.Location.Lower + " <= " + cursorBasePair + " <= " + gene.Location.Upper);
+
                         if (focus)
                         {
                             focusSegment(focusedSegmentSet, segmentIndex);
                         }
-                        
+
                     }, segment => { Debug.LogError("Only support genes right now!"); });
                 }
                 return hit.point;
