@@ -19,7 +19,7 @@ public class Settings : MonoBehaviour
     public static Color BackboneColor;
     public static Color SegmentColor;
     public static Color SegmentFocusedColor;
-
+    
     void Start()
     {
         Debug.Log("Getting settings");
@@ -45,4 +45,5 @@ public class Settings : MonoBehaviour
     {
 
     }
+    
 }
