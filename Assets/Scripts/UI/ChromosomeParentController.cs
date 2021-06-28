@@ -259,15 +259,16 @@ public class ChromosomeParentController : MonoBehaviour
 
     public void openGeneInfoOnline()
     {
-        /*
-        var geneInfo = chromosomeController.geneDict[chromosomeController.focusedGene];
+        var cameraController = mainCamera.GetComponent<CameraController>();
+
+        var geneInfo = ChromosomeController.chromosomeRenderingInfo.segmentInfos[cameraController.focusedSegmentSet].segments.Match(x => x[cameraController.focusedSegmentIndex].Location, x => x[cameraController.focusedSegmentIndex].Location);
         Application.OpenURL(
             "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position=chr1%3A"
-            + geneInfo.start.ToString("D")
+            + geneInfo.Lower.ToString("D")
             + "%2D"
-            + geneInfo.end.ToString("D")
+            + geneInfo.Upper.ToString("D")
             + "&hgsid=908127743_HmMER1nPkAhvlmaDlkaob9Vh99Va");
-        */
+        
     }
 
 
@@ -284,12 +285,13 @@ public class ChromosomeParentController : MonoBehaviour
 
     public void goToBin(int bpindex)
     {
+        var cameraController = mainCamera.GetComponent<CameraController>();
         var info = chromosomeController.binToPoint(bpindex);
 
-        mainCamera.GetComponent<CameraController>().selectionIndicator.transform.localPosition = info.position;
+        cameraController.selectionIndicator.transform.localPosition = info.position;
 
         tweenToShowPos(transform.TransformPoint(info.position * zoomAwayScale));
 
-        mainCamera.GetComponent<CameraController>().Update1DViewBasePairIndex(bpindex);
+        cameraController.Update1DViewBasePairIndex(bpindex);
     }
 }
