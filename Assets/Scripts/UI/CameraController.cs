@@ -117,20 +117,17 @@ public class CameraController : MonoBehaviour
                 }
                 else
                 {
-                    IEnumerable<(string segmentSetName, Segment segment)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
-                        segmentInfo.Value.nameDict.GetByPrefix(search).Select(entry =>
+                    IEnumerable<(string segmentSetName, int i)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
+                        segmentInfo.Value.nameDict.GetByPrefix(search).Select((entry, index) =>
                             (segmentSetName: segmentInfo.Key,
-                             segment: segmentInfo.Value.segments.Match<Segment>(x => x[entry.Value], x => x[entry.Value]))));
+                             segment: index)));
 
                     if (results.Any())
                     {
                         var (segmentSetName, segment) = results.First();
-                        /*
-                         * TODO: uncomment
-                         * 
-                        chromosome.focusSegment((segmentSetName, segment));
-                        parentController.focusSegment((segmentSetName, segment));
-                        */
+                        
+                        focusSegment(segmentSetName, segment);
+                        //parentController.focusSegment((segmentSetName, segment));
                     }
                     else
                     {
