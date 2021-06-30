@@ -269,7 +269,7 @@ namespace Valve.VR.InteractionSystem
 
             float energy = collision.relativeVelocity.magnitude;
 
-            if (energy > minCollisionEnergy && Time.time - lastCollisionHapticsTime > minCollisionHapticsTime)
+            if(energy > minCollisionEnergy && Time.time - lastCollisionHapticsTime > minCollisionHapticsTime)
             {
                 lastCollisionHapticsTime = Time.time;
 

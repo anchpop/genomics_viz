@@ -1,11 +1,9 @@
 {
     "name": "SteamVR",
-    "rootNamespace": "",
     "references": [
         "SteamVR_Windows_EditorHelper",
         "Unity.XR.OpenVR",
-        "UnityEngine.SpatialTracking",
-        "Unity.InputSystem"
+        "UnityEngine.SpatialTracking"
     ],
     "includePlatforms": [],
     "excludePlatforms": [
