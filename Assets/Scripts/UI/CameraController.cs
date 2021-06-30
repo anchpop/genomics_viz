@@ -127,7 +127,6 @@ public class CameraController : MonoBehaviour
                         var (segmentSetName, segment) = results.First();
                         
                         focusSegment(segmentSetName, segment);
-                        //parentController.focusSegment((segmentSetName, segment));
                     }
                     else
                     {
@@ -200,8 +199,6 @@ public class CameraController : MonoBehaviour
                         sideText.text = gene.ExtraInfo.Name;
                         sideLoc.text = cursorBasePair.ToString("D");
 
-                        Debug.Log(gene.Location.Lower + " <= " + cursorBasePair + " <= " + gene.Location.Upper);
-
                         if (focus)
                         {
                             focusSegment(focusedSegmentSet, segmentIndex);
@@ -266,9 +263,6 @@ public class CameraController : MonoBehaviour
             label.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = name;
             label.transform.LookAt(label.transform.position + -(transform.position - label.transform.position), transform.up);
         }
-        /*
-         * todo: uncomment
-        */
     }
 
     public void Tween1DView()

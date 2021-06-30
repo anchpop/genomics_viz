@@ -172,11 +172,11 @@ public class ChromosomeController : MonoBehaviour
         "createSegments".profile(() => createSegments(chromosomeRenderingInfo));
 
 
-        /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
-        //createChromatidInterationPredictionLines(chromosomeRenderingInfo);
+        createChromatidInterationPredictionLines(chromosomeRenderingInfo);
         Profiler.EndSample();
 
+        /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
         createSitePoints(chromosomeRenderingInfo);
         Profiler.EndSample();
@@ -544,19 +544,6 @@ public class ChromosomeController : MonoBehaviour
         return info;
     }
 
-    void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
-    {
-        var mesh = MeshGenerator.applyToMesh(
-            MeshGenerator.generateMeshConnectingPoints(chromosomeRenderingInfo.backbonePoints, lineWidth),
-            backboneRenderer.GetComponent<MeshFilter>());
-
-        var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
-        meshCollider.sharedMesh = mesh;
-
-        backboneRenderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
-        backboneRenderer.GetComponent<Renderer>().material.color = Settings.BackboneColor;
-    }
-
     (List<Vector3> points, int startBackboneIndex) getPointsConnectingBpIndices(int startBasePairIndex, int endBasePairIndex)
     {
         var startBackboneIndex = binToLocationIndex(startBasePairIndex);
@@ -578,23 +565,33 @@ public class ChromosomeController : MonoBehaviour
         }
     }
 
+    void createBackbone(ChromosomeRenderingInfo chromosomeRenderingInfo)
+    {
+        var mesh = MeshGenerator.applyToMesh(
+            MeshGenerator.generateMeshConnectingPoints(chromosomeRenderingInfo.backbonePoints, lineWidth),
+            backboneRenderer.GetComponent<MeshFilter>());
+
+        var meshCollider = backboneRenderer.AddComponent<MeshCollider>();
+        meshCollider.sharedMesh = mesh;
+
+        backboneRenderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
+        backboneRenderer.GetComponent<Renderer>().material.color = Settings.BackboneColor;
+    }
+
+
     void createSegments(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
         foreach (var (segmentSetName, segmentSetInfo) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value.segments)))
         {
-            Profiler.BeginSample("GetSegmentLocationList");
-            var segments = GetSegmentLocationList(segmentSetInfo);
-            Profiler.EndSample();
-            Profiler.BeginSample("combineBinRanges");
-            var ranges = MeshGenerator.combineBinRanges(segments);
-            Profiler.EndSample();
-            Profiler.BeginSample("submeshes");
-            var meshes = ranges.Select(binRange =>
-                MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)).ToList();
-            Profiler.EndSample();
-            Profiler.BeginSample("combined");
-            var combined = MeshGenerator.CombineVertsAndIndices(meshes, false);
-            Profiler.EndSample();
+            var segments = "GetSegmentLocationList".profileF(() => GetSegmentLocationList(segmentSetInfo));
+           
+            var ranges = "combineBinRanges".profileF(() => MeshGenerator.combineBinRanges(segments));
+
+            var meshes = "submeshes".profileF(() => ranges.Select(binRange =>
+                MeshGenerator.generateMeshForBinRange(chromosomeRenderingInfo.backbonePoints, chromosomeRenderingInfo.binIndexJumpPoints, binRange, lineWidth * 1.1f)).ToList());
+
+            var combined = "combined".profileF(() => MeshGenerator.CombineVertsAndIndices(meshes, false));
+            
             var renderer = Instantiate(rendererTemplate, segmentParent.transform);
             renderer.name = segmentSetName;
             MeshGenerator.applyToMesh(combined, renderer.GetComponent<MeshFilter>());
@@ -630,70 +627,6 @@ public class ChromosomeController : MonoBehaviour
             */
         }
     }
-    void createMeshForBinRanges(List<Chromosome.BinRange> binRanges, List<MeshFilter> meshFilters)
-    {
-        /*
-        List<(int startBin, int endBin)> combineOverlappingBinRanges(List<Chromosome.BinRange> binRanges)
-        {
-            var combined = new List<(int startBin, int endBin)>();
-            var current_section = (startBin: (int)binRanges[0].Lower, endBin: (int)binRanges[0].Upper);
-            foreach (var segment in binRanges.GetRange(1, binRanges.Count - 1))
-            {
-                if (current_section.endBin < segment.Lower)
-                {
-                    combined.Add(current_section);
-                    current_section = (startBin: (int)segment.Lower, endBin: (int)segment.Upper);
-                }
-                else
-                {
-                    current_section = (current_section.startBin, Mathf.Max((int)segment.Upper, current_section.endBin));
-                }
-            }
-            combined.Add(current_section);
-            return combined;
-        }
-
-        var combinedSegments = combineOverlappingBinRanges(binRanges);
-        var segmentsPointsGroups = new List<(List<Vector3> genePoints, int startingBackboneindex)>();
-        foreach (var (start, end) in combinedSegments)
-        {
-            segmentsPointsGroups.Add(getPointsConnectingBpIndices(start, end));
-        }
-
-
-        foreach (var (segmentsPointGroupsForCurrentGeneRenderer, meshFiltersIndex) in segmentsPointsGroups.Split(meshFilters.Count).Select((x, i) => (x, i)))
-        {
-            Mesh mesh = new Mesh();
-            meshFilters[meshFiltersIndex].mesh = mesh;
-
-
-            var verticies = new List<Vector3>();
-            var indices = new List<int>();
-            foreach (var (genePoints, startingBackboneIndex) in segmentsPointGroupsForCurrentGeneRenderer)
-            {
-                Assert.AreNotEqual(genePoints.Count, 0);
-                Assert.AreNotEqual(genePoints.Count, 1);
-                if (startingBackboneIndex >= backbonePointNormals.Count) // should only be the case for genes that start on the very last point
-                {
-                }
-                else
-                {
-                    var startNormals = backbonePointNormals[startingBackboneIndex];
-
-                    var (verticiesToAdd, indicesToAdd, _, _) = createMeshConnectingPointsInRange(genePoints, startNormals.Select((v) => v * 1.1f + genePoints[0]).ToList(), true);
-                    var preexistingVerticies = verticies.Count;
-                    verticies.AddRange(verticiesToAdd);
-                    indices.AddRange(indicesToAdd.Select((i) => i + preexistingVerticies));
-                }
-            }
-
-            mesh.Clear();
-            mesh.vertices = verticies.ToArray();
-            mesh.triangles = indices.ToArray();
-            mesh.RecalculateNormals();
-        }
-        */
-    }
 
     void createChromatidInterationPredictionLines(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
@@ -701,7 +634,32 @@ public class ChromosomeController : MonoBehaviour
         {
             var renderer = Instantiate(rendererTemplate, connectionParent.transform.parent.transform);
             renderer.name = description.Name;
+            var combined = MeshGenerator.CombineVertsAndIndices(GetConnectionLocationList(connectionSet).Select((connection) =>
+            {
+                Assert.IsTrue(connection.Start.Lower >= 0);
+                Assert.IsTrue(connection.Start.Upper >= 0);
+                Assert.IsTrue(connection.End.Lower >= 0);
+                Assert.IsTrue(connection.End.Upper >= 0);
+                Assert.IsTrue(connection.Start.Lower <= chromosomeRenderingInfo.highestBin);
+                Assert.IsTrue(connection.Start.Upper <= chromosomeRenderingInfo.highestBin);
+                Assert.IsTrue(connection.End.Lower <= chromosomeRenderingInfo.highestBin);
+                Assert.IsTrue(connection.End.Upper <= chromosomeRenderingInfo.highestBin);
 
+                var midpointStart = binRangeMidpoint(connection.Start);
+                var midpointEnd = binRangeMidpoint(connection.End);
+                return (midpointStart, midpointEnd);
+            }).Select(connection => {
+                var (midpointStart, midpointEnd) = connection;
+                return MeshGenerator.generateConnection(binToPosition(midpointStart), binToPosition(midpointEnd), 5, 0.005f);
+            }), false);
+            renderer.name = description.Name;
+            MeshGenerator.applyToMesh(combined, renderer.GetComponent<MeshFilter>());
+            renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
+            renderer.GetComponent<Renderer>().material.color = Settings.ConnectionColor;
+
+
+
+            /*
             foreach (var connection in GetConnectionLocationList(connectionSet))
             {
                 try
@@ -730,7 +688,7 @@ public class ChromosomeController : MonoBehaviour
                 {
                     //Debug.Log((start, end) + " is outside the range of [0, " + totalBasePairs + "]");
                 }
-            }
+            }*/
         }
     }
 
@@ -838,6 +796,8 @@ public class ChromosomeController : MonoBehaviour
 
         Mesh mesh = new Mesh();
         renderer.mesh = mesh;
+        renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
+        renderer.GetComponent<Renderer>().material.color = Settings.SegmentFocusedColor;
 
         var startNormals = chromosomeRenderingInfo.backbonePoints[genePoints.startBackboneIndex].pipeNormals;
         var startingPoints = startNormals.Select((v) => v * lineWidth * 1.2f + genePoints.points[0]).ToList();

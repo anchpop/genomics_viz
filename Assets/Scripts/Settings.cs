@@ -19,7 +19,8 @@ public class Settings : MonoBehaviour
     public static Color BackboneColor;
     public static Color SegmentColor;
     public static Color SegmentFocusedColor;
-    
+    public static Color ConnectionColor;
+
     void Start()
     {
         Debug.Log("Getting settings");
@@ -33,12 +34,14 @@ public class Settings : MonoBehaviour
 
         var ui = ((Tomlyn.Model.TomlTable)themeTable["ui"]);
         var backboneColorS = (string)(ui["backbone_color"]);
-        var geneColorS = (string)(ui["gene_color"]);
-        var geneFocusedColorS = (string)(ui["gene_focused_color"]);
+        var segmentColorS = (string)(ui["segment_color"]);
+        var segmentFocusedColorS = (string)(ui["segment_focused_color"]);
+        var connectionColorS = (string)(ui["connection_color"]);
 
         ColorUtility.TryParseHtmlString(backboneColorS, out BackboneColor);
-        ColorUtility.TryParseHtmlString(geneColorS, out SegmentColor);
-        ColorUtility.TryParseHtmlString(geneFocusedColorS, out SegmentFocusedColor);
+        ColorUtility.TryParseHtmlString(segmentColorS, out SegmentColor);
+        ColorUtility.TryParseHtmlString(segmentFocusedColorS, out SegmentFocusedColor);
+        ColorUtility.TryParseHtmlString(connectionColorS, out ConnectionColor);
     }
 
     void Update()

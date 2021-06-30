@@ -53,6 +53,10 @@ public class MeshGenerator
     // ===============
     // Mesh Generators
     // ===============
+
+    // Pipes
+    // -----
+
     public static (List<Vector3> verts, List<int> indices) generateMeshForBinRange(List<Point> backbonePoints, (int[] jumps, int binsPerJumpPoint) jumpPoints, Chromosome.BinRange binRange, float lineWidth)
     {
         List<Point> points()
@@ -117,12 +121,36 @@ public class MeshGenerator
                         (1        + sideIndex) % numsides,
                         (1        + sideIndex) % numsides + numsides,
                         (0        + sideIndex) % numsides + numsides,}
-
-                //.Select((j) => j - numsides)
                 ).ToList();
 
         return (verts, indices);
     }
+
+    // Connections 
+    // -----------
+
+    public static (List<Vector3> verts, List<int> indices) generateConnection(Vector3 from, Vector3 to, int numsides, float lineWidth)
+    {
+        var direction = to - from;
+        var circlePoints = createNormalsInCircleAroundVector(direction, Random.insideUnitSphere, numsides).Select(p => (p * lineWidth) + from);
+        var verts = new List<Vector3>();
+        verts.AddRange(circlePoints);
+        verts.AddRange(circlePoints.Select(p => p + direction));
+
+        var indices = Enumerable.Range(0, numsides).SelectMany((sideIndex) =>
+            new List<int>() {
+                        (0        + sideIndex) % numsides,
+                        (1        + sideIndex) % numsides,
+                        (0        + sideIndex) % numsides + numsides,
+
+                        (1        + sideIndex) % numsides,
+                        (1        + sideIndex) % numsides + numsides,
+                        (0        + sideIndex) % numsides + numsides,}
+        ).ToList();
+        return (verts, indices);
+    }
+
+
 
     // =================
     // Utility functions
@@ -186,13 +214,6 @@ public class MeshGenerator
     {
         Assert.IsTrue(points.Count > 1); // Doesn't make sense to generate pipe points for only a single point...
 
-        List<Vector3> createNormalsInCircleAroundVector(Vector3 direction)
-        {
-            var normal = Vector3.Cross(direction, initialVector).normalized;
-            var rotated = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).ToList();
-            return rotated;
-        }
-
         // Thanks to http://www.songho.ca/math/line/line.html#intersect_lineplane
         Vector3 intersectLineAndPlane(Vector3 linePoint, Vector3 lineDirection, Vector3 planePoint, Vector3 planeNormal)
         {
@@ -240,7 +261,7 @@ public class MeshGenerator
             var directionToNextPoint = next - current;
             if (acc.AtMost(0))
             {
-                var normals = createNormalsInCircleAroundVector(directionToNextPoint);
+                var normals = createNormalsInCircleAroundVector(directionToNextPoint, initialVector, numsides);
                 Assert.IsTrue(normals.GetRange(1, normals.Count - 1).All(normal => normals.First() != normal));
 
                 acc.Add((current, normals));
@@ -271,6 +292,14 @@ public class MeshGenerator
 
         return output;
     }
+
+    static List<Vector3> createNormalsInCircleAroundVector(Vector3 direction, Vector3 initialVector, int numsides)
+    {
+        var normal = Vector3.Cross(direction, initialVector).normalized;
+        var rotated = Enumerable.Range(0, numsides).Select((i) => Quaternion.AngleAxis(i * 360.0f / numsides, direction) * normal).ToList();
+        return rotated;
+    }
+
 
     public static Mesh applyToMesh((List<Vector3> verts, List<int> indices) meshData, MeshFilter meshFilter)
     {
@@ -308,6 +337,8 @@ public class MeshGenerator
         combined.Add(current_section);
         return combined;
     }
+
+
 
 
     // Start is called before the first frame update

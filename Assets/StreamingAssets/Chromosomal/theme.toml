@@ -1,4 +1,6 @@
 [ui]
-backbone_color = "#4b86b4"
-gene_color = "#2a4d69"
-gene_focused_color = "#fe8a71"
+backbone_color = "#345995"
+segment_color = "#03CEA4"
+segment_focused_color = "#E40066"
+segment_highlighted_color = "#FB4D3D"
+connection_color = "#EAC435"
