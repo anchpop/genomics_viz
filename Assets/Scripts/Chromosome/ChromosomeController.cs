@@ -129,7 +129,6 @@ public class ChromosomeController : MonoBehaviour
     public GameObject SiteSphere;
     public GameObject bridgePrefab;
 
-    public GameObject bridgeParent;
 
     public Material coloredMaterial;
     public Material highlightedColoredMaterial;
@@ -145,6 +144,7 @@ public class ChromosomeController : MonoBehaviour
     public GameObject segmentParent;
     public GameObject siteParent;
     public GameObject connectionParent;
+    public GameObject bridgeParent;
 
     public Material BaseMaterial;
 
@@ -176,11 +176,9 @@ public class ChromosomeController : MonoBehaviour
         createChromatidInterationPredictionLines(chromosomeRenderingInfo);
         Profiler.EndSample();
 
-        /*
         Profiler.BeginSample("createChromatidInterationPredictionLines");
         createSitePoints(chromosomeRenderingInfo);
         Profiler.EndSample();
-        */
     }
 
     ChromosomeSetRenderingInfo getChromosomeSetRenderingInfo()
@@ -432,15 +430,6 @@ public class ChromosomeController : MonoBehaviour
                             return "segment_points".profileF(() =>
                                 part2.Select(originPosition => new float[] { originPosition.x, originPosition.y, originPosition.z }).ToArray());
                         });
-                        /*
-                        Profiler.BeginSample("converting segment points to float[][][] for " + segmentSet.Description.Name);
-                        float[][] segment_points = segments.Select(segment =>
-                        {
-                            var originBin = checked((int)(segment.ExtraInfo.Ascending ? segment.Location.Lower : segment.Location.Upper));
-                            var originPosition = binToPoint(points, originBin).position;
-                            return new float[] { originPosition.x, originPosition.y, originPosition.z };
-                        }).ToArray();
-                        Profiler.EndSample();*/
                         int[] nodes = ("getting segment indices for " + segmentSet.Description.Name).profileF(() =>
                             segments.Select((x, i) => i).ToArray());
 
@@ -604,27 +593,22 @@ public class ChromosomeController : MonoBehaviour
     {
         foreach (var siteSet in chromosomeRenderingInfo.chromosome.SiteSets)
         {
-
-            //var meshFilters = Instantiate(segmentRenderers, segmentRenderers.transform.parent.transform);
-            //meshFilters.name = siteSet.;
-
-            // todo: uncomment
-            /*
-            var sitesParent = Instantiate(SitesParent, gameObject.transform);
+            
+            var sitesParent = Instantiate(siteParent, gameObject.transform);
             sitesParent.name = siteSet.Description.Name;
             if (siteSet.Sites.which == Chromosome.SiteSet.sites.WHICH.ProteinBinding)
             {
                 foreach (var site in siteSet.Sites.ProteinBinding)
                 {
                     var siteMarker = Instantiate(SiteSphere, sitesParent.transform);
-                    siteMarker.transform.localPosition = binToPoint((int)((site.Location.Lower + site.Location.Upper) / 2));
+                    siteMarker.transform.localPosition = binToPosition((int)((site.Location.Lower + site.Location.Upper) / 2));
                 }
             }
             else
             {
                 Debug.LogError("Only Protein binding sites supported at this time!");
             }
-            */
+            
         }
     }
 
@@ -656,39 +640,6 @@ public class ChromosomeController : MonoBehaviour
             MeshGenerator.applyToMesh(combined, renderer.GetComponent<MeshFilter>());
             renderer.GetComponent<Renderer>().material.CopyPropertiesFromMaterial(BaseMaterial);
             renderer.GetComponent<Renderer>().material.color = Settings.ConnectionColor;
-
-
-
-            /*
-            foreach (var connection in GetConnectionLocationList(connectionSet))
-            {
-                try
-                {
-                    Assert.IsTrue(connection.Start.Lower >= 0);
-                    Assert.IsTrue(connection.Start.Upper >= 0);
-                    Assert.IsTrue(connection.End.Lower >= 0);
-                    Assert.IsTrue(connection.End.Upper >= 0);
-                    Assert.IsTrue(connection.Start.Lower <= chromosomeRenderingInfo.highestBin);
-                    Assert.IsTrue(connection.Start.Upper <= chromosomeRenderingInfo.highestBin);
-                    Assert.IsTrue(connection.End.Lower <= chromosomeRenderingInfo.highestBin);
-                    Assert.IsTrue(connection.End.Upper <= chromosomeRenderingInfo.highestBin);
-
-                    var midpointStart = binRangeMidpoint(connection.Start);
-                    var midpointEnd = binRangeMidpoint(connection.End);
-
-                    // TODO: putting all these lines in seperate components has a substantial performance cost - can I combine them into one mesh like I do with the bridges? 
-                    // It would add a lot of tris, but it would move work from the CPU to the GPU. 
-                    var bridge = Instantiate(bridgePrefab, renderer.transform);
-                    var line = bridge.GetComponent<LineRenderer>();
-                    line.startWidth *= overallScale * lineWidth * 3;
-                    line.endWidth *= overallScale * lineWidth * 3;
-                    line.SetPositions(new Vector3[] { binToPoint(midpointStart).position, binToPoint(midpointEnd).position });
-                }
-                catch
-                {
-                    //Debug.Log((start, end) + " is outside the range of [0, " + totalBasePairs + "]");
-                }
-            }*/
         }
     }
 
