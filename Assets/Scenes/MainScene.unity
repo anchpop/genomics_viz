@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0, g: 0.99999905, b: 0.99999905, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2885,6 +2885,7 @@ MonoBehaviour:
   locationSequence: {fileID: 4900000, guid: b356b8a3fdc2b6c439b38902ea080698, type: 3}
   coordinateMapping: {fileID: 4900000, guid: c1ae0653cf4362d4d8cb043c646b5501, type: 3}
   geneAnnotations: {fileID: 4900000, guid: 80adcbd67a092e24d9be3b231e06ffb5, type: 3}
+  currentlyRenderingSetIndex: 1
   cylinderPrefab_LOD0: {fileID: 4769671688729265167, guid: 5b725741e694c0848911e78a29fb694a,
     type: 3}
   coloredCylinderPrefab_LOD0: {fileID: 4744947408227528854, guid: 6307ccfe9cc7e4a438779393f21b5385,
@@ -2905,7 +2906,6 @@ MonoBehaviour:
     type: 3}
   bridgePrefab: {fileID: 2264368760053339867, guid: 9fcf0db2f6c784c08a6add81e69cc16a,
     type: 3}
-  bridgeParent: {fileID: 1692436608}
   coloredMaterial: {fileID: 2100000, guid: 2f5b5cc03074c6f4e8f2561e95157b8b, type: 2}
   highlightedColoredMaterial: {fileID: 2100000, guid: d84bda549d12c5341b8f5b2a7c3580ce,
     type: 2}
@@ -2917,6 +2917,7 @@ MonoBehaviour:
   segmentParent: {fileID: 2109776164}
   siteParent: {fileID: 2125857183}
   connectionParent: {fileID: 1163242302}
+  bridgeParent: {fileID: 1692436608}
   BaseMaterial: {fileID: 2100000, guid: c50bcd745b4fb4b43a56c0cb8d4dc1b0, type: 2}
   highlightRenderer: {fileID: 1072041575}
   focusRenderer: {fileID: 1771343153}

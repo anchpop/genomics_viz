@@ -98,39 +98,52 @@ public class CameraController : MonoBehaviour
         {
             var search = String.Concat(searchInput.text.ToUpper().Where(c => Char.IsLetterOrDigit(c) || c == '-'));
 
-            int basePairSearch = 0;
-            if (int.TryParse(search, out basePairSearch))
+
+            // check if they typed a chromosome, like chr1
+            if (search.StartsWith("CHR"))
             {
-                parentController.goToBin(basePairSearch);
+                var searchRest = search.Substring(3).Split(':');
+                var chromosomeToView = searchRest.First();
+                chromosome.renderChromosome(chromosomeToView);
+                
             }
             else
             {
-                string[] parts = search.Split('-');
-                if (parts.Length == 2)
+                // check if they typed a number - if so, go to that base pair.
+                int basePairSearch = 0;
+                if (int.TryParse(search, out basePairSearch))
                 {
-                    int basePairSearch0 = 0;
-                    int basePairSearch1 = 0;
-                    if (int.TryParse(parts[0], out basePairSearch0) && int.TryParse(parts[1], out basePairSearch1))
-                    {
-                        parentController.goToBin(basePairSearch0 / 2 + basePairSearch1 / 2);
-                    }
+                    parentController.goToBin(basePairSearch);
                 }
                 else
                 {
-                    IEnumerable<(string segmentSetName, int i)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
-                        segmentInfo.Value.nameDict.GetByPrefix(search).Select((entry, index) =>
-                            (segmentSetName: segmentInfo.Key,
-                             segment: index)));
-
-                    if (results.Any())
+                    string[] parts = search.Split('-');
+                    if (parts.Length == 2)
                     {
-                        var (segmentSetName, segment) = results.First();
-                        
-                        focusSegment(segmentSetName, segment);
+                        int basePairSearch0 = 0;
+                        int basePairSearch1 = 0;
+                        if (int.TryParse(parts[0], out basePairSearch0) && int.TryParse(parts[1], out basePairSearch1))
+                        {
+                            parentController.goToBin(basePairSearch0 / 2 + basePairSearch1 / 2);
+                        }
                     }
                     else
                     {
-                        Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                        IEnumerable<(string segmentSetName, int i)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
+                            segmentInfo.Value.nameDict.GetByPrefix(search).Select((entry, index) =>
+                                (segmentSetName: segmentInfo.Key,
+                                 segment: index)));
+
+                        if (results.Any())
+                        {
+                            var (segmentSetName, segment) = results.First();
+
+                            focusSegment(segmentSetName, segment);
+                        }
+                        else
+                        {
+                            Debug.Log("'" + search + "' (" + search.Length.ToString() + ") not found. ");
+                        }
                     }
                 }
             }
@@ -197,7 +210,7 @@ public class CameraController : MonoBehaviour
                     segment.Switch(gene =>
                     {
                         sideText.text = gene.ExtraInfo.Name;
-                        sideLoc.text = cursorBasePair.ToString("D");
+                        sideLoc.text = "chr" + chromosome.currentlyRenderingSetIndex + ":" + cursorBasePair.ToString("D");
 
                         if (focus)
                         {

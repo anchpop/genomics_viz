@@ -116,7 +116,7 @@ public class ChromosomeController : MonoBehaviour
 
     public static ChromosomeSetRenderingInfo chromosomeSetRenderingInfo;
     public static ChromosomeRenderingInfo chromosomeRenderingInfo;
-    string currentlyRenderingSetIndex = "1";
+    public string currentlyRenderingSetIndex = "1";
 
     public GameObject cylinderPrefab_LOD0;
     public GameObject coloredCylinderPrefab_LOD0;
@@ -158,27 +158,37 @@ public class ChromosomeController : MonoBehaviour
 
     void Start()
     {
-        randoVector = Random.insideUnitSphere;
-
         chromosomeSetRenderingInfo = "getChromosomeSetRenderingInfo".profileF(() =>
             getChromosomeSetRenderingInfo());
 
-        chromosomeRenderingInfo = "createRenderingInfo".profileF(() =>
-            createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex));
+        renderChromosome(currentlyRenderingSetIndex);
+    }
 
-        "createBackbone".profile(() => createBackbone(chromosomeRenderingInfo));
+    public void renderChromosome(string currentlyRenderingSetIndex)
+    {
+        if (chromosomeSetRenderingInfo.chromosomes.ContainsKey(currentlyRenderingSetIndex))
+        {
+            this.currentlyRenderingSetIndex = currentlyRenderingSetIndex;
+
+            randoVector = Random.insideUnitSphere;
+
+            chromosomeRenderingInfo = "createRenderingInfo".profileF(() =>
+                createRenderingInfo(chromosomeSetRenderingInfo, currentlyRenderingSetIndex));
+
+            "createBackbone".profile(() => createBackbone(chromosomeRenderingInfo));
 
 
-        "createSegments".profile(() => createSegments(chromosomeRenderingInfo));
+            "createSegments".profile(() => createSegments(chromosomeRenderingInfo));
 
 
-        Profiler.BeginSample("createChromatidInterationPredictionLines");
-        createChromatidInterationPredictionLines(chromosomeRenderingInfo);
-        Profiler.EndSample();
+            Profiler.BeginSample("createChromatidInterationPredictionLines");
+            createChromatidInterationPredictionLines(chromosomeRenderingInfo);
+            Profiler.EndSample();
 
-        Profiler.BeginSample("createChromatidInterationPredictionLines");
-        createSitePoints(chromosomeRenderingInfo);
-        Profiler.EndSample();
+            Profiler.BeginSample("createChromatidInterationPredictionLines");
+            createSitePoints(chromosomeRenderingInfo);
+            Profiler.EndSample();
+        }
     }
 
     ChromosomeSetRenderingInfo getChromosomeSetRenderingInfo()
@@ -570,6 +580,10 @@ public class ChromosomeController : MonoBehaviour
 
     void createSegments(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
+        foreach (Transform child in segmentParent.transform)
+        {
+            Destroy(child.gameObject);
+        }
         foreach (var (segmentSetName, segmentSetInfo) in chromosomeRenderingInfo.segmentInfos.Select((segmentInfo, index) => (segmentInfo.Key, segmentInfo.Value.segments)))
         {
             var segments = "GetSegmentLocationList".profileF(() => GetSegmentLocationList(segmentSetInfo));
@@ -591,10 +605,13 @@ public class ChromosomeController : MonoBehaviour
 
     void createSitePoints(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
+        foreach (Transform child in siteParent.transform)
+        {
+            Destroy(child.gameObject);
+        }
         foreach (var siteSet in chromosomeRenderingInfo.chromosome.SiteSets)
         {
-            
-            var sitesParent = Instantiate(siteParent, gameObject.transform);
+            var sitesParent = Instantiate(rendererTemplate, siteParent.transform);
             sitesParent.name = siteSet.Description.Name;
             if (siteSet.Sites.which == Chromosome.SiteSet.sites.WHICH.ProteinBinding)
             {
@@ -614,9 +631,13 @@ public class ChromosomeController : MonoBehaviour
 
     void createChromatidInterationPredictionLines(ChromosomeRenderingInfo chromosomeRenderingInfo)
     {
+        foreach (Transform child in connectionParent.transform)
+        {
+            Destroy(child.gameObject);
+        }
         foreach (var (description, connectionSet) in chromosomeRenderingInfo.connectionInfos)
         {
-            var renderer = Instantiate(rendererTemplate, connectionParent.transform.parent.transform);
+            var renderer = Instantiate(rendererTemplate, connectionParent.transform);
             renderer.name = description.Name;
             var combined = MeshGenerator.CombineVertsAndIndices(GetConnectionLocationList(connectionSet).Select((connection) =>
             {

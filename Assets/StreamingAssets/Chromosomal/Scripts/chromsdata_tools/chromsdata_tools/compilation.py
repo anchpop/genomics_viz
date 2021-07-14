@@ -171,27 +171,28 @@ def compile_text_to_binary():
     chromosome_set.description.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
 
     index = 1
-    coordinates = get_coordinates(index)
-    bins = get_bins(index)
-    segment_set = SegmentSet.new_message() 
-    segment_set.segments.genes = get_genes()[str(index)]
-    segment_set.description.name = "genes"
 
-    assert len(coordinates) == len(bins)
+    def createChromosome(index):
+        coordinates = get_coordinates(index)
+        bins = get_bins(index)
+        segment_set = SegmentSet.new_message() 
+        segment_set.segments.genes = get_genes()[str(index)]
+        segment_set.description.name = "genes"
 
+        assert len(coordinates) == len(bins)
+
+        chromosome = chromosome_schema_capnp.Chromosome.new_message()
+        chromosome.index.numbered = index
+        chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
+        chromosome.segmentSets = [segment_set]
+        chromosome.connectionSets = []
+        chromosome.siteSets = siteSets[f'chr{index}']
+        chromosome.connectionSets = connectionSets[f'chr{index}']
+
+        return chromosome
     
-    
 
-    chromosome = chromosome_schema_capnp.Chromosome.new_message()
-    chromosome.index.numbered = index
-    chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
-    chromosome.segmentSets = [segment_set]
-    chromosome.connectionSets = []
-    chromosome.siteSets = siteSets[f'chr{index}']
-    chromosome.connectionSets = connectionSets[f'chr{index}']
-    
-
-    chromosome_set.chromosomes = [chromosome]
+    chromosome_set.chromosomes = [createChromosome(i) for i in range(1, 3)]
 
     output = chromosome_set.to_bytes()
     with open(base_path / Path("Output/info.chromsdata"), "wb") as output_file:
