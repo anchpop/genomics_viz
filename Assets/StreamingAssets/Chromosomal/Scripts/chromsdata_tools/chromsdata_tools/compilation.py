@@ -173,8 +173,7 @@ def compile_text_to_binary():
     assert len(coordinates) == len(bins)
 
     
-        
-       
+    
 
     chromosome = chromosome_schema_capnp.Chromosome.new_message()
     chromosome.index.numbered = index
