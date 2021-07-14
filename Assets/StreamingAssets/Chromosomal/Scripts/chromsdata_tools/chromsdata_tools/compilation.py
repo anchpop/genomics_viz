@@ -14,9 +14,8 @@ def fst(x): return x[0]
 def snd(x): return x[1]
 
 def compile_text_to_binary():
-
-    def get_coordinates():
-        with open(base_path / Path("Data/chromosomes/chr1/5kb/points_GM.txt"), "r") as coordinates_file:
+    def get_coordinates(i):
+        with open(base_path / Path(f"Data/chromosomes/chr{i}/5kb/points_GM.txt"), "r") as coordinates_file:
             def parse_line(line):
                 [x, y, z] = map(float, line.split("\t"))
                 
@@ -30,8 +29,8 @@ def compile_text_to_binary():
         
 
 
-    def get_bins():
-        with open(base_path / Path("Data/chromosomes/chr1/5kb/coordinate_mapping.txt"), "r") as bins_file:
+    def get_bins(i):
+        with open(base_path / Path(f"Data/chromosomes/chr{i}/5kb/coordinate_mapping.txt"), "r") as bins_file:
             def parse_line(line):
                 [bin, index] = map(int, line.split("\t"))
                 return bin
@@ -163,9 +162,17 @@ def compile_text_to_binary():
         
         return {chromosome: [process_chromatin_interaction_predictions(data)] for (chromosome, data) in chromosome_predictions}
 
+
+    siteSets = get_site_sets()
+    connectionSets = get_connection_sets()
+
+    chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()
+    chromosome_set.description.name = "Human chromosomes"
+    chromosome_set.description.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
+
     index = 1
-    coordinates = get_coordinates()
-    bins = get_bins()
+    coordinates = get_coordinates(index)
+    bins = get_bins(index)
     segment_set = SegmentSet.new_message() 
     segment_set.segments.genes = get_genes()[str(index)]
     segment_set.description.name = "genes"
@@ -180,13 +187,10 @@ def compile_text_to_binary():
     chromosome.backbone = list(map(make_point, zip(coordinates, bins)))
     chromosome.segmentSets = [segment_set]
     chromosome.connectionSets = []
-    chromosome.siteSets = get_site_sets()[f'chr{index}']
-    chromosome.connectionSets = get_connection_sets()[f'chr{index}']
+    chromosome.siteSets = siteSets[f'chr{index}']
+    chromosome.connectionSets = connectionSets[f'chr{index}']
     
 
-    chromosome_set = chromosome_schema_capnp.ChromosomeSet.new_message()
-    chromosome_set.description.name = "Human chromosomes"
-    chromosome_set.description.description = "From https://github.com/BDM-Lab/Hierarchical3DGenome/tree/master/output"
     chromosome_set.chromosomes = [chromosome]
 
     output = chromosome_set.to_bytes()
