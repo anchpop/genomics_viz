@@ -16,7 +16,7 @@ def snd(x): return x[1]
 def compile_text_to_binary():
 
     def get_coordinates():
-        with open(base_path / Path("Data/chr1/5kb/points_GM.txt"), "r") as coordinates_file:
+        with open(base_path / Path("Data/chromosomes/chr1/5kb/points_GM.txt"), "r") as coordinates_file:
             def parse_line(line):
                 [x, y, z] = map(float, line.split("\t"))
                 
@@ -31,7 +31,7 @@ def compile_text_to_binary():
 
 
     def get_bins():
-        with open(base_path / Path("Data/chr1/5kb/coordinate_mapping.txt"), "r") as bins_file:
+        with open(base_path / Path("Data/chromosomes/chr1/5kb/coordinate_mapping.txt"), "r") as bins_file:
             def parse_line(line):
                 [bin, index] = map(int, line.split("\t"))
                 return bin
@@ -66,9 +66,9 @@ def compile_text_to_binary():
                 gene.id = id
                 location.lower = start_bin
                 location.upper = end_bin
-
+            
                 return chromosome, {'location': location, 'extraInfo': gene} # need to use a dictionary for generic types
-                
+            
             return {
                 k: list(map(snd, v)) 
                 for k, v 
