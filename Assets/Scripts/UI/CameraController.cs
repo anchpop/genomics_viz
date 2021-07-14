@@ -130,9 +130,9 @@ public class CameraController : MonoBehaviour
                     else
                     {
                         IEnumerable<(string segmentSetName, int i)> results = ChromosomeController.chromosomeRenderingInfo.segmentInfos.SelectMany(segmentInfo =>
-                            segmentInfo.Value.nameDict.GetByPrefix(search).Select((entry, index) =>
+                            segmentInfo.Value.nameDict.GetByPrefix(search).Select((entry) =>
                                 (segmentSetName: segmentInfo.Key,
-                                 segment: index)));
+                                 segment: entry.Value)));
 
                         if (results.Any())
                         {
